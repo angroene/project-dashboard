@@ -652,7 +652,8 @@ await walk(11, "100+ question list: All filter and Load more through every page"
     try {
       await until("next page of questions", async () => (await rows.count()) > n, 10_000, 30);
     } catch (e) {
-      // Diagnostics for an intermittent stall seen once locally: what the list and the button looked like.
+      // Diagnostics if the list stops growing: what the list and the button looked like (a live update that
+      // arrived during a page load used to cancel that load; see applyInvalidation).
       const btn = (await more.count()) ? `"${await more.textContent()}" disabled=${await more.isDisabled()}` : "gone";
       const apiTail = desk.requests.slice(-5).map((r) => apiPath(r.url) + new URL(r.url).search).join(" | ");
       throw new Fail(`${(e as Error).message}; rows ${n} → ${await rows.count()}, load-more ${btn}; last requests: ${apiTail}`);

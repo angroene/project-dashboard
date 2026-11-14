@@ -169,7 +169,11 @@ describe("useServerEvents", () => {
     expect(FakeEventSource.instances).toHaveLength(1);
     act(() => last().open());
     expect(view.result.current.fallback).toBe(false);
-    expect(invalidate).toHaveBeenCalledWith();
+    // Everything is refreshed (the filter accepts any query), without cancelling fetches already running.
+    expect(invalidate).toHaveBeenCalledTimes(1);
+    const [filters, options] = invalidate.mock.calls[0] as [{ predicate: (q: unknown) => boolean }, { cancelRefetch: boolean }];
+    expect(filters.predicate({ queryKey: ["anything", "at", "all"] })).toBe(true);
+    expect(options).toEqual({ cancelRefetch: false });
   });
 
   it("a successful open resets the error count", async () => {
