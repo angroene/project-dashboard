@@ -150,7 +150,8 @@ describe("RecordDetailView", () => {
       const d = detail({ id: "T-1", title: "Task", actions: ["download"], attachments: [att({ id: "a1" }), att({ id: "a2" }), att({ id: "a3", available: false })] });
       const api = mockFetch({
         [`GET ${REC("T-1")}`]: d,
-        [`POST /api/projects/${PID}/download/zip`]: () => new Response(new Blob(["zip"]), { status: 200 }),
+        // Plain string body: Node 22's Response cannot read a jsdom Blob.
+        [`POST /api/projects/${PID}/download/zip`]: () => new Response("zip", { status: 200 }),
       });
       vi.stubGlobal("URL", Object.assign(URL, { createObjectURL: vi.fn(() => "blob:x"), revokeObjectURL: vi.fn() }));
       vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
