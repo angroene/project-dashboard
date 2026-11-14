@@ -414,14 +414,16 @@ describe("change propagation", () => {
     const h = await makeApp(root, { watch: true });
     apps.push(h);
     h.store.startWatching();
-    const events: unknown[] = [];
+    const events: { projectId: string | null; recordIds?: string[] }[] = [];
     h.store.on("invalidate", (e) => events.push(e));
     const file = path.join(root, "projects", "beta", "sections", "backlog", "records", "NEW.json");
     await new Promise((r) => setTimeout(r, 100));
     writeJson(file, question("NEW", { title: "Added later" }));
-    for (let i = 0; i < 40 && !h.store.get("beta")!.records.has("NEW"); i++) await new Promise((r) => setTimeout(r, 50));
+    // The record lands in the index before the event is emitted (a signature read sits in between), so wait for both.
+    const named = () => events.some((e) => e.projectId === "beta" && e.recordIds?.includes("NEW"));
+    for (let i = 0; i < 40 && !(h.store.get("beta")!.records.has("NEW") && named()); i++) await new Promise((r) => setTimeout(r, 50));
     expect(h.store.get("beta")!.records.get("NEW")?.title).toBe("Added later");
-    expect(events.length).toBeGreaterThan(0);
+    expect(named()).toBe(true);
   });
 
   it("a projects folder created after startup gets a watcher at the next reconcile", async () => {
