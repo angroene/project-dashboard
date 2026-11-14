@@ -599,8 +599,11 @@ await walk(10, "Mobile 360 px, keyboard-only tabs, ARIA labels; change propagati
   expect(onTab, "could not reach the tab list with the Tab key");
   await page.keyboard.press("ArrowRight");
   await until("hash after ArrowRight", async () => (await page.evaluate(() => location.hash)).endsWith("/review-desk"), 5000);
-  const focused = await page.evaluate(() => ({ role: document.activeElement?.getAttribute("role"), sel: document.activeElement?.getAttribute("aria-selected") }));
-  expect(focused.role === "tab" && focused.sel === "true", "focus should stay on the newly selected tab");
+  // The hash changes before React re-renders the tab list; wait for the render instead of sampling once.
+  const focusedOnSelectedTab = () =>
+    page.evaluate(() => document.activeElement?.getAttribute("role") === "tab" && document.activeElement.getAttribute("aria-selected") === "true");
+  await until("focus on the newly selected tab", focusedOnSelectedTab, 5000).catch(() => undefined);
+  expect(await focusedOnSelectedTab(), "focus should stay on the newly selected tab");
   await page.keyboard.press("ArrowLeft");
   await until("hash after ArrowLeft", async () => (await page.evaluate(() => location.hash)).endsWith("/progress"), 5000);
   await page.locator('[data-record-id="HBL-MECH-002"] .record-toggle').focus();
@@ -646,7 +649,14 @@ await walk(11, "100+ question list: All filter and Load more through every page"
   while ((await more.count()) > 0 && Date.now() - t0 < 20_000) {
     const n = await rows.count();
     await more.click();
-    await until("next page of questions", async () => (await rows.count()) > n, 10_000, 30);
+    try {
+      await until("next page of questions", async () => (await rows.count()) > n, 10_000, 30);
+    } catch (e) {
+      // Diagnostics for an intermittent stall seen once locally: what the list and the button looked like.
+      const btn = (await more.count()) ? `"${await more.textContent()}" disabled=${await more.isDisabled()}` : "gone";
+      const apiTail = desk.requests.slice(-5).map((r) => apiPath(r.url) + new URL(r.url).search).join(" | ");
+      throw new Fail(`${(e as Error).message}; rows ${n} → ${await rows.count()}, load-more ${btn}; last requests: ${apiTail}`);
+    }
   }
   metrics.questionsLoadAllMs = Date.now() - t0;
   const rendered = await rows.count();
