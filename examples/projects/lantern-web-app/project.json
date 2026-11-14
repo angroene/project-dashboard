@@ -7,5 +7,14 @@
   "theme": {
     "accent": "indigo"
   },
-  "progressStaleAfterDays": 30
+  "progressStaleAfterDays": 30,
+  "publishing": {
+    "enabled": true,
+    "sections": [
+      "questions",
+      "tasks",
+      "issues",
+      "reviews"
+    ]
+  }
 }

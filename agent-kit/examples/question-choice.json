@@ -1,0 +1,20 @@
+{
+  "title": "Which conflict rule should sync use?",
+  "summary": "Two devices edited the same note offline.",
+  "taskId": "LNT-TASK-001",
+  "answerSchema": {
+    "type": "single-choice",
+    "options": [
+      {
+        "id": "keep-both",
+        "label": "Keep both copies",
+        "description": "Recommended: no data loss"
+      },
+      {
+        "id": "last-write",
+        "label": "Last write wins"
+      }
+    ],
+    "allowExplanation": true
+  }
+}

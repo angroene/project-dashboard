@@ -12,12 +12,13 @@ import type {
   ProgressResponse, ProjectsResponse, RecordDetail, RecordPage, SessionInfo, SubmitAnswerResponse, UploadResponse, ZipPreflight,
 } from "../shared/api.js";
 import { Id, SubmitAnswerRequest, type QuestionRecord } from "../shared/schemas.js";
-import { Auth } from "./auth.js";
+import { agentMayUseProject, agentOf, Auth } from "./auth.js";
 import { statusInfo } from "../shared/workflow.js";
 import { ApiFailure, claimNext, completeAnswer, failAnswer, listQueue, readAnswer, recoverExpiredLeases, recoverStaging, submitAnswer } from "./answers.js";
 import { attachmentRef, inlineSafe, resolveAttachment, type ResolvedAttachment } from "./attachments.js";
 import type { Config } from "./config.js";
 import { sanitizeFileName } from "./fsutil.js";
+import { registerPublishRoutes } from "./publish.js";
 import { claimKey, parseRecordFile, Store, type ProjectState, type RecordEntry } from "./store.js";
 import { storeUpload, UploadRejected } from "./uploads.js";
 import { buildWorkbook, commitImport, previewImport } from "./xlsx.js";
@@ -108,11 +109,13 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
     uploadLimits: { maxBytes: cfg.uploads.maxBytes, maxFiles: cfg.uploads.maxFiles, allowedMimeTypes: Object.keys(cfg.allowedUploadTypes) },
   }));
 
-  app.get("/api/projects", async (): Promise<ProjectsResponse> => {
-    const cards = [...store.projects.values()].filter((p) => p.manifest.enabled).map((p) => store.card(p));
-    cards.push(...store.broken.map((b) => store.brokenCard(b)));
+  app.get("/api/projects", async (req): Promise<ProjectsResponse> => {
+    const grant = agentOf(req);
+    const cards = [...store.projects.values()].filter((p) => p.manifest.enabled && agentMayUseProject(grant, p.manifest.id)).map((p) => store.card(p));
+    // Broken projects have no trustworthy id, so only the operator sees them.
+    if (!grant) cards.push(...store.broken.map((b) => store.brokenCard(b)));
     cards.sort((a, b) => a.order - b.order || a.displayName.localeCompare(b.displayName));
-    return { productName: cfg.productName, projects: cards, diagnosticsCount: store.diagnostics().length };
+    return { productName: cfg.productName, projects: cards, diagnosticsCount: grant ? 0 : store.diagnostics().length };
   });
 
   app.get<{ Params: { projectId: string } }>("/api/projects/:projectId", async (req) => store.card(project(req.params.projectId)));
@@ -202,7 +205,7 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
       bodyMarkdown: rec.bodyMarkdown,
       attachments: rec.attachments.map((a) => {
         const r = resolveAttachment(p, a.id);
-        return r ? attachmentRef(pid, r) : { id: a.id, title: a.title ?? a.path, fileName: path.basename(a.path), mimeType: "application/octet-stream", bytes: null, available: false, url: "" };
+        return r ? attachmentRef(pid, { ...r, title: a.title ?? r.title }) : { id: a.id, title: a.title ?? a.path, fileName: path.basename(a.path), mimeType: "application/octet-stream", bytes: null, available: false, url: "" };
       }),
       links: rec.links,
       linkedRecords: rec.linkedRecords.map((id) => p.records.get(id)).filter((r): r is RecordEntry => !!r)
@@ -305,7 +308,8 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
         continue;
       }
       try {
-        const meta = await storeUpload(cfg, p, part.file, part.filename, user, questionId);
+        const grant = agentOf(req);
+        const meta = await storeUpload(cfg, p, part.file, part.filename, grant ? `agent:${grant.name}` : user, questionId);
         out.push({ attachmentId: meta.attachmentId, originalName: meta.originalName, mimeType: meta.mimeType, bytes: meta.bytes });
       } catch (e) {
         if (e instanceof UploadRejected) rejected.push(e.message);
@@ -477,8 +481,15 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
       state: z.enum(["pending", "processing", "processed", "failed"]).default("pending"),
       limit: z.coerce.number().int().min(1).max(5000).default(500),
       after: Id.optional(),
+      questionId: Id.optional(),
+      taskId: Id.optional(),
     }).parse(req.query);
-    return listQueue(p, q.state, q.limit, q.after);
+    // Filters use the in-memory index (question id from the claim file, task id from the question record).
+    const match = q.questionId || q.taskId
+      ? (questionId: string | undefined) => !!questionId && (!q.questionId || questionId === q.questionId) &&
+        (!q.taskId || p.records.get(questionId)?.question?.taskId === q.taskId)
+      : undefined;
+    return listQueue(p, q.state, q.limit, q.after, match);
   });
   app.get<{ Params: { projectId: string; answerId: string } }>("/api/projects/:projectId/queue/:answerId", async (req) => {
     const p = project(req.params.projectId);
@@ -500,6 +511,8 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
     const p = project(req.params.projectId);
     return { recovered: await recoverExpiredLeases(store, p) };
   });
+
+  registerPublishRoutes(app, store, cfg);
 
   app.post("/api/admin/reindex", async () => {
     await store.init();

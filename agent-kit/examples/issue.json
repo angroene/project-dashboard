@@ -1,0 +1,18 @@
+{
+  "recordType": "issue",
+  "title": "Cursor stays in the discarded copy after a sync conflict",
+  "status": "open",
+  "severity": "major",
+  "priority": "high",
+  "summary": "Reproducible 3/3 with two offline devices. Fix not started.",
+  "bodyMarkdown": "**Steps**\n1. Edit the same note on two devices while offline.\n2. Reconnect both.\n\n**Expected** cursor in the kept copy.\n\n**Actual** cursor stays in the discarded copy.",
+  "attachments": [
+    {
+      "uploadId": "UPL-REPLACE-WITH-UPLOAD-ID",
+      "title": "Repro trace"
+    }
+  ],
+  "linkedRecords": [
+    "LNT-TASK-001"
+  ]
+}

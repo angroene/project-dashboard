@@ -9,9 +9,9 @@ dashboard has no built-in knowledge of any language, framework, game, version co
 can be a CI job, a shell script, a person editing files, or an AI coding agent. Nothing in the frontend, backend or
 data format depends on any of them.
 
-> **Status:** Phase 1. The dashboard, API, queue, Excel round trip and examples work and are tested. The Docker setup is
-> verified on linux/arm64 only. AI-tool skills, hooks and runtime notifications for any specific agent are **not
-> part of Phase 1** (see [Limitations](#limitations-and-later-phases)).
+> **Status:** pre-release. The dashboard, API, queue, Excel round trip and examples work and are tested. The Docker
+> setup is verified on linux/arm64 only. The agent kit (CLI and skills) is tested against the API and was run in Claude
+> Code; Codex support is documented but not validated (see [Limitations](#limitations-and-later-phases)).
 
 ## What it does
 
@@ -30,6 +30,8 @@ data format depends on any of them.
 - **Published progress**, never computed: "Not reported" is shown when a project publishes nothing.
 - **Per-project status workflows** with categories that drive counts and colours ([ADR 0008](docs/adr/0008-configurable-status-workflows.md)).
 - **Unread updates and awaiting-response counts** tracked independently, with live updates over Server-Sent Events.
+- **Agent integration:** a publish API, scoped bearer tokens, a single-file CLI with an offline outbox, and four
+  portable skills for coding agents ([docs/AGENT_INTEGRATION.md](docs/AGENT_INTEGRATION.md), [docs/SKILLS.md](docs/SKILLS.md)).
 - **Secure by default:** loopback-only, token authentication and HTTPS enforced for any other bind address, path
   containment with symlink protection, sanitised Markdown, upload and Excel limits.
 
@@ -106,6 +108,14 @@ Producers write question files; users answer in the UI (or Excel); answers becom
 Delivery is at-least-once, so consumers must be idempotent. The contract, failure and crash behavior, and a
 copy-and-paste walkthrough are in [docs/QUEUE.md](docs/QUEUE.md).
 
+## Agents and scripts
+
+Agents on the same machine can write files; agents anywhere else use the publish API with a scoped token (one project,
+only the scopes it needs). The `agent-kit/` folder has the `apd` CLI (one file, no dependencies), four skills
+(ask a question, process answers, update progress, report issues), optional Claude Code and `AGENTS.md` snippets, and
+example inputs. `npm run demo:agent` runs the whole loop on the example project. Guide:
+[docs/AGENT_INTEGRATION.md](docs/AGENT_INTEGRATION.md); skills and installation: [docs/SKILLS.md](docs/SKILLS.md).
+
 ## Excel, uploads and downloads
 
 Export questions to a real `.xlsx` workbook, fill it in, preview the import, then commit. See [docs/EXCEL.md](docs/EXCEL.md).
@@ -149,16 +159,18 @@ Do not expose the server to a network without a token and HTTPS, and read the
 
 Known limitations are in [docs/LIMITATIONS.md](docs/LIMITATIONS.md). In particular:
 
-- **No consumer ships with the dashboard.** The queue API is the integration point. **Skills, hooks and runtime
-  notifications for AI coding tools (Claude Code, Codex or others) are not part of Phase 1.**
-- Single shared access level; no accounts or per-project permissions.
+- **No consumer runs inside the dashboard,** and it cannot push messages into a running agent session; agents check
+  the queue at work boundaries with the CLI or skills in `agent-kit/`.
+- The skills were validated in Claude Code only; Codex support is documentation only.
+- Single shared human access level; per-project limits exist only for scoped agent tokens.
 - Docker is verified on linux/arm64 only.
-- Later phases can build on the queue API, the update event stream and the closed schema lists
+- Later phases can build on the publish and queue APIs, the update event stream and the closed schema lists
   (see [extension points](docs/LIMITATIONS.md#extension-points-for-later-phases)).
 
 ## Documentation map
 
 [Getting started](docs/GETTING_STARTED.md) · [Project format](docs/PROJECT_FORMAT.md) · [Queue](docs/QUEUE.md) ·
+[Agent integration](docs/AGENT_INTEGRATION.md) · [Skills](docs/SKILLS.md) · [Agent kit](agent-kit/README.md) ·
 [Excel](docs/EXCEL.md) · [API](docs/API.md) · [Deployment](docs/DEPLOYMENT.md) · [Security model](docs/SECURITY_MODEL.md) ·
 [Performance](docs/PERFORMANCE.md) · [Limitations](docs/LIMITATIONS.md) · [Decisions (ADRs)](docs/adr/) ·
 [Third-party licenses](docs/THIRD_PARTY_LICENSES.md) · [Examples](examples/README.md)

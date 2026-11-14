@@ -1,0 +1,9 @@
+{
+  "title": "Approve releasing version 1.1 today?",
+  "summary": "All release checks passed; one known minor issue is listed in the body.",
+  "bodyMarkdown": "**Known issue:** the export menu flickers once on first open.",
+  "answerSchema": {
+    "type": "approval",
+    "requireRationaleOnReject": true
+  }
+}

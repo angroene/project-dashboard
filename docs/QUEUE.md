@@ -81,8 +81,10 @@ GET /api/projects/:projectId/queue?state=pending&limit=500&after=<answerId>
 
 - `state`: `pending`, `processing`, `processed` or `failed`. Pass it explicitly.
 - `limit`: 1 to 5000 (default 500). `after`: return ids after this one. `next` is present only when more remain.
-- Items are oldest first (answer ids sort by submission time). The listing reads directory names and small claim
-  files; it does not open answer or question files.
+- `questionId` or `taskId` narrows the list to one question, or to the questions whose record has that `taskId`.
+- Items are oldest first (answer ids sort by submission time). The listing uses directory names and the in-memory
+  claim index; it opens an answer file only when the index does not know that answer yet (for example one submitted a
+  moment ago, or an earlier answer whose question was answered again). It never opens question files.
 - Fetch the full answer only when you want it: `GET /api/projects/:projectId/queue/:answerId` (envelope with
   `processingState`, `attempts`, `lease`, `audit`; 404 if unknown, also 404 for an id from another project).
 - Without the API, list the folder `<project>/communications/answers/pending/`: one file per answer, file name is

@@ -10,11 +10,13 @@ What the dashboard protects, what it trusts, and what it does not do. To report 
 | **Server operator** (controls config, data root, token file) | choose data roots, register extra project roots, set limits | |
 | **Authenticated user** (holds the token, or anyone on loopback) | read every project on this server, submit answers, upload allowed files, download attachments, trigger a reindex | write outside the project folders; see server file paths |
 | **Project files** (JSON, Markdown, attachments written by producers) | nothing: every file is parsed and validated, content is rendered as data | choose paths outside their own project, run code, inject HTML or scripts |
+| **Agent with a scoped token** (`agentTokensFile`) | only its listed projects and scopes: read, publish validated records/events/progress/uploads, consume answers | answer questions, use Excel/ZIP/read state/diagnostics/reindex/live updates, see other projects, choose file paths |
 | **Browser content** (answers, uploads, Excel files) | nothing | |
 
-There is **one shared access level**: whoever can sign in sees all projects on the server. There are no accounts and no
-per-project permissions. If two audiences must not see each other's projects, run two server instances with separate
-data roots.
+There is **one shared human access level**: whoever can sign in sees all projects on the server. There are no user
+accounts. Agents and scripts can instead get scoped bearer tokens limited to projects and scopes
+([ADR 0010](adr/0010-scoped-agent-tokens.md), [AGENT_INTEGRATION.md](AGENT_INTEGRATION.md#scoped-agent-tokens)).
+If two human audiences must not see each other's projects, run two server instances with separate data roots.
 
 ## Network exposure and authentication
 
@@ -46,8 +48,11 @@ data roots.
 - Attachments resolve inside the project's attachment root or one of its declared read-only `artifactRoots`, and the
   API addresses them by id, never by path. One project cannot read another project's files.
 - API errors, diagnostics and logs use project-relative paths and error codes, not server file paths.
-- The server never writes outside a project's `communications/`, `user-state/` and attachment `answers/` folders.
-  Record, section and manifest files are never modified by the dashboard.
+- The server never writes outside a project's `communications/`, `user-state/` and attachment `answers/` folders,
+  except for projects that set `"publishing": {"enabled": true}`: there it also writes the records of the allowed
+  cards (`<card>/records/<id>.json`), events in `activityDir` and the `progressFile`, after full validation and only
+  at server-chosen paths ([ADR 0009](adr/0009-agent-publishing-api.md)). `project.json` and `section.json` are never
+  modified by the dashboard.
 - All JSON writes are atomic (temp file, fsync, rename). Read sizes are capped, and malformed files are isolated
   and reported rather than crashing the server.
 
@@ -91,7 +96,9 @@ answer. Details: [QUEUE.md](QUEUE.md), ADR 0003.
 
 ## What is not covered
 
-- No per-user or per-project authorization, no audit of individual users beyond the operator name on answers.
+- No per-user accounts. Per-project limits exist only for scoped agent tokens; every signed-in browser session and the
+  operator token see all projects. No audit of individual users beyond the operator name on answers, the agent name
+  on uploads and the `owner` on queue claims.
 - No encryption at rest and no malware scanning of uploads.
 - Clear-text HTTP on a network (`allowInsecureRemote`) exposes the token and cookie.
 - The token is long-lived and shared; rotate it by replacing the file and restarting.

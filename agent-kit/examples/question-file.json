@@ -1,0 +1,13 @@
+{
+  "title": "Upload a screenshot of the layout you expect",
+  "taskId": "LNT-TASK-001",
+  "answerSchema": {
+    "type": "file-upload",
+    "maxFiles": 2,
+    "allowedMimeTypes": [
+      "image/png",
+      "image/jpeg"
+    ],
+    "allowComment": true
+  }
+}

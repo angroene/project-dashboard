@@ -1,0 +1,18 @@
+{
+  "overallPercent": 62,
+  "label": "Release 1.0 readiness",
+  "method": "Share of release checklist items done",
+  "breakdown": [
+    {
+      "id": "editor",
+      "title": "Editor",
+      "percent": 80,
+      "detail": "Core editing works"
+    },
+    {
+      "id": "sync",
+      "title": "Sync",
+      "percent": 45
+    }
+  ]
+}

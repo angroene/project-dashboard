@@ -22,7 +22,9 @@
     "test:integration": "vitest run --project integration",
     "test:e2e": "vite build && tsx scripts/e2e.ts",
     "lint": "eslint .",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "demo:agent": "tsx scripts/agent-demo.ts",
+    "agent-token": "tsx scripts/agent-token.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.5",

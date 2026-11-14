@@ -37,6 +37,11 @@ const ConfigSchema = z.object({
       sessionHours: z.number().min(1).max(24 * 90).default(24 * 30),
     })
     .default({ mode: "none", user: "operator", sessionHours: 720 }),
+  /**
+   * JSON file with scoped API tokens for agents and scripts. It holds SHA-256 hashes only, never tokens.
+   * Scoped tokens are sent as `Authorization: Bearer <token>`; see docs/AGENT_INTEGRATION.md.
+   */
+  agentTokensFile: z.string().optional(),
   tls: z.object({ certFile: z.string(), keyFile: z.string() }).optional(),
   /** Set when a TLS-terminating reverse proxy is in front; marks cookies Secure. */
   behindHttpsProxy: z.boolean().default(false),
@@ -76,6 +81,7 @@ export function loadConfig(overrides: Partial<z.input<typeof ConfigSchema>> = {}
     if (!process.env.PCC_TLS_CERT || !process.env.PCC_TLS_KEY) throw new Error("set both PCC_TLS_CERT and PCC_TLS_KEY (or neither)");
     env.tls = { certFile: process.env.PCC_TLS_CERT, keyFile: process.env.PCC_TLS_KEY };
   }
+  if (process.env.PCC_AGENT_TOKENS_FILE) env.agentTokensFile = process.env.PCC_AGENT_TOKENS_FILE;
   if (process.env.PCC_BEHIND_HTTPS_PROXY) env.behindHttpsProxy = process.env.PCC_BEHIND_HTTPS_PROXY === "1" || process.env.PCC_BEHIND_HTTPS_PROXY === "true";
   const merged = { ...fromFile, ...env, ...overrides } as Record<string, unknown>;
   if (process.env.PCC_AUTH_TOKEN_FILE) {
@@ -92,6 +98,9 @@ export function loadConfig(overrides: Partial<z.input<typeof ConfigSchema>> = {}
     throw new Error(`Refusing to bind ${cfg.host} without authentication. Set auth.mode "token" with auth.tokenFile (or PCC_AUTH_TOKEN_FILE), or bind 127.0.0.1.`);
   }
   if (cfg.auth.mode === "token" && !cfg.auth.tokenFile) throw new Error("auth.mode token needs auth.tokenFile");
+  if (cfg.agentTokensFile && cfg.auth.mode !== "token") {
+    throw new Error("agentTokensFile needs auth.mode \"token\": without authentication every client already has full access, so scoped tokens would restrict nothing");
+  }
   if (!isLoopback(cfg.host) && !cfg.tls && !cfg.behindHttpsProxy && !cfg.allowInsecureRemote) {
     throw new Error(`Refusing to bind ${cfg.host} without HTTPS. Set tls.certFile/tls.keyFile (PCC_TLS_CERT/PCC_TLS_KEY), or behindHttpsProxy when a TLS proxy is in front, or allowInsecureRemote to accept clear-text tokens.`);
   }

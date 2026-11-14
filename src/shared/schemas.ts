@@ -55,6 +55,14 @@ export const ProjectManifest = z.object({
   progressStaleAfterDays: z.number().int().min(1).max(365).optional(),
   /** Per-record-type status vocabularies replacing the built-in defaults (questions excluded). */
   workflows: z.partialRecord(z.enum(["task", "issue", "review", "progress", "activity", "document", "generic"]), z.lazy(() => Workflow)).default({}),
+  /**
+   * Opt-in: lets authorised API clients (agents, CI) write records, activity events and progress through the server.
+   * `sections` limits record writes to these expandable-card ids; omitted = every card of the project.
+   */
+  publishing: z.object({
+    enabled: z.boolean().default(false),
+    sections: z.array(Slug).max(200).optional(),
+  }).default({ enabled: false }),
 });
 export type ProjectManifest = z.infer<typeof ProjectManifest>;
 
@@ -176,6 +184,8 @@ export const CompositeFieldDef = z.intersection(
   PlainField,
 );
 export const CompositeField = z.object({ type: z.literal("composite"), fields: z.array(CompositeFieldDef).min(1).max(20) });
+/** Answer schema types a question can use (keep in sync with AnswerSchema below). */
+export const ANSWER_TYPES = ["single-choice", "multiple-choice", "free-text", "approval", "file-upload", "composite"] as const;
 export const AnswerSchema = z.discriminatedUnion("type", [
   SingleChoiceField, MultipleChoiceField, FreeTextField, ApprovalField, FileUploadField, CompositeField,
 ]);

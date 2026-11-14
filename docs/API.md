@@ -5,7 +5,10 @@ Types: `src/shared/api.ts` (responses) and `src/shared/schemas.ts` (request bodi
 **Rules for every call**
 - POST requests must send `X-PCC-Request: 1` (and `Content-Type: application/json` unless multipart).
   A cross-origin `Origin` header is rejected (403).
-- When auth is on, every endpoint except `/api/session`, `/api/auth/*` needs the session cookie (401 otherwise).
+- When auth is on, every endpoint except `/api/session`, `/api/auth/*` needs the session cookie or an
+  `Authorization: Bearer <token>` header (401 otherwise). Bearer tokens are the operator token (full access) or scoped
+  agent tokens ([AGENT_INTEGRATION.md](AGENT_INTEGRATION.md#authentication)); an agent token gets `403 forbidden`
+  outside its scopes and `404` for projects it may not use.
 - Errors: `{ error, message, fieldErrors?, details? }` with 4xx/5xx. `fieldErrors` = `[{fieldId, message}]`.
 - Clients only ever see ids and API URLs, never filesystem paths.
 
@@ -47,6 +50,20 @@ Types: `src/shared/api.ts` (responses) and `src/shared/schemas.ts` (request bodi
 | POST | `/api/projects/:projectId/download/zip` | same body → `.zip` with files under `<recordId>/` and `manifest.json` |
 | POST | `/api/admin/reindex` | rebuild the whole index |
 
+## Publish (producers and agents)
+
+For projects with `"publishing": {"enabled": true}` in `project.json`; otherwise `403 publishing-disabled`. Guide,
+CLI and examples: [AGENT_INTEGRATION.md](AGENT_INTEGRATION.md). Paths are under `/api/projects/:projectId`.
+
+| Method | Path | Body → Result |
+|---|---|---|
+| GET | `/capabilities` | → `{apiVersion, projectId, caller, publishing: {enabled, sections: [{id, title, path}]}, recordTypes: {type: [{id, label, category}]}, answerTypes, priorities, queueStates, uploads}` |
+| GET | `/records/:recordId/source` | → `{recordId, sectionId, revision, record}` (the stored JSON) |
+| PUT | `/records/:recordId` | `{sectionId, record, ifRevision?}` → 201 `{recordId, sectionId, revision, created: true}` or 200 (`unchanged: true` when identical). `record.id`, `schemaVersion` and `updatedAt` are filled in when missing. Attachments may be `{uploadId, title?}`. 404 unknown section; 422 `not-a-card` / `validation` (with `fieldErrors`, including statuses outside the project's workflow); 403 `section-not-allowed`; 409 `id-conflict` (id used in another section, or attachment id used elsewhere), `revision-mismatch`, `revision-required` (answered question revision with a changed answer schema) |
+| PATCH | `/records/:recordId` | `{status?, statusLabel?, summary?, percent?, priority?, notifyUser?, history?: {at?, text, by?}, ifRevision?}` (`null` removes `statusLabel`/`percent`) → `{recordId, sectionId, revision, unchanged}`; sets `updatedAt`; a history entry with the same `at` and `text` is not added twice; unknown fields 400 |
+| PUT | `/activity/:eventId` | activity event (`at` defaults to now) → 201 created, 200 `unchanged` for an identical replay, 409 `id-conflict` for different content; 422 for an unknown `recordId` |
+| PUT | `/progress` | `{progress, ifRevision?}` → `{revision, unchanged}`; validated as `progress.json` |
+
 ### AnswerValue (one per field)
 
 ```json
@@ -64,7 +81,7 @@ Paths are under `/api/projects/:projectId`.
 
 | Method | Path | Body or query → Result |
 |---|---|---|
-| GET | `/queue` | query `state` (`pending` `processing` `processed` `failed`), `limit` (1 to 5000, default 500), `after` (answer id) → `{items: [{answerId, state, questionId, questionRevision, submittedAt}], next?}`, oldest first |
+| GET | `/queue` | query `state` (`pending` `processing` `processed` `failed`), `limit` (1 to 5000, default 500), `after` (answer id), optional `questionId` or `taskId` (the question's `taskId`) → `{items: [{answerId, state, questionId, questionRevision, submittedAt}], next?}`, oldest first |
 | GET | `/queue/:answerId` | → full `AnswerEnvelope` (state, attempts, lease, audit); 404 if unknown or from another project |
 | POST | `/queue/claim` | `{owner, leaseSeconds?, answerId?}` → claimed `AnswerEnvelope`; 204 when nothing is pending; with `answerId`, 409 `not-pending` unless that answer is pending |
 | POST | `/queue/:answerId/complete` | `{owner, note?}` → envelope in `processed`; 409 `not-owner` / `wrong-state` |
@@ -86,6 +103,6 @@ The dashboard runs no consumer: submitted answers show as "Submitted · Awaiting
 - **Other limits:** JSON bodies up to 1 MB; uploads 20 MB and 10 files by default; Excel imports 5 MB and 5000 rows;
   at most 50 concurrent live-update (SSE) connections (503 beyond that; the UI falls back to polling).
 - **Error shape:** `{error, message, fieldErrors?, details?}`. Common `error` codes: `bad-request` (400),
-  `unauthorized` (401), `csrf` (403), `not-found` (404), `stale-revision` / `already-answered` / `not-open` /
-  `not-pending` / `not-owner` / `wrong-state` (409), `too-large` (413), `validation` / `upload-rejected` (422),
+  `unauthorized` (401), `csrf` / `forbidden` / `publishing-disabled` / `section-not-allowed` (403), `not-found` (404), `stale-revision` / `already-answered` / `not-open` /
+  `not-pending` / `not-owner` / `wrong-state` / `id-conflict` / `revision-mismatch` / `revision-required` (409), `too-large` (413), `validation` / `upload-rejected` / `not-a-card` (422),
   `rate-limited` (429), `internal` (500) and `busy` (503; details are in the server log, never in the response).

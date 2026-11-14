@@ -1,14 +1,21 @@
 # Known limitations
 
-- **No answer consumer is included.** Answers wait in `communications/answers/pending/` until something claims them
-  through the queue API or `scripts/queue.ts`. The UI shows "Submitted, awaiting pickup". Agent skills, hooks and
-  runtime notifications for any particular tool are not part of this release.
+- **No answer consumer runs inside the dashboard.** Answers wait in `communications/answers/pending/` until something
+  claims them (queue API, `scripts/queue.ts`, or the `apd` CLI and skills in `agent-kit/`). The UI shows "Submitted,
+  awaiting pickup". The dashboard cannot push a message into a running agent session; agents check the queue at work
+  boundaries, optionally reminded by a session-start hook ([SKILLS.md](SKILLS.md)).
+- **Agent kit validation.** The CLI and API are covered by automated tests and a demo. The skills were run in Claude
+  Code only (two of four in an agent session); Codex support is documentation only and not validated.
+- **Publishing and local writers.** A local producer and the publish API writing the same record at the same moment
+  are not coordinated (last write wins); API writers can detect it with `ifRevision`. Agent tokens do not expire;
+  revoke by editing the token file and restarting.
 - **At-least-once delivery.** Consumers must be idempotent ([QUEUE.md](QUEUE.md)). Leases cannot be renewed; choose a
   lease longer than the job.
 - **One answer per question revision.** To let a user answer again, the producer bumps `questionRevision` or a consumer
   fails the answer. Users cannot edit a submitted answer.
-- **Single shared access level.** One operator identity per server (`auth.user`); read and unread state is per that
-  identity. Sessions are in memory (a restart signs everyone out). No accounts, no per-project permissions.
+- **Single shared human access level.** One operator identity per server (`auth.user`); read and unread state is per
+  that identity. Sessions are in memory (a restart signs everyone out). No user accounts; per-project limits exist
+  only for scoped agent tokens.
 - **Transport security is deployment work.** Remote use needs a token and HTTPS; the server enforces both at startup
   (built-in TLS or a same-host proxy), unless `allowInsecureRemote` is set. A proxy on another host is not supported
   as a trusted proxy. Only failed logins are rate limited.
@@ -35,7 +42,8 @@
 
 These are seams that exist; nothing beyond them is built:
 
-- The queue API and `scripts/queue.ts` are the integration surface for any consumer (agent runtimes, CI jobs, chat bots).
+- The queue API, the publish API and the `apd` CLI are the integration surface for any producer or consumer (agent
+  runtimes, CI jobs, chat bots); see [AGENT_INTEGRATION.md](AGENT_INTEGRATION.md).
 - The `/api/updates` event stream tells a client what changed, which a notifier could subscribe to.
 - Display types, icons and actions are closed lists in the schemas; adding one is a schema change plus a UI mapping.
 - New record types need a schema, a default workflow and a UI mapping; `generic` covers most needs today.

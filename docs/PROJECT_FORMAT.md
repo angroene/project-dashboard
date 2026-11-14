@@ -85,6 +85,7 @@ version. Every file carries `"schemaVersion": 1`. Two complete, working projects
 | `theme.accent` | no | `indigo` | `indigo teal amber rose violet slate`. |
 | `progressStaleAfterDays` | no | never stale | 1 to 365. Shows published progress as stale after that many days. |
 | `workflows` | no | `{}` | Per-record-type status vocabularies, see [Status workflows](#status-workflows). |
+| `publishing` | no | `{"enabled": false}` | Lets authorised API clients write records, activity and progress for this project. `sections` (optional) lists the card ids open for record writes. See [AGENT_INTEGRATION.md](AGENT_INTEGRATION.md#enabling-publishing-for-a-project). |
 
 ## Sections and display types
 

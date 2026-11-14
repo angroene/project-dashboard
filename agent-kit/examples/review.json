@@ -1,0 +1,7 @@
+{
+  "recordType": "review",
+  "title": "Review: sync conflict handling",
+  "status": "changes-requested",
+  "summary": "1 medium finding.",
+  "bodyMarkdown": "- **Medium** `src/sync/merge.ts:88`: after keep-both, the cursor stays in the discarded copy. Test `sync.cursor` fails."
+}
