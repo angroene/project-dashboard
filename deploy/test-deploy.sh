@@ -94,5 +94,15 @@ check "secrets kept" test -s "$APD_SECRETS_DIR/pcc_token.txt"
 check "up after reset" "$D" up
 [ "$(projects)" = 0 ] && ok "empty after reset" || bad "empty after reset"
 
+echo "== upgrade of an instance started by hand (other image name)"
+"$D" reset --confirm "$APD_NAME" >/dev/null
+APD_IMAGE="$IMG-manual" docker compose -p "$APD_NAME" -f "$REPO/docker-compose.yml" up -d --build >/dev/null 2>&1
+check "hand-started instance is up" sh -c "sleep 20; docker inspect -f '{{.State.Health.Status}}' \$(docker compose -p '$APD_NAME' -f '$REPO/docker-compose.yml' ps -q dashboard) | grep -Eq 'healthy|starting'"
+docker run --rm --network none -v "$VOL:/data" --entrypoint sh "$IMG-manual" -c 'mkdir -p /data/projects/hand && echo kept > /data/projects/hand/marker.txt'
+check "upgrade works on it (backs up with the running image)" "$D" upgrade
+check "data kept after upgrading the hand-started instance" inside 'grep -q kept /data/projects/hand/marker.txt'
+check "rollback target is the hand-started image" test "$(docker image inspect -f '{{.Id}}' "$IMG-previous")" = "$(docker image inspect -f '{{.Id}}' "$IMG-manual")"
+docker image rm "$IMG-manual" >/dev/null 2>&1 || true
+
 echo; echo "$pass passed, $fail failed  (platform: $(docker version -f '{{.Server.Os}}/{{.Server.Arch}}'))"
 [ "$fail" = 0 ]

@@ -40,6 +40,14 @@ die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 compose() { docker compose -p "$NAME" -f "$REPO/docker-compose.yml" "$@"; }
 volume_exists() { docker volume inspect "$VOLUME" >/dev/null 2>&1; }
 container() { compose ps -q dashboard 2>/dev/null; }
+# Image for short helper containers (backup, restore, seeding): the one the instance runs, which also covers an
+# instance first started by hand with another image name; otherwise this instance's own image.
+tool_image() {
+  local id img; id="$(compose ps -a -q dashboard 2>/dev/null | head -1)"
+  if [ -n "$id" ]; then img="$(docker inspect -f '{{.Config.Image}}' "$id" 2>/dev/null || true)"; fi
+  for img in ${img:-} "$IMAGE"; do docker image inspect "$img" >/dev/null 2>&1 && { echo "$img"; return; }; done
+  die "no image to run helper containers with; run '$0 up' first"
+}
 # Host to call for checks: the published address, or loopback when published on all addresses.
 check_host() { case "$BIND" in 0.0.0.0|::|"") echo 127.0.0.1 ;; *) echo "$BIND" ;; esac; }
 
@@ -144,7 +152,7 @@ cmd_health() {
 seed_examples() {
   # Copies each example that is not there yet, as the container user; never overwrites a project folder.
   docker run --rm --user 1000:1000 --network none -v "$VOLUME:/data" -v "$REPO/examples/projects:/seed:ro" \
-    --entrypoint sh "$IMAGE" -c '
+    --entrypoint sh "$(tool_image)" -c '
       mkdir -p /data/projects
       for d in /seed/*/; do
         n=$(basename "$d")
@@ -176,7 +184,7 @@ cmd_backup() {
   local file="${NAME}-data-$(date -u +%Y%m%dT%H%M%SZ).tar.gz" running
   running="$(container)"
   if [ -n "$stop" ] && [ -n "$running" ]; then compose stop dashboard; fi
-  docker run --rm --user 0:0 --network none -v "$VOLUME:/data:ro" -v "$dir:/backup" --entrypoint sh "$IMAGE" -c \
+  docker run --rm --user 0:0 --network none -v "$VOLUME:/data:ro" -v "$dir:/backup" --entrypoint sh "$(tool_image)" -c \
     "tar -czf /backup/$file -C /data . && chown $(id -u):$(id -g) /backup/$file"
   if [ -n "$stop" ] && [ -n "$running" ]; then compose start dashboard; wait_healthy; fi
   (cd "$dir" && { command -v sha256sum >/dev/null && sha256sum "$file" || shasum -a 256 "$file"; } > "$file.sha256")
@@ -208,7 +216,7 @@ cmd_restore() {
   if volume_exists; then cmd_backup; say "safety backup of the replaced data: $BACKUP_FILE"; fi
   compose stop dashboard 2>/dev/null || true
   docker volume create "$VOLUME" >/dev/null
-  docker run --rm --user 0:0 --network none -v "$VOLUME:/data" -v "$file:/restore.tar.gz:ro" --entrypoint sh "$IMAGE" -c \
+  docker run --rm --user 0:0 --network none -v "$VOLUME:/data" -v "$file:/restore.tar.gz:ro" --entrypoint sh "$(tool_image)" -c \
     'find /data -mindepth 1 -delete && tar -xzf /restore.tar.gz -C /data --no-same-owner && chown -R 1000:1000 /data'
   compose up -d
   wait_healthy
@@ -219,7 +227,7 @@ cmd_upgrade() {
   require_docker
   [ -n "$(container)" ] || die "instance '$NAME' is not running; use 'up' for a first deployment"
   volume_exists && cmd_backup
-  if docker image inspect "$IMAGE" >/dev/null 2>&1; then docker image tag "$IMAGE" "$IMAGE-previous"; fi
+  docker image tag "$(tool_image)" "$IMAGE-previous"   # the image running now, whatever its name
   compose build
   compose up -d
   wait_healthy
