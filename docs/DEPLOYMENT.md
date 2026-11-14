@@ -156,10 +156,11 @@ or is not terminating TLS, do not set this flag.
 
 ## Docker and Docker Compose
 
-**Status: verified on linux/arm64** (Docker 29.5, Compose 5.1): image build, `docker compose up` to healthy, HTTPS only
+**Status: tested on linux/amd64 and linux/arm64** (Raspberry Pi: Docker 29.5, Compose 5.1; CI runners): image build, `docker compose up` to healthy, HTTPS only
 (plain HTTP refused), token login with a Secure HttpOnly cookie, CSRF guard, read-only root filesystem, non-root user,
 all capabilities dropped, token absent from logs, a project folder copied in while running appears within seconds, and
-data survives a restart. Not yet tried on amd64.
+data survives a restart. The deploy script test (image build, startup, health, backup, upgrade, rollback, restore,
+reset) passes on linux/amd64 and linux/arm64 in CI and on a Raspberry Pi; macOS and Windows hosts are untested.
 
 What the files do:
 
@@ -215,15 +216,52 @@ This combination has not been tested.
 Limitations: no image is published to a registry; the health check assumes built-in TLS; the first start of a new
 named volume takes its ownership from the image (`node` user); the examples are not baked into the image.
 
+### Deploy script
+
+`deploy/apd-deploy.sh` wraps the Compose file for Linux and macOS Docker hosts (bash, `docker compose`, `openssl`,
+`curl`). Every command keeps existing data unless it says otherwise.
+
+| Command | What it does |
+|---|---|
+| `up` | Clean deployment with no projects. Creates the token and a self-signed certificate in `secrets/` if missing (never overwrites them), builds the image, starts, waits until healthy. Refuses if the instance is already running. |
+| `up --demo` | The same, then copies each fictional example project that is not there yet. Existing project folders are never touched. |
+| `health` | Container health, HTTPS answer, plain HTTP refused, API returns 401 without a token. `health --auth` also signs in with the token and counts projects (the token is never printed or put on a command line). |
+| `backup [--stop] [--dir DIR]` | `.tar.gz` of the whole data volume plus a `.sha256` file, into `backups/`. `--stop` pauses the service for a perfectly consistent copy. |
+| `upgrade` | Backs up, keeps the running image as `<image>-previous`, rebuilds from the current checkout, restarts, waits until healthy. Data is untouched. |
+| `rollback` | Returns to the image from before the last upgrade. Data is untouched. |
+| `restore FILE [--confirm NAME]` | **Replaces all data.** Checks the archive first (checksum, readable, only relative paths, has `projects/`), asks you to type the instance name, takes a safety backup, then restores and fixes ownership. |
+| `reset [--confirm NAME]` | **Deletes all data.** Asks you to type the instance name, takes a safety backup, removes the volume. Secrets are kept. |
+| `status`, `logs`, `down` | Show state, show logs, stop (the volume is kept). |
+
+```sh
+deploy/apd-deploy.sh up --demo          # or: up   for an empty dashboard
+deploy/apd-deploy.sh health --auth
+deploy/apd-deploy.sh backup
+git pull && deploy/apd-deploy.sh upgrade
+```
+
+Settings come from the environment or a `.env` file next to `docker-compose.yml`: `APD_NAME` (instance and Compose
+project name, default `apd`; the data volume is `<name>_pcc-data`), `APD_SECRETS_DIR`, `APD_BACKUP_DIR`,
+`APD_TLS_NAMES` (extra names for a generated certificate, e.g. `DNS:dash.lan,IP:192.0.2.10`), `PCC_BIND` and
+`PCC_HOST_PORT`. Several instances can run on one host with different `APD_NAME`, `PCC_HOST_PORT` and secrets folders.
+
+Non-interactive use (scripts, CI): destructive commands need `--confirm <instance name>`; without it they stop
+before changing anything. On Linux the container user is uid/gid 1000: if you are not uid 1000, the token and key
+get group 1000 and mode 640 (the script uses `chgrp`, or `sudo -n` when available, and otherwise tells you the command).
+
+`deploy/test-deploy.sh` runs all of the above against the local Docker daemon in an isolated, loopback-only instance
+and removes it afterwards. CI runs it on amd64 and arm64.
+
 ### Upgrading
 
 Data is plain files outside the image, so an upgrade replaces only the code:
 
 ```sh
-# back up first (see Backups)
 git pull
-docker compose up --build -d
+deploy/apd-deploy.sh upgrade      # backs up first; `rollback` returns to the previous image
 ```
+
+Without the script: back up (see Backups), then `docker compose up --build -d`.
 
 Read the release notes for schema changes; any breaking change to the data format is announced with a migration note.
 Roll back by checking out the previous version and rebuilding. Restarting signs users out (sessions are in memory).
@@ -301,8 +339,7 @@ sudo systemctl start dashboard
   `.*.tmp` files can be deleted. A copy taken mid-submission may contain a staged answer, which startup repairs.
 - After a restore, answers that were `processing` return to `pending` when their lease expires (or call
   `POST /api/projects/:projectId/queue/recover`). Consumers must be idempotent, see [QUEUE.md](QUEUE.md).
-- Docker: `docker run --rm -v <project>_pcc-data:/data -v "$PWD":/backup debian:bookworm-slim tar -czf /backup/data.tar.gz -C /data .`
-  (volume name depends on your compose project name; not executed here).
+- Docker: use `deploy/apd-deploy.sh backup` and `restore` (see [Deploy script](#deploy-script)); both are tested.
 - No telemetry is sent anywhere. Logs go to stdout as JSON; cookies and authorization headers are redacted and
   record content is never logged.
 

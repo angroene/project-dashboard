@@ -1,4 +1,4 @@
-# Status: verified on linux/arm64 (Docker 29.5); not yet built on amd64.
+# Status: built and run on linux/amd64 and linux/arm64 (deploy/test-deploy.sh, in CI on both).
 # See docs/DEPLOYMENT.md.
 
 # ---- build: compile the web UI and the server -------------------------------

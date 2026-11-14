@@ -1,4 +1,4 @@
-# Status: verified on linux/arm64 (Docker Compose 5.1); not yet run on amd64.
+# Status: tested on linux/amd64 and linux/arm64 (deploy/test-deploy.sh, in CI on both).
 # Setup steps: docs/DEPLOYMENT.md, section "Docker Compose".
 #
 # Defaults are the safe ones:
@@ -8,7 +8,7 @@
 services:
   dashboard:
     build: .
-    image: agents-project-dashboard:local
+    image: ${APD_IMAGE:-agents-project-dashboard:local}
     init: true
     restart: unless-stopped
     ports:
@@ -42,11 +42,11 @@ services:
 
 secrets:
   pcc_token:
-    file: ./secrets/pcc_token.txt
+    file: ${APD_SECRETS_DIR:-./secrets}/pcc_token.txt
   pcc_tls_cert:
-    file: ./secrets/tls_cert.pem
+    file: ${APD_SECRETS_DIR:-./secrets}/tls_cert.pem
   pcc_tls_key:
-    file: ./secrets/tls_key.pem
+    file: ${APD_SECRETS_DIR:-./secrets}/tls_key.pem
 
 volumes:
   pcc-data:

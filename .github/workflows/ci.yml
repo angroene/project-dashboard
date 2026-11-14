@@ -66,3 +66,21 @@ jobs:
           name: e2e-screenshots
           path: docs/screenshots/
           retention-days: 14
+
+  docker:
+    name: Docker image and deploy scripts (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      # Builds the image, then clean and demo deployment, health, backup, upgrade, rollback, restore and reset
+      # (with their confirmation guards) in an isolated loopback-only instance.
+      - run: bash deploy/test-deploy.sh
