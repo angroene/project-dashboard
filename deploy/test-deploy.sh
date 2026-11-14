@@ -43,7 +43,9 @@ if "$D" health --auth 2>&1 | grep -qF -- "$(cat "$APD_SECRETS_DIR/pcc_token.txt"
 echo "== demo deployment keeps data"
 "$D" down >/dev/null
 check "demo up" "$D" up --demo
-[ "$(projects)" = 2 ] && ok "demo has the 2 example projects" || bad "demo has the 2 example projects"
+# The examples are copied in after the server is up; its watcher indexes them a moment later.
+n=""; for _ in $(seq 30); do n="$(projects)"; [ "$n" = 2 ] && break; sleep 1; done
+[ "$n" = 2 ] && ok "demo has the 2 example projects" || bad "demo has the 2 example projects (saw: $n)"
 inside 'echo kept > /data/projects/lantern-web-app/marker.txt && echo changed > /data/projects/tidepool-notebook/README.local'
 "$D" down >/dev/null; "$D" up --demo >/dev/null
 check "re-running demo up keeps existing project files" inside 'grep -q kept /data/projects/lantern-web-app/marker.txt'
