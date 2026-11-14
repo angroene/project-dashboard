@@ -10,8 +10,8 @@ can be a CI job, a shell script, a person editing files, or an AI coding agent. 
 data format depends on any of them.
 
 > **Status:** pre-release. The dashboard, API, queue, Excel round trip and examples work and are tested. The Docker
-> image and deploy script are tested on linux/amd64 and linux/arm64. The agent kit (CLI and skills) is tested against the API and was run in Claude
-> Code; Codex support is documented but not validated (see [Limitations](#limitations)).
+> image and deploy script are tested on linux/amd64 and linux/arm64. The agent kit (CLI and skills) is tested against
+> the API, and all four skills were run in Claude Code and Codex CLI (see [Limitations](#limitations)).
 
 ## What it does
 
@@ -172,7 +172,7 @@ Known limitations are in [docs/LIMITATIONS.md](docs/LIMITATIONS.md). In particul
 
 - **No consumer runs inside the dashboard,** and it cannot push messages into a running agent session; agents check
   the queue at work boundaries with the CLI or skills in `agent-kit/`.
-- The skills were validated in Claude Code only; Codex support is documentation only.
+- The skills were run in Claude Code and Codex CLI on Windows only, one model each.
 - Single shared human access level; per-project limits exist only for scoped agent tokens.
 - Docker is tested on Linux hosts (amd64, arm64); macOS and Windows hosts are not tested.
 - Extensions can build on the publish and queue APIs, the update event stream and the closed schema lists

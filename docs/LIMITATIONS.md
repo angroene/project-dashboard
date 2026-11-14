@@ -4,8 +4,9 @@
   claims them (queue API, `scripts/queue.ts`, or the `apd` CLI and skills in `agent-kit/`). The UI shows "Submitted,
   awaiting pickup". The dashboard cannot push a message into a running agent session; agents check the queue at work
   boundaries, optionally reminded by a session-start hook ([SKILLS.md](SKILLS.md)).
-- **Agent kit validation.** The CLI and API are covered by automated tests and a demo. The skills were run in Claude
-  Code only (two of four in an agent session); Codex support is documentation only and not validated.
+- **Agent kit validation.** The CLI and API are covered by automated tests and a demo. All four skills were run in
+  Claude Code (Haiku) and Codex CLI on Windows with one model each; other runtimes, models and operating systems
+  were not tried. Agents can still pick the wrong record type or skip a flag; check the first runs.
 - **Publishing and local writers.** A local producer and the publish API writing the same record at the same moment
   are not coordinated (last write wins); API writers can detect it with `ifRevision`. Agent tokens do not expire;
   revoke by editing the token file and restarting.

@@ -44,8 +44,14 @@ Apply these steps only in a project whose owner agreed to it.
 
 The skills are plain Markdown and the CLI is plain Node, so any agent that can run a shell command can use them.
 [`agent-kit/codex/AGENTS.snippet.md`](../agent-kit/codex/AGENTS.snippet.md) is an `AGENTS.md` section for Codex-style
-runtimes that read `AGENTS.md`; it points the agent at the same skill files and CLI.
-**Not validated:** this repository has not tested the skills inside Codex or any runtime other than Claude Code.
+runtimes that read `AGENTS.md`; it points the agent at the same skill files and CLI. Its paths (`skills/...`) are
+relative to the folder holding `AGENTS.md`: copy the four skill folders into a `skills/` folder next to it, or edit
+the paths.
+
+Codex on Windows: with `-s workspace-write` and the default (elevated) Windows sandbox, every shell command failed in a
+non-interactive run because the sandbox helper needs an elevation prompt. `-c 'windows.sandbox="unelevated"'` with
+`-s workspace-write` worked: Node ran and reached a loopback dashboard without extra network settings. Do not use
+`--dangerously-bypass-approvals-and-sandbox` for this.
 
 ## What the skills do not do
 
@@ -59,13 +65,19 @@ runtimes that read `AGENTS.md`; it points the agent at the same skill files and 
 
 - The CLI, the server endpoints and the full agent loop are covered by automated tests (`test/cli.test.ts`,
   `test/agent-api.test.ts`) and by `npm run demo:agent`.
-- The two queue-facing skills were run once in headless Claude Code 2.1.325 (model: Haiku 5.5, Bash limited to
-  `node`) against a loopback dashboard with the example data. `dashboard-ask-question` was selected by the agent on
-  its own from a plain task description, called `capabilities`, and published a single-choice question with a
-  recommendation and the task id. After the question was answered in the API, `dashboard-process-answers` listed the
-  pending id by task, claimed it with a 900 s lease, completed it with a note, and set the question to `processed`.
-  `dashboard-update-progress` and `dashboard-report-issue` were not run in an agent session; their CLI commands are
-  covered by the tests and the demo.
+- All four skills were run in real agent sessions against a loopback dashboard with a token-mode server, a scoped
+  agent token and the example data, each from a plain task description (the skill was not named):
+  - Claude Code 2.1.325 (`claude -p --model haiku`, tools limited to `Bash(node:*)`, `Read`, `Skill`): it selected each
+    skill itself. It asked a question linked to a task; claimed, applied and completed the answer and set the question
+    to `processed`; updated a task (status, percent, note), published an activity event and project progress; and
+    reported issues with an uploaded log file.
+  - Codex CLI 0.159.2 (`codex exec`, default model, `-s workspace-write`, unelevated Windows sandbox, the
+    `AGENTS.md` section): the same four workflows, plus a review record with status `changes-requested`.
+  - Every result was checked through the API and in the browser.
+- Agent behaviour seen in those runs: one Claude Code run published a review finding as an issue instead of a review
+  record, and one run passed `--owner` to `claim` but not to `complete` (the server refused the acknowledgement until
+  it was retried with the owner; the skill now says to pass `--owner` on every queue call). Models differ; check the
+  first runs in a new project.
 - The session-start hook example was run the same way: with one answer pending, the hint sentence appeared in the
   session context; with the server unreachable, the session started normally and the context had no hint.
 

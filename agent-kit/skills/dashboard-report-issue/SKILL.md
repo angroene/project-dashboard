@@ -30,7 +30,8 @@ State reproducibility in `summary` ("3/3", "once in 20 runs", "not reproduced").
 
 ## Code review
 
-Publish one `review` record per review (`"recordType": "review"`, status such as `changes-requested` or `approved`)
+A review is not an issue. Publish one `review` record per review into the section `capabilities` lists for reviews
+(`"recordType": "review"`, status such as `changes-requested` or `approved`)
 with the findings as a Markdown list in `bodyMarkdown`: severity, file and line, what is wrong. Publish a separate
 `issue` for any finding that needs its own follow-up.
 

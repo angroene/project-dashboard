@@ -7,7 +7,7 @@ Tools for connecting coding agents and scripts to an Agents Project Dashboard.
 | [`cli/apd.mjs`](cli/apd.mjs) | Single-file CLI (Node 22+, no dependencies): discover, publish, upload, list pending answers, claim, complete, fail, offline outbox |
 | [`skills/`](skills/) | Four portable skills: ask a question, process answers, update progress, report issues |
 | [`claude-code/`](claude-code/) | Optional `CLAUDE.md` section and a session-start hook example |
-| [`codex/`](codex/) | Optional `AGENTS.md` section (not validated in Codex) |
+| [`codex/`](codex/) | Optional `AGENTS.md` section (run in Codex CLI 0.159; see [SKILLS.md](../docs/SKILLS.md#codex-and-other-runtimes)) |
 | [`examples/`](examples/) | JSON inputs for `apd ask/publish/progress --file` |
 
 Quick check against a local server started from the examples (`docs/GETTING_STARTED.md`):

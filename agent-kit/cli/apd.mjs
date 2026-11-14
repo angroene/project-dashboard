@@ -194,6 +194,8 @@ function readJsonInput(flags) {
   else if (typeof flags.file === "string") {
     try { text = fs.readFileSync(flags.file === "-" ? 0 : flags.file, "utf8"); } catch (e) { throw new ApdError("usage", `cannot read ${flags.file} (${e.code ?? "error"})`, 2); }
   } else throw new ApdError("usage", `--file or --json is required\n${USAGE}`, 2);
+  // Windows PowerShell 5.1 writes UTF-8 files with a byte order mark; JSON.parse rejects it.
+  text = text.replace(/^\uFEFF/, "");
   try {
     const v = JSON.parse(text);
     if (!v || typeof v !== "object" || Array.isArray(v)) throw new Error("object expected");

@@ -22,16 +22,18 @@ Do not interrupt a task in progress to check, and never poll in a loop. One chec
    `node "$APD_CLI" pending --task <taskId>` (or `--question <id>`, or no filter for the whole project).
    Output: `{"items":[{"answerId","questionId","questionRevision","submittedAt"}]}`. No items: nothing to do.
    `--count` prints just `{"count","more"}`.
-2. Claim each answer you will act on now. Set `APD_OWNER` to a stable name for this agent first.
-   `node "$APD_CLI" claim <answerId> --lease 900`
+2. Claim each answer you will act on now. Pass the same `--owner <stable agent name>` to `claim`, `complete` and
+   `fail` (each shell call may be a new process, so a variable set in one call is gone in the next; only the owner
+   that claimed an answer may acknowledge it).
+   `node "$APD_CLI" claim <answerId> --lease 900 --owner <name>`
    The lease must outlast your work on it; if you stop, the answer returns to pending when the lease expires.
    `{"claimed":false}` or `409 not-pending` means someone else has it: skip it.
 3. Read `answer.answers` in the claim output. Files: `node "$APD_CLI" download <attachmentId> --out <path>`.
 4. Apply the answer. If it only affects later work, record it with that task and finish your current task first.
 5. Acknowledge exactly once:
-   - applied: `node "$APD_CLI" complete <answerId> --note "<what you did, one line>"`
-   - cannot apply now, maybe later: `node "$APD_CLI" fail <answerId> --reason "<why>" --retry`
-   - cannot apply at all, the owner must answer again: `node "$APD_CLI" fail <answerId> --reason "<why>"`
+   - applied: `node "$APD_CLI" complete <answerId> --owner <name> --note "<what you did, one line>"`
+   - cannot apply now, maybe later: `node "$APD_CLI" fail <answerId> --owner <name> --reason "<why>" --retry`
+   - cannot apply at all, the owner must answer again: `node "$APD_CLI" fail <answerId> --owner <name> --reason "<why>"`
 6. Mark the question handled: `node "$APD_CLI" update <questionId> --status processed`
    (or `answered` or `closed`).
 

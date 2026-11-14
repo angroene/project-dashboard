@@ -120,6 +120,15 @@ describe("apd CLI", () => {
     expect((src.out.record as { history: { text: string }[] }).history.at(-1)!.text).toBe("Storage switched");
   });
 
+  it("accepts a JSON file with a UTF-8 byte order mark (as Windows PowerShell 5.1 writes them)", async () => {
+    const s = await server({ auth: true });
+    const f = path.join(s.work, "bom.json");
+    fs.writeFileSync(f, "﻿" + JSON.stringify({ title: "Written by PowerShell", taskId: "T1", answerSchema: { type: "free-text" } }), "utf8");
+    const r = await s.apd(["ask", "--section", "qs", "--id", "Q-BOM-1", "--file", f]);
+    expect(r.code, r.stderr).toBe(0);
+    expect(r.out).toMatchObject({ recordId: "Q-BOM-1", created: true });
+  });
+
   it("never prints or stores the token", async () => {
     const s = await server({ auth: true });
     const outputs = [await s.apd(["projects"]), await s.apd(["capabilities"]), await s.apd(["update", "NOPE", "--status", "done"])];

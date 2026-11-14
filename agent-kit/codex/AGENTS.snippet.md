@@ -1,5 +1,6 @@
 <!-- Optional section for a project's AGENTS.md (Codex and other runtimes that read AGENTS.md).
-     Not validated in Codex by this repository. Paste it only with the project owner's agreement. -->
+     Run in Codex CLI 0.159 (see docs/SKILLS.md). Paths below are relative to this file: copy the skills next to it.
+     Paste it only with the project owner's agreement. -->
 
 ## Project dashboard
 
