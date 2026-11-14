@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "ATL-EV-003",
+  "at": "2026-11-04T06:40:00Z",
+  "area": "Atlas",
+  "action": "milestone-updated",
+  "summary": "SYNTHETIC FIXTURE atlas event 3.",
+  "status": "info",
+  "recordId": "ATL-MS-003"
+}

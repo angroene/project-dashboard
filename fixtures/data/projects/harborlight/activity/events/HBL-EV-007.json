@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-EV-007",
+  "at": "2026-11-02T19:06:00Z",
+  "area": "Game Developer",
+  "action": "task-updated",
+  "source": "synthetic-engine-agent",
+  "summary": "SYNTHETIC FIXTURE event 7: task updated.",
+  "status": "failure",
+  "recordId": "HBL-Q-035"
+}

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-107",
+  "recordType": "question",
+  "title": "How should movement behave in case 107?",
+  "summary": "SYNTHETIC FIXTURE question 107 (single-choice-other).",
+  "status": "processed",
+  "priority": "medium",
+  "createdAt": "2026-11-08T04:59:00Z",
+  "updatedAt": "2026-11-08T05:29:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 107 about Movement.\n\n1. Point one\n2. Point two\n\n**Answer (synthetic):** recorded outside the dashboard queue.",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "single-choice",
+    "options": [
+      {
+        "id": "opt-a",
+        "label": "Option A: Movement variant 1",
+        "description": "Synthetic recommended option."
+      },
+      {
+        "id": "opt-b",
+        "label": "Option B: Movement variant 2"
+      },
+      {
+        "id": "opt-c",
+        "label": "Option C: Movement variant 3"
+      }
+    ],
+    "allowOther": true,
+    "allowExplanation": true,
+    "required": true
+  }
+}

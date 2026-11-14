@@ -1,0 +1,17 @@
+.git
+node_modules
+dist
+coverage
+secrets
+*.pem
+*.key
+*.token
+.env
+pcc.config.json
+fixtures
+examples
+test
+scripts
+docs/screenshots
+docs/perf
+**/*.log

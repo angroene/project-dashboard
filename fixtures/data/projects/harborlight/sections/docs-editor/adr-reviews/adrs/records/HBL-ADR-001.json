@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-ADR-001",
+  "recordType": "review",
+  "title": "ADR-001: Folder-driven navigation",
+  "summary": "SYNTHETIC FIXTURE ADR awaiting review.",
+  "status": "needs-review",
+  "priority": "medium",
+  "updatedAt": "2026-11-13T00:00:00Z",
+  "attachments": [
+    {
+      "id": "HBL-ADR-001-md",
+      "title": "ADR-001.md",
+      "path": "documents/adr/ADR-001-folder-driven-navigation.md",
+      "mimeType": "text/markdown"
+    }
+  ],
+  "actions": [
+    "copy",
+    "open-detail",
+    "download",
+    "bulk-download",
+    "mark-read"
+  ],
+  "notifyUser": false
+}

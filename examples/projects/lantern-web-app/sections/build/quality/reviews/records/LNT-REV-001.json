@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "LNT-REV-001",
+  "recordType": "review",
+  "title": "Review the sync API notes",
+  "status": "needs-review",
+  "updatedAt": "2026-11-10T08:00:00Z",
+  "attachments": [
+    {
+      "id": "LNT-REV-001-notes",
+      "title": "API notes",
+      "path": "documents/api-notes.md",
+      "mimeType": "text/markdown"
+    }
+  ]
+}

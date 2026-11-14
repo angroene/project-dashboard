@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "LNT-EV-001",
+  "at": "2026-11-10T08:31:00Z",
+  "area": "Build",
+  "action": "build",
+  "source": "ci",
+  "summary": "Build 118 passed",
+  "status": "success"
+}

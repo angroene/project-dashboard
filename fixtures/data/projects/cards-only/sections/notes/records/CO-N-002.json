@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "CO-N-002",
+  "recordType": "document",
+  "title": "Readme",
+  "summary": "SYNTHETIC FIXTURE.",
+  "status": "published",
+  "updatedAt": "2026-11-01T02:20:00Z",
+  "attachments": [
+    {
+      "id": "CO-N-002-txt",
+      "path": "documents/readme.txt",
+      "mimeType": "text/plain"
+    }
+  ]
+}

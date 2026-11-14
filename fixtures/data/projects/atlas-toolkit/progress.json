@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "overallPercent": null,
+  "label": "Release readiness",
+  "method": "SYNTHETIC FIXTURE: the project has not reported an overall figure yet.",
+  "updatedAt": "2026-11-06T00:00:00Z",
+  "breakdown": [
+    {
+      "id": "parser",
+      "title": "Parser",
+      "percent": 40,
+      "detail": "Synthetic"
+    },
+    {
+      "id": "cli",
+      "title": "CLI",
+      "percent": null,
+      "detail": "Synthetic: not reported"
+    }
+  ]
+}

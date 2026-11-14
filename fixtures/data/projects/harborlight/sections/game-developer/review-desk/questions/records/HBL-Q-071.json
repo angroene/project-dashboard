@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-071",
+  "recordType": "question",
+  "title": "How should carrying behave in case 71?",
+  "summary": "SYNTHETIC FIXTURE question 71 (single-choice).",
+  "status": "open",
+  "priority": "high",
+  "createdAt": "2026-11-05T18:47:00Z",
+  "updatedAt": "2026-11-05T19:17:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 71 about Carrying.\n\n1. Point one\n2. Point two",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "single-choice",
+    "options": [
+      {
+        "id": "opt-a",
+        "label": "Option A: Carrying variant 1",
+        "description": "Synthetic recommended option."
+      },
+      {
+        "id": "opt-b",
+        "label": "Option B: Carrying variant 2"
+      },
+      {
+        "id": "opt-c",
+        "label": "Option C: Carrying variant 3"
+      }
+    ],
+    "allowOther": false,
+    "allowExplanation": false,
+    "required": true
+  }
+}

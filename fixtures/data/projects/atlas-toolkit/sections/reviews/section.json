@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "reviews",
+  "displayType": "page-tab",
+  "title": "Reviews",
+  "order": 30,
+  "icon": "review"
+}

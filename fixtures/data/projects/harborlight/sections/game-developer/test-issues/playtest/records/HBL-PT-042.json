@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-042",
+  "recordType": "issue",
+  "title": "Playtest: Animation glitch #42",
+  "summary": "SYNTHETIC FIXTURE playtest issue 42.",
+  "status": "duplicate",
+  "priority": "low",
+  "severity": "high",
+  "area": "UI",
+  "createdAt": "2026-11-07T00:11:00Z",
+  "updatedAt": "2026-11-07T00:56:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 42",
+  "metadata": {
+    "night": "2026-11-06",
+    "build": "CL1441"
+  },
+  "notifyUser": false
+}

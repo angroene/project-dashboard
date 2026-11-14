@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-002",
+  "recordType": "issue",
+  "title": "Playtest: UI glitch #2",
+  "summary": "SYNTHETIC FIXTURE playtest issue 2.",
+  "status": "in-progress",
+  "priority": "low",
+  "severity": "medium",
+  "area": "Audio",
+  "createdAt": "2026-11-01T03:31:00Z",
+  "updatedAt": "2026-11-01T04:16:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 2",
+  "metadata": {
+    "night": "2026-11-02",
+    "build": "CL1401"
+  },
+  "notifyUser": false
+}

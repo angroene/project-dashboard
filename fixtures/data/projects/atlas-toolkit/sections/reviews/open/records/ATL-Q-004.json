@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "ATL-Q-004",
+  "recordType": "question",
+  "title": "Atlas question 4",
+  "summary": "SYNTHETIC FIXTURE question inside a review card.",
+  "status": "answered",
+  "requiresResponse": true,
+  "answerSchema": {
+    "type": "composite",
+    "fields": [
+      {
+        "id": "choice",
+        "label": "Pick a direction",
+        "type": "single-choice",
+        "options": [
+          {
+            "id": "opt-a",
+            "label": "Option A: format variant 1",
+            "description": "Synthetic recommended option."
+          },
+          {
+            "id": "opt-b",
+            "label": "Option B: format variant 2"
+          },
+          {
+            "id": "opt-c",
+            "label": "Option C: format variant 3"
+          }
+        ],
+        "allowOther": true,
+        "allowExplanation": false,
+        "required": true
+      },
+      {
+        "id": "explanation",
+        "label": "Explain your choice",
+        "type": "free-text",
+        "required": false,
+        "minLength": 0,
+        "maxLength": 3000,
+        "multiline": true
+      },
+      {
+        "id": "artwork",
+        "label": "Reference artwork",
+        "help": "PNG, JPEG or WebP",
+        "type": "file-upload",
+        "required": false,
+        "minFiles": 0,
+        "maxFiles": 3,
+        "allowedMimeTypes": [
+          "image/png",
+          "image/jpeg",
+          "image/webp"
+        ],
+        "allowComment": true
+      }
+    ]
+  },
+  "updatedAt": "2026-11-05T05:03:00Z"
+}

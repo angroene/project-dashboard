@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "questions",
+  "displayType": "expandable-card",
+  "title": "Questions",
+  "order": 10,
+  "actions": [
+    "copy",
+    "open-detail",
+    "respond",
+    "upload",
+    "export-xlsx",
+    "import-xlsx",
+    "mark-read"
+  ],
+  "defaultOpen": true,
+  "icon": "question",
+  "pageSize": 50,
+  "filters": {
+    "statuses": [
+      "open",
+      "answered",
+      "processed",
+      "closed"
+    ],
+    "defaultStatus": "open",
+    "sort": "updated-desc"
+  }
+}

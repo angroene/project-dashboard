@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-MECH-002",
+  "recordType": "task",
+  "title": "Perception mechanic",
+  "summary": "SYNTHETIC FIXTURE: outstanding work on perception.",
+  "status": "in-progress",
+  "priority": "high",
+  "order": 2,
+  "percent": 72,
+  "createdAt": "2026-11-01T01:00:00Z",
+  "updatedAt": "2026-11-10T00:37:00Z",
+  "assignee": "synthetic-agent",
+  "bodyMarkdown": "## Perception\n\nSYNTHETIC FIXTURE. Remaining steps:\n\n- step one\n- step two\n",
+  "linkedRecords": [
+    "HBL-Q-002"
+  ],
+  "notifyUser": false,
+  "history": [
+    {
+      "at": "2026-11-01T01:00:00Z",
+      "text": "Created (synthetic)",
+      "by": "fixture"
+    }
+  ]
+}

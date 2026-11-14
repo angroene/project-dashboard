@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "ATL-BL-001",
+  "recordType": "issue",
+  "title": "Backlog item 1",
+  "summary": "SYNTHETIC FIXTURE backlog entry.",
+  "status": "open",
+  "priority": "critical",
+  "updatedAt": "2026-11-05T00:00:00Z"
+}

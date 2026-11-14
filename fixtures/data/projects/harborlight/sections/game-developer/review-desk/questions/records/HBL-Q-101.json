@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-101",
+  "recordType": "question",
+  "title": "How should vehicles behave in case 101?",
+  "summary": "SYNTHETIC FIXTURE question 101 (multiple-choice).",
+  "status": "open",
+  "priority": "high",
+  "createdAt": "2026-11-07T19:17:00Z",
+  "updatedAt": "2026-11-07T19:47:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 101 about Vehicles.\n\n1. Point one\n2. Point two",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "multiple-choice",
+    "options": [
+      {
+        "id": "opt-a",
+        "label": "Option A: Vehicles variant 1",
+        "description": "Synthetic recommended option."
+      },
+      {
+        "id": "opt-b",
+        "label": "Option B: Vehicles variant 2"
+      },
+      {
+        "id": "opt-c",
+        "label": "Option C: Vehicles variant 3"
+      },
+      {
+        "id": "opt-d",
+        "label": "Option D: Vehicles variant 4"
+      },
+      {
+        "id": "opt-e",
+        "label": "Option E: Vehicles variant 5"
+      }
+    ],
+    "allowOther": false,
+    "allowExplanation": true,
+    "required": true,
+    "minSelected": 1,
+    "maxSelected": 3
+  },
+  "dueAt": "2026-11-16T18:31:00Z"
+}

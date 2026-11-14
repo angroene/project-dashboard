@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "CO-Q-002",
+  "recordType": "question",
+  "title": "Upload a synthetic logo",
+  "summary": "SYNTHETIC FIXTURE.",
+  "status": "open",
+  "requiresResponse": true,
+  "answerSchema": {
+    "type": "file-upload",
+    "required": true,
+    "minFiles": 1,
+    "maxFiles": 4,
+    "allowedMimeTypes": [
+      "image/png",
+      "image/jpeg",
+      "image/webp"
+    ],
+    "allowComment": true
+  },
+  "updatedAt": "2026-11-01T01:50:00Z"
+}

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "ATL-BL-005",
+  "recordType": "task",
+  "title": "Backlog item 5",
+  "summary": "SYNTHETIC FIXTURE backlog entry.",
+  "status": "planned",
+  "priority": "none",
+  "updatedAt": "2026-11-05T01:08:00Z"
+}

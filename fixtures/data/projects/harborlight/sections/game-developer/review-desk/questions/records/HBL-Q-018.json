@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-018",
+  "recordType": "question",
+  "title": "How should vehicles behave in case 18?",
+  "summary": "SYNTHETIC FIXTURE question 18 (free-text).",
+  "status": "processed",
+  "priority": "low",
+  "createdAt": "2026-11-02T05:06:00Z",
+  "updatedAt": "2026-11-02T05:36:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 18 about Vehicles.\n\n1. Point one\n2. Point two\n\n**Answer (synthetic):** recorded outside the dashboard queue.",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "free-text",
+    "required": true,
+    "minLength": 1,
+    "maxLength": 2000,
+    "multiline": true,
+    "placeholder": "Write a short synthetic answer"
+  }
+}

@@ -1,0 +1,276 @@
+/**
+ * HTTP API response shapes. All endpoints live under /api and return JSON unless noted.
+ * State-changing requests (POST) must send header `X-PCC-Request: 1` (CSRF guard).
+ * Errors: HTTP 4xx/5xx with body ApiError.
+ */
+import type {
+  Action, ActivityEvent, AnswerSchema, AnswerValue, DisplayType, ProcessingState, ProgressFile, RecordType, StatusCategory, StatusTone,
+} from "./schemas.js";
+
+export interface ApiError {
+  error: string;
+  message: string;
+  /** Per-field validation errors when error === "validation". */
+  fieldErrors?: { fieldId: string; message: string }[];
+  details?: unknown;
+}
+
+export interface SessionInfo {
+  authRequired: boolean;
+  authenticated: boolean;
+  user: string;
+  productName: string;
+  uploadLimits: { maxBytes: number; maxFiles: number; allowedMimeTypes: string[] };
+}
+
+export interface ProgressSummary {
+  /** null = Not reported. */
+  overallPercent: number | null;
+  label: string;
+  method: string;
+  updatedAt?: string;
+  stale: boolean;
+}
+
+/** GET /api/projects → { projects: ProjectCard[], diagnosticsCount } */
+export interface ProjectCard {
+  id: string;
+  displayName: string;
+  description: string;
+  order: number;
+  accent: string;
+  available: boolean;
+  /** Why the project is unavailable (invalid manifest etc.). */
+  unavailableReason?: string;
+  progress: ProgressSummary;
+  /** Questions with requiresResponse, status open, and no answer for the current revision. */
+  awaitingResponse: number;
+  /** Answers submitted but not yet processed by the project (pending + processing). */
+  awaitingPickup: number;
+  unreadUpdates: number;
+  blocked: number;
+  active: number;
+}
+
+export interface ProjectsResponse {
+  productName: string;
+  projects: ProjectCard[];
+  diagnosticsCount: number;
+}
+
+/** GET /api/projects/:projectId */
+export type ProjectDetail = ProjectCard;
+
+export interface NavNode {
+  id: string;
+  displayType: DisplayType;
+  title: string;
+  description: string;
+  icon?: string;
+  order: number;
+  defaultOpen: boolean;
+  views: ("records" | "progress" | "activity" | "attention")[];
+  actions: Action[];
+  filters: { statuses?: string[]; defaultStatus?: string; sort: string };
+  pageSize: number;
+  /** Counts for badges. */
+  counts: { records: number; awaitingResponse: number; unread: number };
+  children: NavNode[];
+}
+
+/** GET /api/projects/:projectId/navigation */
+export interface NavigationResponse {
+  projectId: string;
+  /** Display type shared by the root's children ("main-tab", "page-tab" or "expandable-card"), or null if empty. */
+  rootChildType: DisplayType | null;
+  nodes: NavNode[];
+}
+
+/** Effective question state as shown to the user, derived from the record and the answer queue. */
+export type QuestionUiState =
+  | "needs-response"     // open, requiresResponse, no answer for current revision
+  | "submitted"          // answer pending pickup
+  | "processing"         // answer claimed by a consumer
+  | "answered"           // record says answered outside the dashboard (no queued answer)
+  | "processed"          // answer processed (or record status processed)
+  | "failed"             // answer processing failed
+  | "informational"      // requiresResponse=false
+  | "closed";            // closed/withdrawn
+
+export interface RecordSummary {
+  id: string;
+  recordType: RecordType;
+  sectionId: string;
+  title: string;
+  summary: string;
+  status: string;
+  /** Record's own statusLabel, else the workflow label. */
+  statusLabel?: string;
+  /** Generic category from the project's workflow (unknown statuses: "open"). */
+  statusCategory: StatusCategory;
+  statusTone: StatusTone;
+  priority: string;
+  updatedAt: string;
+  order?: number;
+  percent?: number | null;
+  attachmentCount: number;
+  unread: boolean;
+  actions: Action[];
+  /** Questions only. */
+  question?: {
+    uiState: QuestionUiState;
+    revision: number;
+    requiresResponse: boolean;
+    answerType?: AnswerSchema["type"];
+    answerId?: string;
+    answeredAt?: string;
+    dueAt?: string;
+  };
+}
+
+/**
+ * GET /api/projects/:projectId/sections/:sectionId/records?cursor=&status=&q=&sort=&limit=
+ * Without `status` the section's filters.defaultStatus applies; send `status=all` for everything.
+ * `status` also matches question UI states, so `status=needs-response` lists only questions still awaiting an answer.
+ * `cursor` is an opaque keyset token (stable under inserts/deletes).
+ */
+export interface RecordPage {
+  sectionId: string;
+  total: number;
+  /** Total before status/text filtering. */
+  unfilteredTotal: number;
+  statusCounts: Record<string, number>;
+  /** Display label for every status in statusCounts (workflow label or humanized id). */
+  statusLabels: Record<string, string>;
+  /** Questions in the section still needing a response; present only when the section has answerable questions. */
+  needsResponseCount?: number;
+  items: RecordSummary[];
+  nextCursor: string | null;
+}
+
+export interface AttachmentRef {
+  id: string;
+  title: string;
+  fileName: string;
+  mimeType: string;
+  bytes: number | null;
+  available: boolean;
+  /** GET this URL to download (same-origin). */
+  url: string;
+}
+
+/** GET /api/projects/:projectId/records/:recordId */
+export interface RecordDetail extends RecordSummary {
+  createdAt?: string;
+  bodyMarkdown: string;
+  attachments: AttachmentRef[];
+  links: { title: string; url: string }[];
+  linkedRecords: { id: string; title: string; sectionId: string; recordType: RecordType }[];
+  metadata: Record<string, string | number | boolean>;
+  history: { at: string; text: string; by?: string }[];
+  /** Questions only. */
+  answerSchema?: AnswerSchema;
+  taskId?: string;
+  submittedAnswer?: {
+    answerId: string;
+    submittedAt: string;
+    source: "dashboard" | "excel-import";
+    processingState: ProcessingState;
+    answers: AnswerValue[];
+    attachments: AttachmentRef[];
+    resultNote?: string;
+  };
+}
+
+/** GET /api/projects/:projectId/progress */
+export interface ProgressResponse extends ProgressSummary {
+  breakdown: NonNullable<ProgressFile["breakdown"]>;
+}
+
+/** GET /api/projects/:projectId/activity?cursor=&limit= */
+export interface ActivityPage {
+  items: (ActivityEvent & { unread: boolean })[];
+  nextCursor: string | null;
+  unreadCount: number;
+}
+
+/** GET /api/projects/:projectId/attention → questions awaiting the user across all sections. */
+export interface AttentionResponse {
+  questions: RecordSummary[];
+  unreadRecords: RecordSummary[];
+}
+
+/** POST /api/projects/:projectId/questions/:id/answers  (body SubmitAnswerRequest) */
+export interface SubmitAnswerResponse {
+  answerId: string;
+  processingState: ProcessingState;
+  /** true when the same idempotency key was replayed. */
+  replayed: boolean;
+}
+
+/** POST /api/projects/:projectId/uploads (multipart: file(s), optional field questionId) */
+export interface UploadResponse {
+  attachments: { attachmentId: string; originalName: string; mimeType: string; bytes: number }[];
+}
+
+/** POST /api/projects/:projectId/records/mark-read  body { recordIds?: string[], activityIds?: string[], allActivity?: boolean } */
+export interface MarkReadResponse {
+  marked: number;
+  unreadUpdates: number;
+}
+
+/** POST /api/projects/:projectId/export/xlsx  body { questionIds: string[] } → .xlsx file download */
+
+export type ImportRowStatus = "ready" | "blank" | "invalid" | "stale" | "already-answered" | "needs-dashboard";
+
+/** POST /api/projects/:projectId/import/xlsx/preview (multipart: file) */
+export interface ImportPreview {
+  previewId: string;
+  projectId: string;
+  fileName: string;
+  totals: Record<ImportRowStatus, number>;
+  rows: {
+    questionId: string;
+    title: string;
+    status: ImportRowStatus;
+    messages: string[];
+    answers?: AnswerValue[];
+  }[];
+  /** Workbook-level problems (wrong project, unknown schema version...). */
+  errors: string[];
+  expiresAt: string;
+}
+
+/** POST /api/projects/:projectId/import/xlsx/commit  body { previewId, questionIds } */
+export interface ImportCommitResponse {
+  results: { questionId: string; ok: boolean; answerId?: string; message?: string }[];
+}
+
+/** POST /api/projects/:projectId/download/zip/preflight body { recordIds?, attachmentIds? } */
+export interface ZipPreflight {
+  available: AttachmentRef[];
+  missing: { attachmentId: string; recordId?: string; reason: string }[];
+  totalBytes: number;
+}
+/** POST /api/projects/:projectId/download/zip body { recordIds?, attachmentIds? } → application/zip */
+
+export interface Diagnostic {
+  level: "error" | "warning";
+  projectId?: string;
+  path?: string;
+  message: string;
+}
+/** GET /api/diagnostics */
+export interface DiagnosticsResponse {
+  indexedAt: string;
+  projects: { id: string; records: number; sections: number; indexMs: number }[];
+  diagnostics: Diagnostic[];
+}
+
+/** GET /api/updates — Server-Sent Events. Event "invalidate" data: InvalidateEvent. Event "ping" every 25 s. */
+export interface InvalidateEvent {
+  projectId: string | null;
+  scopes: ("projects" | "navigation" | "records" | "progress" | "activity" | "answers")[];
+  /** Ids of records that changed when known. */
+  recordIds?: string[];
+}

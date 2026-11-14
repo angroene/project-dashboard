@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-019",
+  "recordType": "issue",
+  "title": "Playtest: Audio glitch #19",
+  "summary": "SYNTHETIC FIXTURE playtest issue 19.",
+  "status": "fixed",
+  "priority": "none",
+  "severity": "high",
+  "area": "Combat",
+  "createdAt": "2026-11-03T15:18:00Z",
+  "updatedAt": "2026-11-03T16:03:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 19",
+  "metadata": {
+    "night": "2026-11-07",
+    "build": "CL1418"
+  },
+  "notifyUser": false
+}

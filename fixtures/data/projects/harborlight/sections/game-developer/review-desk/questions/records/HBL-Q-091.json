@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-091",
+  "recordType": "question",
+  "title": "FYI: Perception change landed (synthetic note 91)",
+  "summary": "SYNTHETIC FIXTURE question 91 (informational).",
+  "status": "closed",
+  "priority": "high",
+  "createdAt": "2026-11-07T03:07:00Z",
+  "updatedAt": "2026-11-07T03:37:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 91 about Perception.\n\n1. Point one\n2. Point two",
+  "requiresResponse": false,
+  "notifyUser": true
+}

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "map-progress",
+  "displayType": "page-tab",
+  "title": "Progress",
+  "order": 10,
+  "views": [
+    "progress"
+  ]
+}

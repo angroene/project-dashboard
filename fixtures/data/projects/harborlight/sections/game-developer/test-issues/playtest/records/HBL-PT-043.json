@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-043",
+  "recordType": "issue",
+  "title": "Playtest: UI glitch #43",
+  "summary": "SYNTHETIC FIXTURE playtest issue 43.",
+  "status": "fixed",
+  "priority": "high",
+  "severity": "high",
+  "area": "Camera",
+  "createdAt": "2026-11-07T03:42:00Z",
+  "updatedAt": "2026-11-07T04:27:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 43",
+  "metadata": {
+    "night": "2026-11-07",
+    "build": "CL1442"
+  },
+  "notifyUser": false
+}

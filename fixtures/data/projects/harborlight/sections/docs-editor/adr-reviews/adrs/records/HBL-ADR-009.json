@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-ADR-009",
+  "recordType": "review",
+  "title": "ADR-009: Attachment deliberately missing",
+  "summary": "SYNTHETIC FIXTURE: the referenced file does not exist (tests the unavailable-attachment state).",
+  "status": "needs-review",
+  "updatedAt": "2026-11-13T03:20:00Z",
+  "attachments": [
+    {
+      "id": "HBL-ADR-009-md",
+      "title": "ADR-009.md",
+      "path": "documents/adr/ADR-009-missing-on-purpose.md",
+      "mimeType": "text/markdown"
+    }
+  ]
+}

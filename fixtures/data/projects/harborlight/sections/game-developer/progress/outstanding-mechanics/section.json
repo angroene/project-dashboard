@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "outstanding-mechanics",
+  "displayType": "expandable-card",
+  "title": "Outstanding Mechanics",
+  "order": 10,
+  "actions": [
+    "copy",
+    "open-detail",
+    "export-xlsx",
+    "mark-read"
+  ],
+  "defaultOpen": true,
+  "filters": {
+    "sort": "order"
+  }
+}

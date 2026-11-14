@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "LNT-Q-001",
+  "recordType": "question",
+  "title": "Where should notes be stored for sync?",
+  "summary": "Decides the sync architecture.",
+  "status": "open",
+  "priority": "high",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "dueAt": "2026-11-20T18:00:00Z",
+  "updatedAt": "2026-11-10T09:00:00Z",
+  "bodyMarkdown": "We can keep one file per note or a single database file. Pick one.",
+  "answerSchema": {
+    "type": "single-choice",
+    "options": [
+      {
+        "id": "file-per-note",
+        "label": "One file per note",
+        "description": "Simple to inspect and back up."
+      },
+      {
+        "id": "single-db",
+        "label": "A single database file",
+        "description": "Faster for large collections."
+      }
+    ],
+    "allowOther": true,
+    "allowExplanation": true,
+    "required": true
+  }
+}

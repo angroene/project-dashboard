@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-ADR-006",
+  "recordType": "document",
+  "title": "ADR-006: Excel round trip",
+  "summary": "SYNTHETIC FIXTURE ADR awaiting review.",
+  "status": "draft",
+  "statusLabel": "Draft",
+  "priority": "medium",
+  "updatedAt": "2026-11-13T01:40:00Z",
+  "attachments": [
+    {
+      "id": "HBL-ADR-006-md",
+      "title": "ADR-006.md",
+      "path": "documents/adr/ADR-006-excel-round-trip.md",
+      "mimeType": "text/markdown"
+    }
+  ],
+  "actions": [
+    "copy",
+    "open-detail",
+    "download",
+    "bulk-download",
+    "mark-read"
+  ],
+  "notifyUser": false
+}

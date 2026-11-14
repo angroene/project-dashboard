@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "test-issues",
+  "displayType": "page-tab",
+  "title": "Test Issues",
+  "order": 30,
+  "icon": "bug"
+}

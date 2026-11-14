@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-054",
+  "recordType": "question",
+  "title": "How should climbing behave in case 54?",
+  "summary": "SYNTHETIC FIXTURE question 54 (approval).",
+  "status": "open",
+  "priority": "none",
+  "createdAt": "2026-11-04T15:18:00Z",
+  "updatedAt": "2026-11-04T15:48:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 54 about Climbing.\n\n1. Point one\n2. Point two",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "approval",
+    "required": true,
+    "allowRationale": true,
+    "requireRationaleOnReject": true
+  }
+}

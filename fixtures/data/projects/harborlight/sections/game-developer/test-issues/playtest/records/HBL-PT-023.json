@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-023",
+  "recordType": "issue",
+  "title": "Playtest: Audio glitch #23",
+  "summary": "SYNTHETIC FIXTURE playtest issue 23.",
+  "status": "fixed",
+  "priority": "high",
+  "severity": "medium",
+  "area": "Audio",
+  "createdAt": "2026-11-04T05:22:00Z",
+  "updatedAt": "2026-11-04T06:07:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 23",
+  "metadata": {
+    "night": "2026-11-11",
+    "build": "CL1422"
+  },
+  "notifyUser": false
+}

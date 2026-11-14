@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "cards-only",
+  "displayName": "Cards Only (synthetic)",
+  "description": "SYNTHETIC FIXTURE: third arrangement, expandable cards directly at the root and no progress file.",
+  "order": 30,
+  "theme": {
+    "accent": "amber"
+  }
+}

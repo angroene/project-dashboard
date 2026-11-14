@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-080",
+  "recordType": "question",
+  "title": "How should inventory behave in case 80?",
+  "summary": "SYNTHETIC FIXTURE question 80 (multiple-choice).",
+  "status": "open",
+  "priority": "critical",
+  "createdAt": "2026-11-06T09:20:00Z",
+  "updatedAt": "2026-11-06T09:50:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 80 about Inventory.\n\n1. Point one\n2. Point two",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "multiple-choice",
+    "options": [
+      {
+        "id": "opt-a",
+        "label": "Option A: Inventory variant 1",
+        "description": "Synthetic recommended option."
+      },
+      {
+        "id": "opt-b",
+        "label": "Option B: Inventory variant 2"
+      },
+      {
+        "id": "opt-c",
+        "label": "Option C: Inventory variant 3"
+      },
+      {
+        "id": "opt-d",
+        "label": "Option D: Inventory variant 4"
+      },
+      {
+        "id": "opt-e",
+        "label": "Option E: Inventory variant 5"
+      }
+    ],
+    "allowOther": false,
+    "allowExplanation": true,
+    "required": true,
+    "minSelected": 1,
+    "maxSelected": 3
+  },
+  "dueAt": "2026-11-16T14:40:00Z"
+}

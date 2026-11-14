@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-047",
+  "recordType": "issue",
+  "title": "Playtest: Save/Load glitch #47",
+  "summary": "SYNTHETIC FIXTURE playtest issue 47.",
+  "status": "fixed",
+  "priority": "low",
+  "severity": "low",
+  "area": "UI",
+  "createdAt": "2026-11-07T17:46:00Z",
+  "updatedAt": "2026-11-07T18:31:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 47",
+  "metadata": {
+    "night": "2026-11-11",
+    "build": "CL1446"
+  },
+  "notifyUser": true
+}

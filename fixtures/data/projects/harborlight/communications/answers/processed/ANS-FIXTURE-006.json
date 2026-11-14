@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "projectId": "harborlight",
+  "answerId": "ANS-FIXTURE-006",
+  "questionId": "HBL-Q-017",
+  "questionRevision": 1,
+  "submittedAt": "2026-11-02T05:29:00Z",
+  "source": "excel-import",
+  "submittedBy": "fixture-operator",
+  "idempotencyKey": "fixture-key-006",
+  "answers": [
+    {
+      "fieldId": "response",
+      "kind": "choice",
+      "optionIds": [
+        "opt-a",
+        "opt-c"
+      ]
+    }
+  ],
+  "attachments": [],
+  "processingState": "processed",
+  "attempts": 1,
+  "result": {
+    "at": "2026-11-16T00:06:00Z",
+    "note": "Processed by a synthetic consumer."
+  },
+  "audit": [
+    {
+      "at": "2026-11-02T05:29:00Z",
+      "event": "submitted",
+      "by": "fixture-operator"
+    },
+    {
+      "at": "2026-11-16T00:06:00Z",
+      "event": "processed",
+      "by": "synthetic-consumer"
+    }
+  ]
+}

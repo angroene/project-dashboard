@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-069",
+  "recordType": "question",
+  "title": "How should vehicles behave in case 69?",
+  "summary": "SYNTHETIC FIXTURE question 69 (file-upload).",
+  "status": "closed",
+  "priority": "none",
+  "createdAt": "2026-11-05T15:33:00Z",
+  "updatedAt": "2026-11-05T16:03:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 69 about Vehicles.\n\n1. Point one\n2. Point two",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "file-upload",
+    "required": true,
+    "minFiles": 1,
+    "maxFiles": 4,
+    "allowedMimeTypes": [
+      "image/png",
+      "image/jpeg",
+      "image/webp"
+    ],
+    "allowComment": true
+  },
+  "attachments": [
+    {
+      "id": "HBL-Q-069-ref",
+      "title": "Current look",
+      "path": "images/concept-gate.png",
+      "mimeType": "image/png"
+    }
+  ]
+}

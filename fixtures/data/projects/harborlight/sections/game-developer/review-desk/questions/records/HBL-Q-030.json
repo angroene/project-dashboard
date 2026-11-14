@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-030",
+  "recordType": "question",
+  "title": "How should perception behave in case 30?",
+  "summary": "SYNTHETIC FIXTURE question 30 (single-choice-other).",
+  "status": "open",
+  "priority": "critical",
+  "createdAt": "2026-11-03T00:30:00Z",
+  "updatedAt": "2026-11-03T01:00:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 30 about Perception.\n\n1. Point one\n2. Point two",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "single-choice",
+    "options": [
+      {
+        "id": "opt-a",
+        "label": "Option A: Perception variant 1",
+        "description": "Synthetic recommended option."
+      },
+      {
+        "id": "opt-b",
+        "label": "Option B: Perception variant 2"
+      },
+      {
+        "id": "opt-c",
+        "label": "Option C: Perception variant 3"
+      },
+      {
+        "id": "opt-d",
+        "label": "Option D: Perception variant 4"
+      }
+    ],
+    "allowOther": true,
+    "allowExplanation": true,
+    "required": true
+  }
+}

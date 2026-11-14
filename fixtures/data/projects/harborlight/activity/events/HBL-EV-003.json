@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-EV-003",
+  "at": "2026-11-01T14:22:00Z",
+  "area": "Docs Editor",
+  "action": "issue-reported",
+  "source": "synthetic-map-agent",
+  "summary": "SYNTHETIC FIXTURE event 3: issue reported.",
+  "status": "warning",
+  "recordId": "HBL-Q-007"
+}

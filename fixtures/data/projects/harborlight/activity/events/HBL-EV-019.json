@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-EV-019",
+  "at": "2026-11-06T09:18:00Z",
+  "area": "Game Developer",
+  "action": "task-updated",
+  "source": "synthetic-map-agent",
+  "summary": "SYNTHETIC FIXTURE event 19: task updated.",
+  "status": "info",
+  "recordId": "HBL-PT-003"
+}

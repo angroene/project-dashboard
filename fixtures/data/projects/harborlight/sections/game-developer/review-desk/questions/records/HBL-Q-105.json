@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-105",
+  "recordType": "question",
+  "title": "How should inventory behave in case 105?",
+  "summary": "SYNTHETIC FIXTURE question 105 (composite).",
+  "status": "answered",
+  "priority": "critical",
+  "createdAt": "2026-11-08T01:45:00Z",
+  "updatedAt": "2026-11-08T02:15:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 105 about Inventory.\n\n1. Point one\n2. Point two\n\n**Answer (synthetic):** recorded outside the dashboard queue.",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "composite",
+    "fields": [
+      {
+        "id": "choice",
+        "label": "Pick a direction",
+        "type": "single-choice",
+        "options": [
+          {
+            "id": "opt-a",
+            "label": "Option A: Inventory variant 1",
+            "description": "Synthetic recommended option."
+          },
+          {
+            "id": "opt-b",
+            "label": "Option B: Inventory variant 2"
+          },
+          {
+            "id": "opt-c",
+            "label": "Option C: Inventory variant 3"
+          }
+        ],
+        "allowOther": true,
+        "allowExplanation": false,
+        "required": true
+      },
+      {
+        "id": "explanation",
+        "label": "Explain your choice",
+        "type": "free-text",
+        "required": false,
+        "minLength": 0,
+        "maxLength": 3000,
+        "multiline": true
+      },
+      {
+        "id": "artwork",
+        "label": "Reference artwork",
+        "help": "PNG, JPEG or WebP",
+        "type": "file-upload",
+        "required": false,
+        "minFiles": 0,
+        "maxFiles": 3,
+        "allowedMimeTypes": [
+          "image/png",
+          "image/jpeg",
+          "image/webp"
+        ],
+        "allowComment": true
+      }
+    ]
+  },
+  "attachments": [
+    {
+      "id": "HBL-Q-105-ref",
+      "title": "Current look",
+      "path": "images/concept-gate.png",
+      "mimeType": "image/png"
+    }
+  ]
+}

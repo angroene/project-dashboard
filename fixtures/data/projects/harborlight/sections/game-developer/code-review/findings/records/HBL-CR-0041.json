@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-CR-0041",
+  "recordType": "review",
+  "title": "Review finding 41: race on save",
+  "summary": "SYNTHETIC FIXTURE code review finding.",
+  "status": "needs-review",
+  "priority": "critical",
+  "updatedAt": "2026-11-12T08:40:00Z",
+  "bodyMarkdown": "```cpp\n// synthetic snippet\nint x = 0;\n```\n\nSuggested fix: synthetic.",
+  "metadata": {
+    "file": "Source/Synthetic/File4.cpp",
+    "line": 290,
+    "category": "bug"
+  },
+  "notifyUser": true
+}

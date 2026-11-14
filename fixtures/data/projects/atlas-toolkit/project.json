@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "atlas-toolkit",
+  "displayName": "Atlas Toolkit (synthetic)",
+  "description": "SYNTHETIC FIXTURE: a second, differently arranged project (page tabs at the root, no work areas).",
+  "order": 20,
+  "theme": {
+    "accent": "teal"
+  }
+}

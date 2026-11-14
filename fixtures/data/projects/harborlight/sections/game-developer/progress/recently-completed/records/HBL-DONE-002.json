@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-DONE-002",
+  "recordType": "task",
+  "title": "Completed: Climbing polish 2",
+  "summary": "SYNTHETIC FIXTURE: completed item.",
+  "status": "done",
+  "priority": "low",
+  "percent": 100,
+  "updatedAt": "2026-11-11T01:30:00Z"
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "ATL-RV-001",
+  "recordType": "review",
+  "title": "Spec review 1",
+  "summary": "SYNTHETIC FIXTURE review.",
+  "status": "needs-review",
+  "updatedAt": "2026-11-05T00:00:00Z",
+  "attachments": [
+    {
+      "id": "ATL-RV-001-spec",
+      "path": "documents/spec/atlas-format.md",
+      "mimeType": "text/markdown"
+    }
+  ],
+  "notifyUser": false
+}

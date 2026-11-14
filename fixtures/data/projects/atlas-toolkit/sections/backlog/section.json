@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "backlog",
+  "displayType": "page-tab",
+  "title": "Backlog",
+  "order": 20,
+  "icon": "list"
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-009",
+  "recordType": "issue",
+  "title": "Playtest: Combat glitch #9",
+  "summary": "SYNTHETIC FIXTURE playtest issue 9.",
+  "status": "open",
+  "priority": "none",
+  "severity": "medium",
+  "area": "AI",
+  "createdAt": "2026-11-02T04:08:00Z",
+  "updatedAt": "2026-11-02T04:53:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 9",
+  "metadata": {
+    "night": "2026-11-09",
+    "build": "CL1408"
+  },
+  "notifyUser": false
+}

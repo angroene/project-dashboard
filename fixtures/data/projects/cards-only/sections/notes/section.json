@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "notes",
+  "displayType": "expandable-card",
+  "title": "Notes",
+  "order": 20,
+  "actions": [
+    "copy",
+    "open-detail",
+    "download",
+    "bulk-download",
+    "mark-read"
+  ]
+}

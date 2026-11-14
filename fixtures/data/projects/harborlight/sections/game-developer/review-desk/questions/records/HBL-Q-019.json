@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-019",
+  "recordType": "question",
+  "title": "How should perception behave in case 19?",
+  "summary": "SYNTHETIC FIXTURE question 19 (approval).",
+  "status": "closed",
+  "priority": "none",
+  "createdAt": "2026-11-02T06:43:00Z",
+  "updatedAt": "2026-11-02T07:13:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 19 about Perception.\n\n1. Point one\n2. Point two",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "approval",
+    "required": true,
+    "allowRationale": true,
+    "requireRationaleOnReject": true
+  }
+}

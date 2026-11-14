@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-MECH-005",
+  "recordType": "task",
+  "title": "Climbing mechanic",
+  "summary": "SYNTHETIC FIXTURE: outstanding work on climbing.",
+  "status": "in-progress",
+  "priority": "critical",
+  "order": 5,
+  "percent": 41,
+  "createdAt": "2026-11-01T04:00:00Z",
+  "updatedAt": "2026-11-10T02:28:00Z",
+  "assignee": "synthetic-agent",
+  "bodyMarkdown": "## Climbing\n\nSYNTHETIC FIXTURE. Remaining steps:\n\n- step one\n- step two\n",
+  "linkedRecords": [],
+  "notifyUser": false,
+  "history": [
+    {
+      "at": "2026-11-01T04:00:00Z",
+      "text": "Created (synthetic)",
+      "by": "fixture"
+    }
+  ]
+}

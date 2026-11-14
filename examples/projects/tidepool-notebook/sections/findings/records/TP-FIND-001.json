@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "TP-FIND-001",
+  "recordType": "issue",
+  "title": "Anemone density drops east of the rock shelf",
+  "status": "investigating",
+  "priority": "high",
+  "updatedAt": "2026-11-11T10:00:00+01:00",
+  "notifyUser": true,
+  "bodyMarkdown": "Counts on three transects agree. Cause not known."
+}

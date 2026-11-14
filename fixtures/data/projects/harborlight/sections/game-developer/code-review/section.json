@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "code-review",
+  "displayType": "page-tab",
+  "title": "Code Review",
+  "order": 40,
+  "icon": "review"
+}

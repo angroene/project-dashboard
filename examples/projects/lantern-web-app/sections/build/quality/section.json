@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "quality",
+  "displayType": "page-tab",
+  "title": "Quality",
+  "order": 20,
+  "icon": "bug"
+}

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-022",
+  "recordType": "question",
+  "title": "How should alarms behave in case 22?",
+  "summary": "SYNTHETIC FIXTURE question 22 (single-choice).",
+  "status": "open",
+  "priority": "medium",
+  "createdAt": "2026-11-02T11:34:00Z",
+  "updatedAt": "2026-11-02T12:04:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 22 about Alarms.\n\n1. Point one\n2. Point two",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "single-choice",
+    "options": [
+      {
+        "id": "opt-a",
+        "label": "Option A: Alarms variant 1",
+        "description": "Synthetic recommended option."
+      },
+      {
+        "id": "opt-b",
+        "label": "Option B: Alarms variant 2"
+      },
+      {
+        "id": "opt-c",
+        "label": "Option C: Alarms variant 3"
+      }
+    ],
+    "allowOther": false,
+    "allowExplanation": false,
+    "required": true
+  }
+}

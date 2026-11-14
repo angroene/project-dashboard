@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "LNT-TASK-001",
+  "recordType": "task",
+  "title": "Autosave drafts every 5 seconds",
+  "summary": "Drafts are lost when the tab closes.",
+  "status": "in-progress",
+  "priority": "high",
+  "assignee": "dev-1",
+  "updatedAt": "2026-11-10T08:30:00Z",
+  "bodyMarkdown": "Save to local storage first, then sync when online."
+}

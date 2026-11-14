@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-MQ-005",
+  "recordType": "question",
+  "title": "Map question 5: object placement on slope 5?",
+  "summary": "SYNTHETIC FIXTURE map editor question.",
+  "status": "answered",
+  "requiresResponse": true,
+  "answerSchema": {
+    "type": "free-text",
+    "required": true,
+    "minLength": 1,
+    "maxLength": 2000,
+    "multiline": true,
+    "placeholder": "Write a short synthetic answer"
+  },
+  "priority": "medium",
+  "createdAt": "2026-11-02T11:32:00Z",
+  "updatedAt": "2026-11-02T11:37:00Z",
+  "attachments": [
+    {
+      "id": "HBL-MQ-005-shot",
+      "title": "Screenshot (synthetic)",
+      "path": "images/concept-tower.png",
+      "mimeType": "image/png"
+    }
+  ]
+}

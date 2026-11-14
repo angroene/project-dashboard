@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-DOC-OVERVIEW",
+  "recordType": "document",
+  "title": "Design overview (artifact root)",
+  "summary": "SYNTHETIC FIXTURE: attachment served from the read-only artifact root docs/design.",
+  "status": "published",
+  "updatedAt": "2026-11-13T03:30:00Z",
+  "attachments": [
+    {
+      "id": "HBL-DOC-OVERVIEW-md",
+      "path": "overview.md",
+      "root": "docs/design",
+      "mimeType": "text/markdown"
+    }
+  ]
+}

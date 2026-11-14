@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "milestones",
+  "displayType": "page-tab",
+  "title": "Milestones",
+  "order": 10,
+  "views": [
+    "progress"
+  ],
+  "icon": "flag"
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-022",
+  "recordType": "issue",
+  "title": "Playtest: Save/Load glitch #22",
+  "summary": "SYNTHETIC FIXTURE playtest issue 22.",
+  "status": "in-progress",
+  "priority": "low",
+  "severity": "high",
+  "area": "UI",
+  "createdAt": "2026-11-04T01:51:00Z",
+  "updatedAt": "2026-11-04T02:36:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 22",
+  "metadata": {
+    "night": "2026-11-10",
+    "build": "CL1421"
+  },
+  "notifyUser": false
+}

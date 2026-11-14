@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-032",
+  "recordType": "issue",
+  "title": "Playtest: Level glitch #32",
+  "summary": "SYNTHETIC FIXTURE playtest issue 32.",
+  "status": "verified",
+  "priority": "low",
+  "severity": "low",
+  "area": "Audio",
+  "createdAt": "2026-11-05T13:01:00Z",
+  "updatedAt": "2026-11-05T13:46:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 32",
+  "metadata": {
+    "night": "2026-11-08",
+    "build": "CL1431"
+  },
+  "notifyUser": false
+}

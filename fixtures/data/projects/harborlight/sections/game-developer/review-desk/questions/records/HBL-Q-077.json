@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-077",
+  "recordType": "question",
+  "title": "How should combat behave in case 77?",
+  "summary": "SYNTHETIC FIXTURE question 77 (composite).",
+  "status": "processed",
+  "priority": "medium",
+  "createdAt": "2026-11-06T04:29:00Z",
+  "updatedAt": "2026-11-06T04:59:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 77 about Combat.\n\n1. Point one\n2. Point two\n\n**Answer (synthetic):** recorded outside the dashboard queue.",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "composite",
+    "fields": [
+      {
+        "id": "choice",
+        "label": "Pick a direction",
+        "type": "single-choice",
+        "options": [
+          {
+            "id": "opt-a",
+            "label": "Option A: Combat variant 1",
+            "description": "Synthetic recommended option."
+          },
+          {
+            "id": "opt-b",
+            "label": "Option B: Combat variant 2"
+          },
+          {
+            "id": "opt-c",
+            "label": "Option C: Combat variant 3"
+          }
+        ],
+        "allowOther": true,
+        "allowExplanation": false,
+        "required": true
+      },
+      {
+        "id": "explanation",
+        "label": "Explain your choice",
+        "type": "free-text",
+        "required": false,
+        "minLength": 0,
+        "maxLength": 3000,
+        "multiline": true
+      },
+      {
+        "id": "artwork",
+        "label": "Reference artwork",
+        "help": "PNG, JPEG or WebP",
+        "type": "file-upload",
+        "required": false,
+        "minFiles": 0,
+        "maxFiles": 3,
+        "allowedMimeTypes": [
+          "image/png",
+          "image/jpeg",
+          "image/webp"
+        ],
+        "allowComment": true
+      }
+    ]
+  },
+  "attachments": [
+    {
+      "id": "HBL-Q-077-ref",
+      "title": "Current look",
+      "path": "images/concept-gate.png",
+      "mimeType": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-MECH-003",
+  "recordType": "task",
+  "title": "Combat mechanic",
+  "summary": "SYNTHETIC FIXTURE: outstanding work on combat.",
+  "status": "in-progress",
+  "priority": "medium",
+  "order": 3,
+  "percent": 64,
+  "createdAt": "2026-11-01T02:00:00Z",
+  "updatedAt": "2026-11-10T01:14:00Z",
+  "assignee": "synthetic-agent",
+  "bodyMarkdown": "## Combat\n\nSYNTHETIC FIXTURE. Remaining steps:\n\n- step one\n- step two\n",
+  "linkedRecords": [
+    "HBL-Q-003"
+  ],
+  "notifyUser": false,
+  "history": [
+    {
+      "at": "2026-11-01T02:00:00Z",
+      "text": "Created (synthetic)",
+      "by": "fixture"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-DONE-004",
+  "recordType": "task",
+  "title": "Completed: Alarms polish 4",
+  "summary": "SYNTHETIC FIXTURE: completed item.",
+  "status": "done",
+  "priority": "low",
+  "percent": 100,
+  "updatedAt": "2026-11-11T04:30:00Z"
+}

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "map-questions",
+  "displayType": "page-tab",
+  "title": "Questions",
+  "order": 20,
+  "icon": "question"
+}

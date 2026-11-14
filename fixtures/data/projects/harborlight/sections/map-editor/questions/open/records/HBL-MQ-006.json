@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-MQ-006",
+  "recordType": "question",
+  "title": "Map question 6: object placement on slope 6?",
+  "summary": "SYNTHETIC FIXTURE map editor question.",
+  "status": "answered",
+  "requiresResponse": true,
+  "answerSchema": {
+    "type": "multiple-choice",
+    "options": [
+      {
+        "id": "opt-a",
+        "label": "Option A: terrain variant 1",
+        "description": "Synthetic recommended option."
+      },
+      {
+        "id": "opt-b",
+        "label": "Option B: terrain variant 2"
+      },
+      {
+        "id": "opt-c",
+        "label": "Option C: terrain variant 3"
+      },
+      {
+        "id": "opt-d",
+        "label": "Option D: terrain variant 4"
+      },
+      {
+        "id": "opt-e",
+        "label": "Option E: terrain variant 5"
+      }
+    ],
+    "allowOther": false,
+    "allowExplanation": true,
+    "required": true,
+    "minSelected": 1,
+    "maxSelected": 3
+  },
+  "priority": "medium",
+  "createdAt": "2026-11-02T12:05:00Z",
+  "updatedAt": "2026-11-02T12:10:00Z",
+  "attachments": [
+    {
+      "id": "HBL-MQ-006-shot",
+      "title": "Screenshot (synthetic)",
+      "path": "images/concept-gate.png",
+      "mimeType": "image/png"
+    }
+  ]
+}

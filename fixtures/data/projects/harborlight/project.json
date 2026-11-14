@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "harborlight",
+  "displayName": "Harborlight (example game)",
+  "description": "SYNTHETIC FIXTURE: a fictional example game project (game development, map tooling, documentation). Not real project data.",
+  "order": 10,
+  "artifactRoots": [
+    "docs/design"
+  ],
+  "theme": {
+    "accent": "indigo"
+  },
+  "progressStaleAfterDays": 14
+}

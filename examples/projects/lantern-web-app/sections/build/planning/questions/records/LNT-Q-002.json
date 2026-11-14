@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "LNT-Q-002",
+  "recordType": "question",
+  "title": "Approve the release name Lantern 1.0?",
+  "status": "open",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "updatedAt": "2026-11-10T09:05:00Z",
+  "answerSchema": {
+    "type": "approval",
+    "required": true,
+    "allowRationale": true,
+    "requireRationaleOnReject": true
+  }
+}

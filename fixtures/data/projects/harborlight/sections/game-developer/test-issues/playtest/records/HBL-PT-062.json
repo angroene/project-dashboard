@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-062",
+  "recordType": "issue",
+  "title": "Playtest: AI glitch #62",
+  "summary": "SYNTHETIC FIXTURE playtest issue 62.",
+  "status": "in-progress",
+  "priority": "low",
+  "severity": "high",
+  "area": "Animation",
+  "createdAt": "2026-11-09T22:31:00Z",
+  "updatedAt": "2026-11-09T23:16:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 62",
+  "metadata": {
+    "night": "2026-11-02",
+    "build": "CL1461"
+  },
+  "notifyUser": false
+}

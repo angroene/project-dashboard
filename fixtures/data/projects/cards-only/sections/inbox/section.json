@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "inbox",
+  "displayType": "expandable-card",
+  "title": "Inbox",
+  "order": 10,
+  "actions": [
+    "copy",
+    "open-detail",
+    "respond",
+    "upload",
+    "export-xlsx",
+    "import-xlsx",
+    "mark-read"
+  ],
+  "defaultOpen": true
+}

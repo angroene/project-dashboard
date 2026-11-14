@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-054",
+  "recordType": "issue",
+  "title": "Playtest: AI glitch #54",
+  "summary": "SYNTHETIC FIXTURE playtest issue 54.",
+  "status": "duplicate",
+  "priority": "none",
+  "severity": "high",
+  "area": "Level",
+  "createdAt": "2026-11-08T18:23:00Z",
+  "updatedAt": "2026-11-08T19:08:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 54",
+  "metadata": {
+    "night": "2026-11-06",
+    "build": "CL1453"
+  },
+  "notifyUser": false
+}

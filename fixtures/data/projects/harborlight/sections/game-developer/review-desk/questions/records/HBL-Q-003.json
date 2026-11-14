@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-003",
+  "recordType": "question",
+  "title": "How should climbing behave in case 3?",
+  "summary": "SYNTHETIC FIXTURE question 3 (multiple-choice).",
+  "status": "open",
+  "priority": "low",
+  "createdAt": "2026-11-01T04:51:00Z",
+  "updatedAt": "2026-11-01T05:21:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 3 about Climbing.\n\n1. Point one\n2. Point two",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "multiple-choice",
+    "options": [
+      {
+        "id": "opt-a",
+        "label": "Option A: Climbing variant 1",
+        "description": "Synthetic recommended option."
+      },
+      {
+        "id": "opt-b",
+        "label": "Option B: Climbing variant 2"
+      },
+      {
+        "id": "opt-c",
+        "label": "Option C: Climbing variant 3"
+      },
+      {
+        "id": "opt-d",
+        "label": "Option D: Climbing variant 4"
+      },
+      {
+        "id": "opt-e",
+        "label": "Option E: Climbing variant 5"
+      }
+    ],
+    "allowOther": false,
+    "allowExplanation": true,
+    "required": true,
+    "minSelected": 1,
+    "maxSelected": 3
+  },
+  "dueAt": "2026-11-16T00:33:00Z",
+  "taskId": "HBL-MECH-003"
+}

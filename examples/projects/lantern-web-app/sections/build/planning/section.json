@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "planning",
+  "displayType": "page-tab",
+  "title": "Planning",
+  "order": 10,
+  "icon": "list"
+}

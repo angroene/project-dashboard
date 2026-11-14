@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "tidepool-notebook",
+  "displayName": "Tidepool Survey (example research notebook)",
+  "description": "EXAMPLE: a fictional field-research notebook. Cards only, no progress file, and a custom status workflow for findings.",
+  "order": 20,
+  "theme": {
+    "accent": "teal"
+  },
+  "workflows": {
+    "issue": {
+      "unknownStatus": "strict",
+      "statuses": [
+        {
+          "id": "observed",
+          "label": "Observed",
+          "category": "open"
+        },
+        {
+          "id": "investigating",
+          "label": "Investigating",
+          "category": "active"
+        },
+        {
+          "id": "awaiting-data",
+          "label": "Awaiting data",
+          "category": "waiting",
+          "tone": "info"
+        },
+        {
+          "id": "confirmed",
+          "label": "Confirmed",
+          "category": "done",
+          "tone": "ok"
+        },
+        {
+          "id": "dismissed",
+          "label": "Dismissed",
+          "category": "closed"
+        }
+      ]
+    }
+  }
+}

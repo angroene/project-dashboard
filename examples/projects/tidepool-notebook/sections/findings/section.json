@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "findings",
+  "displayType": "expandable-card",
+  "title": "Findings",
+  "order": 10,
+  "icon": "flag",
+  "defaultOpen": true,
+  "actions": [
+    "copy",
+    "open-detail",
+    "mark-read"
+  ],
+  "filters": {
+    "sort": "updated-desc"
+  }
+}

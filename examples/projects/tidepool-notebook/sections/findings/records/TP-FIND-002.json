@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "TP-FIND-002",
+  "recordType": "issue",
+  "title": "Water temperature logger drifts",
+  "status": "awaiting-data",
+  "priority": "medium",
+  "updatedAt": "2026-11-10T16:20:00+01:00",
+  "summary": "Need a calibration run."
+}

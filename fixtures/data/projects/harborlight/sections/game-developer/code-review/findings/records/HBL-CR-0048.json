@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-CR-0048",
+  "recordType": "review",
+  "title": "Review finding 48: unused include",
+  "summary": "SYNTHETIC FIXTURE code review finding.",
+  "status": "approved",
+  "priority": "low",
+  "updatedAt": "2026-11-12T10:11:00Z",
+  "bodyMarkdown": "```cpp\n// synthetic snippet\nint x = 0;\n```\n\nSuggested fix: synthetic.",
+  "metadata": {
+    "file": "Source/Synthetic/File2.cpp",
+    "line": 339,
+    "category": "bug"
+  },
+  "notifyUser": false
+}

@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-049",
+  "recordType": "question",
+  "title": "How should combat behave in case 49?",
+  "summary": "SYNTHETIC FIXTURE question 49 (composite).",
+  "status": "closed",
+  "priority": "none",
+  "createdAt": "2026-11-04T07:13:00Z",
+  "updatedAt": "2026-11-04T07:43:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 49 about Combat.\n\n1. Point one\n2. Point two",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "composite",
+    "fields": [
+      {
+        "id": "choice",
+        "label": "Pick a direction",
+        "type": "single-choice",
+        "options": [
+          {
+            "id": "opt-a",
+            "label": "Option A: Combat variant 1",
+            "description": "Synthetic recommended option."
+          },
+          {
+            "id": "opt-b",
+            "label": "Option B: Combat variant 2"
+          },
+          {
+            "id": "opt-c",
+            "label": "Option C: Combat variant 3"
+          }
+        ],
+        "allowOther": true,
+        "allowExplanation": false,
+        "required": true
+      },
+      {
+        "id": "explanation",
+        "label": "Explain your choice",
+        "type": "free-text",
+        "required": false,
+        "minLength": 0,
+        "maxLength": 3000,
+        "multiline": true
+      },
+      {
+        "id": "artwork",
+        "label": "Reference artwork",
+        "help": "PNG, JPEG or WebP",
+        "type": "file-upload",
+        "required": false,
+        "minFiles": 0,
+        "maxFiles": 3,
+        "allowedMimeTypes": [
+          "image/png",
+          "image/jpeg",
+          "image/webp"
+        ],
+        "allowComment": true
+      }
+    ]
+  },
+  "attachments": [
+    {
+      "id": "HBL-Q-049-ref",
+      "title": "Current look",
+      "path": "images/concept-gate.png",
+      "mimeType": "image/png"
+    }
+  ]
+}

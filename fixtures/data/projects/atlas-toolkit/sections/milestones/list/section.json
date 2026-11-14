@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "milestone-list",
+  "displayType": "expandable-card",
+  "title": "Milestones",
+  "order": 10,
+  "actions": [
+    "copy",
+    "open-detail",
+    "mark-read"
+  ],
+  "defaultOpen": true,
+  "filters": {
+    "sort": "order"
+  }
+}

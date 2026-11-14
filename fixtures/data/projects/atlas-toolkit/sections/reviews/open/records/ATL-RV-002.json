@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "ATL-RV-002",
+  "recordType": "review",
+  "title": "Spec review 2",
+  "summary": "SYNTHETIC FIXTURE review.",
+  "status": "approved",
+  "updatedAt": "2026-11-05T00:41:00Z",
+  "attachments": [],
+  "notifyUser": false
+}

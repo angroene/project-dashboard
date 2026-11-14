@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-010",
+  "recordType": "issue",
+  "title": "Playtest: Animation glitch #10",
+  "summary": "SYNTHETIC FIXTURE playtest issue 10.",
+  "status": "in-progress",
+  "priority": "medium",
+  "severity": "medium",
+  "area": "Audio",
+  "createdAt": "2026-11-02T07:39:00Z",
+  "updatedAt": "2026-11-02T08:24:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 10",
+  "metadata": {
+    "night": "2026-11-10",
+    "build": "CL1409"
+  },
+  "notifyUser": false
+}

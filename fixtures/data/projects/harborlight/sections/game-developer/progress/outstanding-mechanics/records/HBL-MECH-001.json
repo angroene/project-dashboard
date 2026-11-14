@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-MECH-001",
+  "recordType": "task",
+  "title": "Movement mechanic",
+  "summary": "SYNTHETIC FIXTURE: outstanding work on movement.",
+  "status": "in-progress",
+  "priority": "critical",
+  "order": 1,
+  "percent": 85,
+  "createdAt": "2026-11-01T00:00:00Z",
+  "updatedAt": "2026-11-10T00:00:00Z",
+  "assignee": "synthetic-agent",
+  "bodyMarkdown": "## Movement\n\nSYNTHETIC FIXTURE. Remaining steps:\n\n- step one\n- step two\n",
+  "linkedRecords": [
+    "HBL-Q-001"
+  ],
+  "notifyUser": true,
+  "history": [
+    {
+      "at": "2026-11-01T00:00:00Z",
+      "text": "Created (synthetic)",
+      "by": "fixture"
+    }
+  ]
+}

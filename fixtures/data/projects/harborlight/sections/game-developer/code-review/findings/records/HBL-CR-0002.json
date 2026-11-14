@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-CR-0002",
+  "recordType": "review",
+  "title": "Review finding 2: race on save",
+  "summary": "SYNTHETIC FIXTURE code review finding.",
+  "status": "changes-requested",
+  "priority": "high",
+  "updatedAt": "2026-11-12T00:13:00Z",
+  "bodyMarkdown": "```cpp\n// synthetic snippet\nint x = 0;\n```\n\nSuggested fix: synthetic.",
+  "metadata": {
+    "file": "Source/Synthetic/File1.cpp",
+    "line": 17,
+    "category": "test-gap"
+  },
+  "notifyUser": false
+}

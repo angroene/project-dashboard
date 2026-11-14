@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "ATL-Q-003",
+  "recordType": "question",
+  "title": "Atlas question 3",
+  "summary": "SYNTHETIC FIXTURE question inside a review card.",
+  "status": "open",
+  "requiresResponse": true,
+  "answerSchema": {
+    "type": "free-text",
+    "required": true,
+    "minLength": 1,
+    "maxLength": 2000,
+    "multiline": true,
+    "placeholder": "Write a short synthetic answer"
+  },
+  "updatedAt": "2026-11-05T05:02:00Z"
+}

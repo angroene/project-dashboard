@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "game-developer",
+  "displayType": "main-tab",
+  "title": "Game Developer",
+  "order": 10,
+  "icon": "gamepad",
+  "description": "Synthetic engine work area"
+}

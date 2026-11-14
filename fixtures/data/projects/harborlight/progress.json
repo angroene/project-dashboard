@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "overallPercent": 64,
+  "label": "Synthetic milestone completion",
+  "method": "SYNTHETIC FIXTURE: illustrative weighted estimate, not a real measurement.",
+  "updatedAt": "2026-11-13T00:00:00Z",
+  "breakdown": [
+    {
+      "id": "core-mechanics",
+      "title": "Core mechanics",
+      "percent": 78,
+      "detail": "Synthetic",
+      "weight": 3,
+      "updatedAt": "2026-11-13T00:00:00Z"
+    },
+    {
+      "id": "ai",
+      "title": "Enemy and civilian AI",
+      "percent": 61,
+      "detail": "Synthetic",
+      "weight": 2
+    },
+    {
+      "id": "map",
+      "title": "Map editor content",
+      "percent": 55,
+      "detail": "Synthetic",
+      "weight": 2
+    },
+    {
+      "id": "docs",
+      "title": "Documentation",
+      "percent": 70,
+      "detail": "Synthetic",
+      "weight": 1
+    },
+    {
+      "id": "qa",
+      "title": "Testing and QA",
+      "percent": null,
+      "detail": "Synthetic: not reported yet"
+    }
+  ]
+}

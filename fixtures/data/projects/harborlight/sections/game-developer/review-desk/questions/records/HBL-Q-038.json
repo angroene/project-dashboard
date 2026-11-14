@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-038",
+  "recordType": "question",
+  "title": "How should vehicles behave in case 38?",
+  "summary": "SYNTHETIC FIXTURE question 38 (multiple-choice).",
+  "status": "processed",
+  "priority": "low",
+  "createdAt": "2026-11-03T13:26:00Z",
+  "updatedAt": "2026-11-03T13:56:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 38 about Vehicles.\n\n1. Point one\n2. Point two\n\n**Answer (synthetic):** recorded outside the dashboard queue.",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "multiple-choice",
+    "options": [
+      {
+        "id": "opt-a",
+        "label": "Option A: Vehicles variant 1",
+        "description": "Synthetic recommended option."
+      },
+      {
+        "id": "opt-b",
+        "label": "Option B: Vehicles variant 2"
+      },
+      {
+        "id": "opt-c",
+        "label": "Option C: Vehicles variant 3"
+      },
+      {
+        "id": "opt-d",
+        "label": "Option D: Vehicles variant 4"
+      },
+      {
+        "id": "opt-e",
+        "label": "Option E: Vehicles variant 5"
+      }
+    ],
+    "allowOther": false,
+    "allowExplanation": true,
+    "required": true,
+    "minSelected": 1,
+    "maxSelected": 3
+  },
+  "dueAt": "2026-11-16T06:58:00Z"
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-005",
+  "recordType": "issue",
+  "title": "Playtest: Combat glitch #5",
+  "summary": "SYNTHETIC FIXTURE playtest issue 5.",
+  "status": "open",
+  "priority": "medium",
+  "severity": "medium",
+  "area": "Animation",
+  "createdAt": "2026-11-01T14:04:00Z",
+  "updatedAt": "2026-11-01T14:49:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 5",
+  "metadata": {
+    "night": "2026-11-05",
+    "build": "CL1404"
+  },
+  "notifyUser": true
+}

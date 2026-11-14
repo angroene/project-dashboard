@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "issues",
+  "displayType": "expandable-card",
+  "title": "Issues",
+  "order": 10,
+  "defaultOpen": true,
+  "actions": [
+    "copy",
+    "open-detail",
+    "mark-read"
+  ],
+  "filters": {
+    "sort": "priority"
+  }
+}

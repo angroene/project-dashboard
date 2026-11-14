@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "docs-activity",
+  "displayType": "page-tab",
+  "title": "Activity",
+  "order": 20,
+  "icon": "clock",
+  "views": [
+    "activity"
+  ]
+}

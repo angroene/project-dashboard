@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "review-desk",
+  "displayType": "page-tab",
+  "title": "Review Desk",
+  "order": 20,
+  "icon": "inbox",
+  "views": [
+    "attention"
+  ]
+}

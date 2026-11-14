@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "overallPercent": 55,
+  "label": "Release 1.0 readiness",
+  "method": "Example figure published by the project lead: share of release checklist items done.",
+  "updatedAt": "2026-11-10T09:00:00Z",
+  "breakdown": [
+    {
+      "id": "editor",
+      "title": "Editor",
+      "percent": 80,
+      "detail": "Core editing works; export is open."
+    },
+    {
+      "id": "sync",
+      "title": "Sync",
+      "percent": 30,
+      "detail": "Waiting for the storage decision."
+    },
+    {
+      "id": "docs",
+      "title": "Documentation",
+      "percent": null,
+      "detail": "Not reported yet."
+    }
+  ]
+}

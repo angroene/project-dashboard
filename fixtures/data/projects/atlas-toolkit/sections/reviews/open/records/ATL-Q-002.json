@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "ATL-Q-002",
+  "recordType": "question",
+  "title": "Atlas question 2",
+  "summary": "SYNTHETIC FIXTURE question inside a review card.",
+  "status": "open",
+  "requiresResponse": true,
+  "answerSchema": {
+    "type": "single-choice",
+    "options": [
+      {
+        "id": "opt-a",
+        "label": "Option A: format variant 1",
+        "description": "Synthetic recommended option."
+      },
+      {
+        "id": "opt-b",
+        "label": "Option B: format variant 2"
+      },
+      {
+        "id": "opt-c",
+        "label": "Option C: format variant 3"
+      },
+      {
+        "id": "opt-d",
+        "label": "Option D: format variant 4"
+      }
+    ],
+    "allowOther": true,
+    "allowExplanation": true,
+    "required": true
+  },
+  "updatedAt": "2026-11-05T05:01:00Z",
+  "dueAt": "2026-11-07T00:00:00Z"
+}

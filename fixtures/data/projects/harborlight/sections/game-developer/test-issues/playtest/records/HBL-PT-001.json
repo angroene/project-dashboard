@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-001",
+  "recordType": "issue",
+  "title": "Playtest: Level glitch #1",
+  "summary": "SYNTHETIC FIXTURE playtest issue 1.",
+  "status": "open",
+  "priority": "critical",
+  "severity": "medium",
+  "area": "Save/Load",
+  "createdAt": "2026-11-01T00:00:00Z",
+  "updatedAt": "2026-11-01T00:45:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 1",
+  "metadata": {
+    "night": "2026-11-01",
+    "build": "CL1400"
+  },
+  "notifyUser": false,
+  "attachments": [
+    {
+      "id": "HBL-PT-001-notes",
+      "path": "documents/notes/playtest-night-notes.txt",
+      "mimeType": "text/plain"
+    }
+  ]
+}

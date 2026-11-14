@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-ART-002",
+  "recordType": "document",
+  "title": "Concept art: concept-gate",
+  "summary": "SYNTHETIC FIXTURE placeholder image.",
+  "status": "published",
+  "statusLabel": "Published",
+  "updatedAt": "2026-11-08T00:15:00Z",
+  "attachments": [
+    {
+      "id": "HBL-ART-002-png",
+      "title": "concept-gate.png",
+      "path": "images/concept-gate.png",
+      "mimeType": "image/png"
+    }
+  ],
+  "notifyUser": false
+}

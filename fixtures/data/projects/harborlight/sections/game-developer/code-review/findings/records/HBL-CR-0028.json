@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-CR-0028",
+  "recordType": "review",
+  "title": "Review finding 28: unused include",
+  "summary": "SYNTHETIC FIXTURE code review finding.",
+  "status": "approved",
+  "priority": "low",
+  "updatedAt": "2026-11-12T05:51:00Z",
+  "bodyMarkdown": "```cpp\n// synthetic snippet\nint x = 0;\n```\n\nSuggested fix: synthetic.",
+  "metadata": {
+    "file": "Source/Synthetic/File0.cpp",
+    "line": 199,
+    "category": "test-gap"
+  },
+  "notifyUser": false
+}

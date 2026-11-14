@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-036",
+  "recordType": "issue",
+  "title": "Playtest: Combat glitch #36",
+  "summary": "SYNTHETIC FIXTURE playtest issue 36.",
+  "status": "duplicate",
+  "priority": "critical",
+  "severity": "low",
+  "area": "Level",
+  "createdAt": "2026-11-06T03:05:00Z",
+  "updatedAt": "2026-11-06T03:50:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 36",
+  "metadata": {
+    "night": "2026-11-12",
+    "build": "CL1435"
+  },
+  "notifyUser": false
+}

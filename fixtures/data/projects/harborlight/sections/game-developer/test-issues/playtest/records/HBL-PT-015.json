@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-015",
+  "recordType": "issue",
+  "title": "Playtest: AI glitch #15",
+  "summary": "SYNTHETIC FIXTURE playtest issue 15.",
+  "status": "fixed",
+  "priority": "medium",
+  "severity": "low",
+  "area": "Animation",
+  "createdAt": "2026-11-03T01:14:00Z",
+  "updatedAt": "2026-11-03T01:59:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 15",
+  "metadata": {
+    "night": "2026-11-03",
+    "build": "CL1414"
+  },
+  "notifyUser": false
+}

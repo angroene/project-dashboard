@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "recently-completed",
+  "displayType": "expandable-card",
+  "title": "Recently Completed",
+  "order": 20,
+  "actions": [
+    "copy",
+    "open-detail",
+    "mark-read"
+  ]
+}

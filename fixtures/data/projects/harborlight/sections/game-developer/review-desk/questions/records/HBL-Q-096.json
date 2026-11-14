@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-096",
+  "recordType": "question",
+  "title": "How should carrying behave in case 96?",
+  "summary": "SYNTHETIC FIXTURE question 96 (approval).",
+  "status": "answered",
+  "priority": "high",
+  "createdAt": "2026-11-07T11:12:00Z",
+  "updatedAt": "2026-11-07T11:42:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 96 about Carrying.\n\n1. Point one\n2. Point two\n\n**Answer (synthetic):** recorded outside the dashboard queue.",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "approval",
+    "required": true,
+    "allowRationale": true,
+    "requireRationaleOnReject": true
+  }
+}

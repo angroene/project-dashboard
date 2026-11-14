@@ -1,0 +1,10 @@
+node_modules/
+dist/
+pcc.config.json
+*.token
+.env
+coverage/
+secrets/
+*.pem
+*.key
+*.token.txt

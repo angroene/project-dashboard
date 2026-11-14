@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "LNT-ISS-001",
+  "recordType": "issue",
+  "title": "Cursor jumps to the end when pasting",
+  "status": "open",
+  "priority": "high",
+  "severity": "major",
+  "area": "editor",
+  "updatedAt": "2026-11-10T07:45:00Z",
+  "notifyUser": true,
+  "bodyMarkdown": "Steps:\n1. Paste text in the middle of a note.\n2. The cursor moves to the end."
+}

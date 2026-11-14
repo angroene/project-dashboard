@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-EV-006",
+  "at": "2026-11-02T11:55:00Z",
+  "area": "Docs Editor",
+  "action": "doc-landed",
+  "source": "synthetic-engine-agent",
+  "summary": "SYNTHETIC FIXTURE event 6: doc landed.",
+  "status": "warning"
+}

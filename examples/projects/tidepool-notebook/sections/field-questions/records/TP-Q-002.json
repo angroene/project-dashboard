@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "TP-Q-002",
+  "recordType": "question",
+  "title": "Describe the tide conditions during the week-42 count",
+  "status": "open",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "updatedAt": "2026-11-11T09:30:00+01:00",
+  "answerSchema": {
+    "type": "composite",
+    "fields": [
+      {
+        "id": "tide",
+        "label": "Tide state",
+        "type": "single-choice",
+        "options": [
+          {
+            "id": "low",
+            "label": "Low"
+          },
+          {
+            "id": "rising",
+            "label": "Rising"
+          },
+          {
+            "id": "high",
+            "label": "High"
+          }
+        ],
+        "allowOther": false,
+        "allowExplanation": false,
+        "required": true
+      },
+      {
+        "id": "notes",
+        "label": "Notes",
+        "type": "free-text",
+        "required": false,
+        "minLength": 0,
+        "maxLength": 1000,
+        "multiline": true
+      }
+    ]
+  }
+}

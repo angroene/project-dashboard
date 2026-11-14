@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "questions",
+  "displayType": "expandable-card",
+  "title": "Questions for the owner",
+  "order": 20,
+  "defaultOpen": true,
+  "actions": [
+    "copy",
+    "open-detail",
+    "respond",
+    "export-xlsx",
+    "import-xlsx",
+    "mark-read"
+  ]
+}

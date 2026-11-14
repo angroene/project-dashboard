@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-CR-0014",
+  "recordType": "review",
+  "title": "Review finding 14: missing test",
+  "summary": "SYNTHETIC FIXTURE code review finding.",
+  "status": "rejected",
+  "priority": "high",
+  "updatedAt": "2026-11-12T02:49:00Z",
+  "bodyMarkdown": "```cpp\n// synthetic snippet\nint x = 0;\n```\n\nSuggested fix: synthetic.",
+  "metadata": {
+    "file": "Source/Synthetic/File4.cpp",
+    "line": 101,
+    "category": "test-gap"
+  },
+  "notifyUser": false
+}

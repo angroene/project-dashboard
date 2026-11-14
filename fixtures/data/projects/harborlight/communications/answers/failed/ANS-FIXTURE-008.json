@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "projectId": "harborlight",
+  "answerId": "ANS-FIXTURE-008",
+  "questionId": "HBL-Q-011",
+  "questionRevision": 1,
+  "submittedAt": "2026-11-01T19:47:00Z",
+  "source": "dashboard",
+  "submittedBy": "fixture-operator",
+  "idempotencyKey": "fixture-key-008",
+  "answers": [
+    {
+      "fieldId": "response",
+      "kind": "text",
+      "text": "Synthetic free-text answer."
+    }
+  ],
+  "attachments": [],
+  "processingState": "failed",
+  "attempts": 1,
+  "result": {
+    "at": "2026-11-16T00:08:00Z",
+    "reason": "Synthetic consumer could not apply the answer.",
+    "retryable": false
+  },
+  "audit": [
+    {
+      "at": "2026-11-01T19:47:00Z",
+      "event": "submitted",
+      "by": "fixture-operator"
+    },
+    {
+      "at": "2026-11-16T00:08:00Z",
+      "event": "failed",
+      "by": "synthetic-consumer",
+      "note": "Synthetic consumer could not apply the answer."
+    }
+  ]
+}

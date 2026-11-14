@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-MQ-004",
+  "recordType": "question",
+  "title": "Map question 4: object placement on slope 4?",
+  "summary": "SYNTHETIC FIXTURE map editor question.",
+  "status": "open",
+  "requiresResponse": true,
+  "answerSchema": {
+    "type": "composite",
+    "fields": [
+      {
+        "id": "choice",
+        "label": "Pick a direction",
+        "type": "single-choice",
+        "options": [
+          {
+            "id": "opt-a",
+            "label": "Option A: terrain variant 1",
+            "description": "Synthetic recommended option."
+          },
+          {
+            "id": "opt-b",
+            "label": "Option B: terrain variant 2"
+          },
+          {
+            "id": "opt-c",
+            "label": "Option C: terrain variant 3"
+          }
+        ],
+        "allowOther": true,
+        "allowExplanation": false,
+        "required": true
+      },
+      {
+        "id": "explanation",
+        "label": "Explain your choice",
+        "type": "free-text",
+        "required": false,
+        "minLength": 0,
+        "maxLength": 3000,
+        "multiline": true
+      },
+      {
+        "id": "artwork",
+        "label": "Reference artwork",
+        "help": "PNG, JPEG or WebP",
+        "type": "file-upload",
+        "required": false,
+        "minFiles": 0,
+        "maxFiles": 3,
+        "allowedMimeTypes": [
+          "image/png",
+          "image/jpeg",
+          "image/webp"
+        ],
+        "allowComment": true
+      }
+    ]
+  },
+  "priority": "medium",
+  "createdAt": "2026-11-02T10:59:00Z",
+  "updatedAt": "2026-11-02T11:04:00Z",
+  "attachments": [
+    {
+      "id": "HBL-MQ-004-shot",
+      "title": "Screenshot (synthetic)",
+      "path": "images/concept-forest.png",
+      "mimeType": "image/png"
+    }
+  ]
+}

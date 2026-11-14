@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-EV-001",
+  "at": "2026-11-01T00:00:00Z",
+  "area": "Game Developer",
+  "action": "task-updated",
+  "source": "synthetic-engine-agent",
+  "summary": "SYNTHETIC FIXTURE event 1: task updated.",
+  "status": "info",
+  "recordId": "HBL-MECH-001"
+}

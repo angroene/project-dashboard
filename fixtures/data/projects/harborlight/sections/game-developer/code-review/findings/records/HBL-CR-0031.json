@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-CR-0031",
+  "recordType": "review",
+  "title": "Review finding 31: null check",
+  "summary": "SYNTHETIC FIXTURE code review finding.",
+  "status": "needs-review",
+  "priority": "medium",
+  "updatedAt": "2026-11-12T06:30:00Z",
+  "bodyMarkdown": "```cpp\n// synthetic snippet\nint x = 0;\n```\n\nSuggested fix: synthetic.",
+  "metadata": {
+    "file": "Source/Synthetic/File3.cpp",
+    "line": 220,
+    "category": "design"
+  },
+  "notifyUser": false
+}

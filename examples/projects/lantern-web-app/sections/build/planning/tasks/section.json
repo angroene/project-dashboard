@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "tasks",
+  "displayType": "expandable-card",
+  "title": "Tasks",
+  "order": 10,
+  "defaultOpen": true,
+  "actions": [
+    "copy",
+    "open-detail",
+    "mark-read"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-MECH-007",
+  "recordType": "task",
+  "title": "Alarms mechanic",
+  "summary": "SYNTHETIC FIXTURE: outstanding work on alarms.",
+  "status": "blocked",
+  "priority": "medium",
+  "order": 7,
+  "percent": 20,
+  "createdAt": "2026-11-01T06:00:00Z",
+  "updatedAt": "2026-11-10T03:42:00Z",
+  "assignee": "synthetic-agent",
+  "bodyMarkdown": "## Alarms\n\nSYNTHETIC FIXTURE. Remaining steps:\n\n- step one\n- step two\n",
+  "linkedRecords": [],
+  "notifyUser": true,
+  "history": [
+    {
+      "at": "2026-11-01T06:00:00Z",
+      "text": "Created (synthetic)",
+      "by": "fixture"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-025",
+  "recordType": "issue",
+  "title": "Playtest: Camera glitch #25",
+  "summary": "SYNTHETIC FIXTURE playtest issue 25.",
+  "status": "open",
+  "priority": "medium",
+  "severity": "medium",
+  "area": "Save/Load",
+  "createdAt": "2026-11-04T12:24:00Z",
+  "updatedAt": "2026-11-04T13:09:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 25",
+  "metadata": {
+    "night": "2026-11-01",
+    "build": "CL1424"
+  },
+  "notifyUser": false
+}

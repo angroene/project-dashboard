@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "observations",
+  "displayType": "expandable-card",
+  "title": "Observations",
+  "order": 30,
+  "icon": "book",
+  "actions": [
+    "copy",
+    "open-detail"
+  ]
+}

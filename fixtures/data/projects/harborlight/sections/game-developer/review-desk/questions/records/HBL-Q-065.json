@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-065",
+  "recordType": "question",
+  "title": "FYI: Alarms change landed (synthetic note 65)",
+  "summary": "SYNTHETIC FIXTURE question 65 (informational).",
+  "status": "closed",
+  "priority": "critical",
+  "createdAt": "2026-11-05T09:05:00Z",
+  "updatedAt": "2026-11-05T09:35:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 65 about Alarms.\n\n1. Point one\n2. Point two",
+  "requiresResponse": false,
+  "notifyUser": true
+}

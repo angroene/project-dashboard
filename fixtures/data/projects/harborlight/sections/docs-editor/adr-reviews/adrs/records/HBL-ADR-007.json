@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-ADR-007",
+  "recordType": "review",
+  "title": "ADR-007: Attachment roots",
+  "summary": "SYNTHETIC FIXTURE ADR awaiting review.",
+  "status": "needs-review",
+  "priority": "medium",
+  "updatedAt": "2026-11-13T02:00:00Z",
+  "attachments": [
+    {
+      "id": "HBL-ADR-007-md",
+      "title": "ADR-007.md",
+      "path": "documents/adr/ADR-007-attachment-roots.md",
+      "mimeType": "text/markdown"
+    }
+  ],
+  "actions": [
+    "copy",
+    "open-detail",
+    "download",
+    "bulk-download",
+    "mark-read"
+  ],
+  "notifyUser": false
+}

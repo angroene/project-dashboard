@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-014",
+  "recordType": "issue",
+  "title": "Playtest: Save/Load glitch #14",
+  "summary": "SYNTHETIC FIXTURE playtest issue 14.",
+  "status": "in-progress",
+  "priority": "none",
+  "severity": "medium",
+  "area": "Save/Load",
+  "createdAt": "2026-11-02T21:43:00Z",
+  "updatedAt": "2026-11-02T22:28:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 14",
+  "metadata": {
+    "night": "2026-11-02",
+    "build": "CL1413"
+  },
+  "notifyUser": false
+}

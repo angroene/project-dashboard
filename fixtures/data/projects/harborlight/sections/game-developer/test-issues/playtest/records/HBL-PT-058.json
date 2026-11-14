@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-058",
+  "recordType": "issue",
+  "title": "Playtest: UI glitch #58",
+  "summary": "SYNTHETIC FIXTURE playtest issue 58.",
+  "status": "in-progress",
+  "priority": "high",
+  "severity": "high",
+  "area": "AI",
+  "createdAt": "2026-11-09T08:27:00Z",
+  "updatedAt": "2026-11-09T09:12:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 58",
+  "metadata": {
+    "night": "2026-11-10",
+    "build": "CL1457"
+  },
+  "notifyUser": false
+}

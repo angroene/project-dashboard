@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-024",
+  "recordType": "issue",
+  "title": "Playtest: Camera glitch #24",
+  "summary": "SYNTHETIC FIXTURE playtest issue 24.",
+  "status": "duplicate",
+  "priority": "none",
+  "severity": "high",
+  "area": "Audio",
+  "createdAt": "2026-11-04T08:53:00Z",
+  "updatedAt": "2026-11-04T09:38:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 24",
+  "metadata": {
+    "night": "2026-11-12",
+    "build": "CL1423"
+  },
+  "notifyUser": false
+}

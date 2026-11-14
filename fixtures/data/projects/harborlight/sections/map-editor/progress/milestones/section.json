@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "map-milestones",
+  "displayType": "expandable-card",
+  "title": "Map milestones",
+  "order": 10,
+  "actions": [
+    "copy",
+    "open-detail",
+    "mark-read"
+  ],
+  "defaultOpen": true
+}

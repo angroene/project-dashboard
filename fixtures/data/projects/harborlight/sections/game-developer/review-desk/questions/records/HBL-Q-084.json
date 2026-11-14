@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-084",
+  "recordType": "question",
+  "title": "How should vehicles behave in case 84?",
+  "summary": "SYNTHETIC FIXTURE question 84 (composite).",
+  "status": "open",
+  "priority": "none",
+  "createdAt": "2026-11-06T15:48:00Z",
+  "updatedAt": "2026-11-06T16:18:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 84 about Vehicles.\n\n1. Point one\n2. Point two",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "composite",
+    "fields": [
+      {
+        "id": "choice",
+        "label": "Pick a direction",
+        "type": "single-choice",
+        "options": [
+          {
+            "id": "opt-a",
+            "label": "Option A: Vehicles variant 1",
+            "description": "Synthetic recommended option."
+          },
+          {
+            "id": "opt-b",
+            "label": "Option B: Vehicles variant 2"
+          },
+          {
+            "id": "opt-c",
+            "label": "Option C: Vehicles variant 3"
+          }
+        ],
+        "allowOther": true,
+        "allowExplanation": false,
+        "required": true
+      },
+      {
+        "id": "explanation",
+        "label": "Explain your choice",
+        "type": "free-text",
+        "required": false,
+        "minLength": 0,
+        "maxLength": 3000,
+        "multiline": true
+      },
+      {
+        "id": "artwork",
+        "label": "Reference artwork",
+        "help": "PNG, JPEG or WebP",
+        "type": "file-upload",
+        "required": false,
+        "minFiles": 0,
+        "maxFiles": 3,
+        "allowedMimeTypes": [
+          "image/png",
+          "image/jpeg",
+          "image/webp"
+        ],
+        "allowComment": true
+      }
+    ]
+  },
+  "attachments": [
+    {
+      "id": "HBL-Q-084-ref",
+      "title": "Current look",
+      "path": "images/concept-tower.png",
+      "mimeType": "image/png"
+    }
+  ]
+}

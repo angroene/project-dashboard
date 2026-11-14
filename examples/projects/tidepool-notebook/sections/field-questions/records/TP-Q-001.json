@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "TP-Q-001",
+  "recordType": "question",
+  "title": "Which sites should the next survey include?",
+  "status": "open",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "updatedAt": "2026-11-11T09:00:00+01:00",
+  "answerSchema": {
+    "type": "multiple-choice",
+    "options": [
+      {
+        "id": "north-cove",
+        "label": "North cove"
+      },
+      {
+        "id": "rock-shelf",
+        "label": "Rock shelf"
+      },
+      {
+        "id": "inlet",
+        "label": "Inlet"
+      },
+      {
+        "id": "sandbar",
+        "label": "Sandbar"
+      }
+    ],
+    "allowOther": true,
+    "allowExplanation": false,
+    "required": true,
+    "minSelected": 1,
+    "maxSelected": 3
+  }
+}

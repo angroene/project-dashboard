@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "TP-OBS-002",
+  "recordType": "generic",
+  "title": "Transect B, 2026-11-06",
+  "status": "open",
+  "updatedAt": "2026-11-06T14:00:00+01:00",
+  "metadata": {
+    "transect": "B",
+    "count": 17,
+    "calm": false
+  }
+}

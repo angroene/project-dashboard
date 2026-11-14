@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-056",
+  "recordType": "issue",
+  "title": "Playtest: Camera glitch #56",
+  "summary": "SYNTHETIC FIXTURE playtest issue 56.",
+  "status": "verified",
+  "priority": "critical",
+  "severity": "high",
+  "area": "UI",
+  "createdAt": "2026-11-09T01:25:00Z",
+  "updatedAt": "2026-11-09T02:10:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 56",
+  "metadata": {
+    "night": "2026-11-08",
+    "build": "CL1455"
+  },
+  "notifyUser": false
+}

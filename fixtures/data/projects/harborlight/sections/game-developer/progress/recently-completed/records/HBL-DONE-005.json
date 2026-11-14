@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-DONE-005",
+  "recordType": "task",
+  "title": "Completed: Inventory polish 5",
+  "summary": "SYNTHETIC FIXTURE: completed item.",
+  "status": "done",
+  "priority": "low",
+  "percent": 100,
+  "updatedAt": "2026-11-11T06:00:00Z"
+}

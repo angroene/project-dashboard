@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-045",
+  "recordType": "issue",
+  "title": "Playtest: Camera glitch #45",
+  "summary": "SYNTHETIC FIXTURE playtest issue 45.",
+  "status": "open",
+  "priority": "medium",
+  "severity": "high",
+  "area": "UI",
+  "createdAt": "2026-11-07T10:44:00Z",
+  "updatedAt": "2026-11-07T11:29:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 45",
+  "metadata": {
+    "night": "2026-11-09",
+    "build": "CL1444"
+  },
+  "notifyUser": false
+}

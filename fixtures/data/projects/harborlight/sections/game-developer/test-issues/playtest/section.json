@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "playtest-issues",
+  "displayType": "expandable-card",
+  "title": "Playtest issues",
+  "order": 10,
+  "actions": [
+    "copy",
+    "open-detail",
+    "mark-read"
+  ],
+  "defaultOpen": true,
+  "pageSize": 50
+}

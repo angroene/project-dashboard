@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-MECH-006",
+  "recordType": "task",
+  "title": "Carrying mechanic",
+  "summary": "SYNTHETIC FIXTURE: outstanding work on carrying.",
+  "status": "in-progress",
+  "priority": "high",
+  "order": 6,
+  "percent": 33,
+  "createdAt": "2026-11-01T05:00:00Z",
+  "updatedAt": "2026-11-10T03:05:00Z",
+  "assignee": "synthetic-agent",
+  "bodyMarkdown": "## Carrying\n\nSYNTHETIC FIXTURE. Remaining steps:\n\n- step one\n- step two\n",
+  "linkedRecords": [],
+  "notifyUser": false,
+  "history": [
+    {
+      "at": "2026-11-01T05:00:00Z",
+      "text": "Created (synthetic)",
+      "by": "fixture"
+    }
+  ]
+}

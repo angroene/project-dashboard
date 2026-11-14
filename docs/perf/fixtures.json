@@ -1,0 +1,120 @@
+{
+  "dataRoot": "data",
+  "node": "v24.19.0",
+  "platform": "win32 x64",
+  "cpu": "AMD Ryzen 7 8845HS w/ Radeon 780M Graphics",
+  "at": "2026-11-13T22:10:10.176Z",
+  "startupIndexMs": 485.87,
+  "projects": [
+    {
+      "id": "atlas-toolkit",
+      "records": 27,
+      "sections": 6,
+      "indexMs": 86.9
+    },
+    {
+      "id": "cards-only",
+      "records": 5,
+      "sections": 2,
+      "indexMs": 18
+    },
+    {
+      "id": "harborlight",
+      "records": 274,
+      "sections": 21,
+      "indexMs": 173.6
+    }
+  ],
+  "diagnostics": 3,
+  "projectsList": {
+    "coldMs": 35.43,
+    "bytes": 1910
+  },
+  "projectsListWarm": {
+    "n": 50,
+    "min": 0.15,
+    "p50": 0.29,
+    "p95": 0.83,
+    "max": 2.33
+  },
+  "perProject": [
+    {
+      "project": "harborlight",
+      "navigationMs": 1.04,
+      "navigationBytes": 6579,
+      "sections": 21,
+      "biggestSection": {
+        "id": "questions",
+        "records": 116,
+        "page25Ms": 1.57,
+        "page25Bytes": 14184,
+        "page200Ms": 1.08,
+        "page200Bytes": 32750,
+        "filteredMs": 1.06
+      },
+      "recordDetail": {
+        "n": 20,
+        "min": 0.67,
+        "p50": 1.11,
+        "p95": 4.63,
+        "max": 4.63,
+        "maxBytes": 1700
+      },
+      "activityMs": 0.57
+    },
+    {
+      "project": "atlas-toolkit",
+      "navigationMs": 0.26,
+      "navigationBytes": 1881,
+      "sections": 6,
+      "biggestSection": {
+        "id": "backlog-items",
+        "records": 12,
+        "page25Ms": 0.28,
+        "page25Bytes": 4507,
+        "page200Ms": 0.22,
+        "page200Bytes": 4507,
+        "filteredMs": 0.22
+      },
+      "recordDetail": {
+        "n": 12,
+        "min": 0.57,
+        "p50": 0.81,
+        "p95": 1.27,
+        "max": 1.27,
+        "maxBytes": 457
+      },
+      "activityMs": 0.42
+    },
+    {
+      "project": "cards-only",
+      "navigationMs": 0.28,
+      "navigationBytes": 711,
+      "sections": 2,
+      "biggestSection": {
+        "id": "inbox",
+        "records": 3,
+        "page25Ms": 0.39,
+        "page25Bytes": 1608,
+        "page200Ms": 0.66,
+        "page200Bytes": 1608,
+        "filteredMs": 0.31
+      },
+      "recordDetail": {
+        "n": 3,
+        "min": 0.81,
+        "p50": 0.89,
+        "p95": 0.92,
+        "max": 0.92,
+        "maxBytes": 745
+      },
+      "activityMs": 0.27
+    }
+  ],
+  "changePropagationMs": 224.4,
+  "changePropagationNote": "file write → watcher debounce (200 ms) → reindex → invalidate event; -1 = not observed within 10 s",
+  "memoryMB": {
+    "rss": 145,
+    "heapUsed": 39
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "adr-review-list",
+  "displayType": "expandable-card",
+  "title": "ADR reviews",
+  "order": 10,
+  "actions": [
+    "copy",
+    "open-detail",
+    "download",
+    "bulk-download",
+    "mark-read"
+  ],
+  "defaultOpen": true,
+  "filters": {
+    "sort": "title"
+  }
+}

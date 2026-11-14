@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-017",
+  "recordType": "issue",
+  "title": "Playtest: Audio glitch #17",
+  "summary": "SYNTHETIC FIXTURE playtest issue 17.",
+  "status": "open",
+  "priority": "low",
+  "severity": "medium",
+  "area": "Combat",
+  "createdAt": "2026-11-03T08:16:00Z",
+  "updatedAt": "2026-11-03T09:01:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 17",
+  "metadata": {
+    "night": "2026-11-05",
+    "build": "CL1416"
+  },
+  "notifyUser": false,
+  "attachments": [
+    {
+      "id": "HBL-PT-017-notes",
+      "path": "documents/notes/playtest-night-notes.txt",
+      "mimeType": "text/plain"
+    }
+  ]
+}

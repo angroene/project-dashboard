@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "ATL-MS-005",
+  "recordType": "task",
+  "title": "Milestone 5",
+  "summary": "SYNTHETIC FIXTURE milestone.",
+  "status": "planned",
+  "percent": 0,
+  "order": 5,
+  "updatedAt": "2026-11-04T04:00:00Z"
+}

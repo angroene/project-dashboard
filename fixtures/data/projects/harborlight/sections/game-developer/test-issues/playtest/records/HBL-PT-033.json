@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-033",
+  "recordType": "issue",
+  "title": "Playtest: Save/Load glitch #33",
+  "summary": "SYNTHETIC FIXTURE playtest issue 33.",
+  "status": "open",
+  "priority": "high",
+  "severity": "low",
+  "area": "Audio",
+  "createdAt": "2026-11-05T16:32:00Z",
+  "updatedAt": "2026-11-05T17:17:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 33",
+  "metadata": {
+    "night": "2026-11-09",
+    "build": "CL1432"
+  },
+  "notifyUser": false,
+  "attachments": [
+    {
+      "id": "HBL-PT-033-notes",
+      "path": "documents/notes/playtest-night-notes.txt",
+      "mimeType": "text/plain"
+    }
+  ]
+}

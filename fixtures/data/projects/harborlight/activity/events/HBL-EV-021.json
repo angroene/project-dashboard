@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-EV-021",
+  "at": "2026-11-06T23:40:00Z",
+  "area": "Docs Editor",
+  "action": "issue-reported",
+  "source": "synthetic-docs-agent",
+  "summary": "SYNTHETIC FIXTURE event 21: issue reported.",
+  "status": "failure",
+  "recordId": "HBL-PT-017"
+}

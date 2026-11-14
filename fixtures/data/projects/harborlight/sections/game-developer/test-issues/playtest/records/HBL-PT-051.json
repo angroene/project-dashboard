@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-051",
+  "recordType": "issue",
+  "title": "Playtest: Save/Load glitch #51",
+  "summary": "SYNTHETIC FIXTURE playtest issue 51.",
+  "status": "fixed",
+  "priority": "critical",
+  "severity": "medium",
+  "area": "Save/Load",
+  "createdAt": "2026-11-08T07:50:00Z",
+  "updatedAt": "2026-11-08T08:35:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 51",
+  "metadata": {
+    "night": "2026-11-03",
+    "build": "CL1450"
+  },
+  "notifyUser": false
+}

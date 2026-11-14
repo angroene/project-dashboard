@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "LNT-TASK-003",
+  "recordType": "task",
+  "title": "Dark theme",
+  "status": "done",
+  "priority": "low",
+  "updatedAt": "2026-11-08T12:00:00Z",
+  "notifyUser": true,
+  "history": [
+    {
+      "at": "2026-11-08T12:00:00Z",
+      "text": "Merged",
+      "by": "dev-2"
+    }
+  ]
+}

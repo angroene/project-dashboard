@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-ART-003",
+  "recordType": "document",
+  "title": "Concept art: concept-yard",
+  "summary": "SYNTHETIC FIXTURE placeholder image.",
+  "status": "published",
+  "statusLabel": "Published",
+  "updatedAt": "2026-11-08T00:30:00Z",
+  "attachments": [
+    {
+      "id": "HBL-ART-003-png",
+      "title": "concept-yard.png",
+      "path": "images/concept-yard.png",
+      "mimeType": "image/png"
+    }
+  ],
+  "notifyUser": false
+}

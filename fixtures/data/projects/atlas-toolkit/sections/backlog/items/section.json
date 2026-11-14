@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "backlog-items",
+  "displayType": "expandable-card",
+  "title": "Backlog",
+  "order": 10,
+  "actions": [
+    "copy",
+    "open-detail",
+    "mark-read"
+  ]
+}

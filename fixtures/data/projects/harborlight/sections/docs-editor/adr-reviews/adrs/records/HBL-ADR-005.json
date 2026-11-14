@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-ADR-005",
+  "recordType": "review",
+  "title": "ADR-005: Atomic JSON writes",
+  "summary": "SYNTHETIC FIXTURE ADR awaiting review.",
+  "status": "changes-requested",
+  "priority": "medium",
+  "updatedAt": "2026-11-13T01:20:00Z",
+  "attachments": [
+    {
+      "id": "HBL-ADR-005-md",
+      "title": "ADR-005.md",
+      "path": "documents/adr/ADR-005-atomic-json-writes.md",
+      "mimeType": "text/markdown"
+    }
+  ],
+  "actions": [
+    "copy",
+    "open-detail",
+    "download",
+    "bulk-download",
+    "mark-read"
+  ],
+  "notifyUser": false
+}

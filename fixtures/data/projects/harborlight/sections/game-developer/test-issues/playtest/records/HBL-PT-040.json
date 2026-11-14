@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-040",
+  "recordType": "issue",
+  "title": "Playtest: Combat glitch #40",
+  "summary": "SYNTHETIC FIXTURE playtest issue 40.",
+  "status": "verified",
+  "priority": "medium",
+  "severity": "high",
+  "area": "Animation",
+  "createdAt": "2026-11-06T17:09:00Z",
+  "updatedAt": "2026-11-06T17:54:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 40",
+  "metadata": {
+    "night": "2026-11-04",
+    "build": "CL1439"
+  },
+  "notifyUser": false
+}

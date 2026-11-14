@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-031",
+  "recordType": "issue",
+  "title": "Playtest: Combat glitch #31",
+  "summary": "SYNTHETIC FIXTURE playtest issue 31.",
+  "status": "fixed",
+  "priority": "critical",
+  "severity": "high",
+  "area": "Audio",
+  "createdAt": "2026-11-05T09:30:00Z",
+  "updatedAt": "2026-11-05T10:15:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 31",
+  "metadata": {
+    "night": "2026-11-07",
+    "build": "CL1430"
+  },
+  "notifyUser": false
+}

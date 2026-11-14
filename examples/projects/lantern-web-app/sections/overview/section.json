@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "overview",
+  "displayType": "main-tab",
+  "title": "Overview",
+  "order": 10,
+  "icon": "chart",
+  "views": [
+    "progress",
+    "attention",
+    "activity"
+  ]
+}

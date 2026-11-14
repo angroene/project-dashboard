@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-EV-039",
+  "at": "2026-11-12T08:58:00Z",
+  "area": "Docs Editor",
+  "action": "issue-reported",
+  "source": "synthetic-engine-agent",
+  "summary": "SYNTHETIC FIXTURE event 39: issue reported.",
+  "status": "warning",
+  "recordId": "HBL-Q-017"
+}

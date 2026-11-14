@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "reviews",
+  "displayType": "expandable-card",
+  "title": "Reviews",
+  "order": 20,
+  "actions": [
+    "copy",
+    "open-detail",
+    "download",
+    "mark-read"
+  ]
+}

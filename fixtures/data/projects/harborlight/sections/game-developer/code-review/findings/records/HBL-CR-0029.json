@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-CR-0029",
+  "recordType": "review",
+  "title": "Review finding 29: magic number",
+  "summary": "SYNTHETIC FIXTURE code review finding.",
+  "status": "rejected",
+  "priority": "critical",
+  "updatedAt": "2026-11-12T06:04:00Z",
+  "bodyMarkdown": "```cpp\n// synthetic snippet\nint x = 0;\n```\n\nSuggested fix: synthetic.",
+  "metadata": {
+    "file": "Source/Synthetic/File1.cpp",
+    "line": 206,
+    "category": "test-gap"
+  },
+  "notifyUser": false
+}

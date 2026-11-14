@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "LNT-EV-002",
+  "at": "2026-11-10T08:50:00Z",
+  "area": "Build",
+  "action": "test",
+  "source": "ci",
+  "summary": "2 of 214 tests failed in the editor suite",
+  "status": "warning",
+  "recordId": "LNT-ISS-001"
+}

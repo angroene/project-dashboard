@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-044",
+  "recordType": "issue",
+  "title": "Playtest: Combat glitch #44",
+  "summary": "SYNTHETIC FIXTURE playtest issue 44.",
+  "status": "verified",
+  "priority": "none",
+  "severity": "low",
+  "area": "UI",
+  "createdAt": "2026-11-07T07:13:00Z",
+  "updatedAt": "2026-11-07T07:58:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 44",
+  "metadata": {
+    "night": "2026-11-08",
+    "build": "CL1443"
+  },
+  "notifyUser": false
+}

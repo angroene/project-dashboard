@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-MECH-008",
+  "recordType": "task",
+  "title": "Inventory mechanic",
+  "summary": "SYNTHETIC FIXTURE: outstanding work on inventory.",
+  "status": "planned",
+  "priority": "low",
+  "order": 8,
+  "percent": 0,
+  "createdAt": "2026-11-01T07:00:00Z",
+  "updatedAt": "2026-11-10T04:19:00Z",
+  "assignee": "synthetic-agent",
+  "bodyMarkdown": "## Inventory\n\nSYNTHETIC FIXTURE. Remaining steps:\n\n- step one\n- step two\n",
+  "linkedRecords": [],
+  "notifyUser": false,
+  "history": [
+    {
+      "at": "2026-11-01T07:00:00Z",
+      "text": "Created (synthetic)",
+      "by": "fixture"
+    }
+  ]
+}

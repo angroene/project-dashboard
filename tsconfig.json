@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": { "noEmit": true, "types": ["node"], "allowImportingTsExtensions": false },
+  "include": ["src/server/**/*.ts", "src/shared/**/*.ts", "scripts/**/*.ts", "test/**/*.ts"]
+}

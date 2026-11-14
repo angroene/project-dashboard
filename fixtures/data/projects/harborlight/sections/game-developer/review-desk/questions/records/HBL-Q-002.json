@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-002",
+  "recordType": "question",
+  "title": "How should doors behave in case 2?",
+  "summary": "SYNTHETIC FIXTURE question 2 (single-choice-other).",
+  "status": "open",
+  "priority": "medium",
+  "createdAt": "2026-11-01T03:14:00Z",
+  "updatedAt": "2026-11-01T03:44:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 2 about Doors.\n\n1. Point one\n2. Point two",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "single-choice",
+    "options": [
+      {
+        "id": "opt-a",
+        "label": "Option A: Doors variant 1",
+        "description": "Synthetic recommended option."
+      },
+      {
+        "id": "opt-b",
+        "label": "Option B: Doors variant 2"
+      },
+      {
+        "id": "opt-c",
+        "label": "Option C: Doors variant 3"
+      },
+      {
+        "id": "opt-d",
+        "label": "Option D: Doors variant 4"
+      }
+    ],
+    "allowOther": true,
+    "allowExplanation": true,
+    "required": true
+  },
+  "taskId": "HBL-MECH-002"
+}

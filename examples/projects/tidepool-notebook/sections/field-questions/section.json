@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "field-questions",
+  "displayType": "expandable-card",
+  "title": "Field questions",
+  "order": 20,
+  "icon": "question",
+  "defaultOpen": true,
+  "actions": [
+    "copy",
+    "open-detail",
+    "respond",
+    "export-xlsx",
+    "import-xlsx",
+    "mark-read"
+  ]
+}

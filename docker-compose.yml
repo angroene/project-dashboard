@@ -1,0 +1,52 @@
+# Status: verified on linux/arm64 (Docker Compose 5.1); not yet run on amd64.
+# Setup steps: docs/DEPLOYMENT.md, section "Docker Compose".
+#
+# Defaults are the safe ones:
+#   - the port is published on the host's loopback address only (change PCC_BIND to expose it deliberately)
+#   - a token file and a TLS certificate and key are required, supplied as Compose secrets
+#   - project data lives in the named volume "pcc-data", mounted at /data inside the container
+services:
+  dashboard:
+    build: .
+    image: agents-project-dashboard:local
+    init: true
+    restart: unless-stopped
+    ports:
+      - "${PCC_BIND:-127.0.0.1}:${PCC_HOST_PORT:-8790}:8790"
+    environment:
+      PCC_TLS_CERT: /run/secrets/pcc_tls_cert
+      PCC_TLS_KEY: /run/secrets/pcc_tls_key
+    secrets:
+      - pcc_token
+      - pcc_tls_cert
+      - pcc_tls_key
+    volumes:
+      - pcc-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('https').get({host:'127.0.0.1',port:8790,path:'/api/session',rejectUnauthorized:false},r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+secrets:
+  pcc_token:
+    file: ./secrets/pcc_token.txt
+  pcc_tls_cert:
+    file: ./secrets/tls_cert.pem
+  pcc_tls_key:
+    file: ./secrets/tls_key.pem
+
+volumes:
+  pcc-data:

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-EV-029",
+  "at": "2026-11-09T09:08:00Z",
+  "area": "Map Editor",
+  "action": "build-finished",
+  "source": "synthetic-engine-agent",
+  "summary": "SYNTHETIC FIXTURE event 29: build finished.",
+  "status": "success",
+  "recordId": "HBL-CR-0009"
+}

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-046",
+  "recordType": "question",
+  "title": "How should carrying behave in case 46?",
+  "summary": "SYNTHETIC FIXTURE question 46 (free-text).",
+  "status": "answered",
+  "priority": "high",
+  "createdAt": "2026-11-04T02:22:00Z",
+  "updatedAt": "2026-11-04T02:52:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 46 about Carrying.\n\n1. Point one\n2. Point two\n\n**Answer (synthetic):** recorded outside the dashboard queue.",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "free-text",
+    "required": true,
+    "minLength": 1,
+    "maxLength": 2000,
+    "multiline": true,
+    "placeholder": "Write a short synthetic answer"
+  }
+}

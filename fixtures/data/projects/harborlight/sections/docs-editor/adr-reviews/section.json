@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "adr-reviews",
+  "displayType": "page-tab",
+  "title": "ADR Reviews",
+  "order": 10,
+  "icon": "file"
+}

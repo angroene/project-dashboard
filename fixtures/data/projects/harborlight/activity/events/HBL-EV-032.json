@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-EV-032",
+  "at": "2026-11-10T06:41:00Z",
+  "area": "Map Editor",
+  "action": "question-asked",
+  "source": "synthetic-map-agent",
+  "summary": "SYNTHETIC FIXTURE event 32: question asked.",
+  "status": "success"
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-020",
+  "recordType": "issue",
+  "title": "Playtest: Level glitch #20",
+  "summary": "SYNTHETIC FIXTURE playtest issue 20.",
+  "status": "verified",
+  "priority": "medium",
+  "severity": "medium",
+  "area": "AI",
+  "createdAt": "2026-11-03T18:49:00Z",
+  "updatedAt": "2026-11-03T19:34:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 20",
+  "metadata": {
+    "night": "2026-11-08",
+    "build": "CL1419"
+  },
+  "notifyUser": false
+}

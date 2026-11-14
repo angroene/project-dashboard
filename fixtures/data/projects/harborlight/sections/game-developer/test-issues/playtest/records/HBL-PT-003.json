@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-003",
+  "recordType": "issue",
+  "title": "Playtest: AI glitch #3",
+  "summary": "SYNTHETIC FIXTURE playtest issue 3.",
+  "status": "fixed",
+  "priority": "high",
+  "severity": "medium",
+  "area": "AI",
+  "createdAt": "2026-11-01T07:02:00Z",
+  "updatedAt": "2026-11-01T07:47:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 3",
+  "metadata": {
+    "night": "2026-11-03",
+    "build": "CL1402"
+  },
+  "notifyUser": false
+}

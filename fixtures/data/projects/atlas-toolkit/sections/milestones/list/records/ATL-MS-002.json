@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "ATL-MS-002",
+  "recordType": "task",
+  "title": "Milestone 2",
+  "summary": "SYNTHETIC FIXTURE milestone.",
+  "status": "done",
+  "percent": 100,
+  "order": 2,
+  "updatedAt": "2026-11-04T01:00:00Z"
+}

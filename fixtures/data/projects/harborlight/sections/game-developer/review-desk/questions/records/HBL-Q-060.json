@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-060",
+  "recordType": "question",
+  "title": "How should alarms behave in case 60?",
+  "summary": "SYNTHETIC FIXTURE question 60 (free-text).",
+  "status": "open",
+  "priority": "critical",
+  "createdAt": "2026-11-05T01:00:00Z",
+  "updatedAt": "2026-11-05T01:30:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 60 about Alarms.\n\n1. Point one\n2. Point two",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "free-text",
+    "required": true,
+    "minLength": 1,
+    "maxLength": 2000,
+    "multiline": true,
+    "placeholder": "Write a short synthetic answer"
+  }
+}

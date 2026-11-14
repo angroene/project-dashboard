@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "build",
+  "displayType": "main-tab",
+  "title": "Build",
+  "order": 20,
+  "icon": "wrench"
+}

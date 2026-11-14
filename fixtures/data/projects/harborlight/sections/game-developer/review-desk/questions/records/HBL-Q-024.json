@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-024",
+  "recordType": "question",
+  "title": "How should combat behave in case 24?",
+  "summary": "SYNTHETIC FIXTURE question 24 (multiple-choice).",
+  "status": "open",
+  "priority": "none",
+  "createdAt": "2026-11-02T14:48:00Z",
+  "updatedAt": "2026-11-02T15:18:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 24 about Combat.\n\n1. Point one\n2. Point two",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "multiple-choice",
+    "options": [
+      {
+        "id": "opt-a",
+        "label": "Option A: Combat variant 1",
+        "description": "Synthetic recommended option."
+      },
+      {
+        "id": "opt-b",
+        "label": "Option B: Combat variant 2"
+      },
+      {
+        "id": "opt-c",
+        "label": "Option C: Combat variant 3"
+      },
+      {
+        "id": "opt-d",
+        "label": "Option D: Combat variant 4"
+      },
+      {
+        "id": "opt-e",
+        "label": "Option E: Combat variant 5"
+      }
+    ],
+    "allowOther": false,
+    "allowExplanation": true,
+    "required": true,
+    "minSelected": 1,
+    "maxSelected": 3
+  },
+  "dueAt": "2026-11-16T04:24:00Z",
+  "questionRevision": 2,
+  "history": [
+    {
+      "at": "2026-11-02T14:48:00Z",
+      "text": "Revision 1 published (synthetic)"
+    },
+    {
+      "at": "2026-11-02T15:18:00Z",
+      "text": "Revision 2: options reworded (synthetic)"
+    }
+  ]
+}

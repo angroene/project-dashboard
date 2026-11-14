@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "CO-Q-001",
+  "recordType": "question",
+  "title": "Approve the synthetic plan?",
+  "summary": "SYNTHETIC FIXTURE.",
+  "status": "open",
+  "requiresResponse": true,
+  "answerSchema": {
+    "type": "approval",
+    "required": true,
+    "allowRationale": true,
+    "requireRationaleOnReject": true
+  },
+  "updatedAt": "2026-11-01T01:40:00Z"
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-ART-004",
+  "recordType": "document",
+  "title": "Concept art: concept-forest",
+  "summary": "SYNTHETIC FIXTURE placeholder image.",
+  "status": "published",
+  "statusLabel": "Published",
+  "updatedAt": "2026-11-08T00:45:00Z",
+  "attachments": [
+    {
+      "id": "HBL-ART-004-png",
+      "title": "concept-forest.png",
+      "path": "images/concept-forest.png",
+      "mimeType": "image/png"
+    }
+  ],
+  "notifyUser": true
+}

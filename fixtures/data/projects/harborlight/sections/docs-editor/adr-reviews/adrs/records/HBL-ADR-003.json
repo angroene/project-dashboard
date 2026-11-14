@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-ADR-003",
+  "recordType": "document",
+  "title": "ADR-003: Published progress only",
+  "summary": "SYNTHETIC FIXTURE ADR awaiting review.",
+  "status": "draft",
+  "statusLabel": "Draft",
+  "priority": "medium",
+  "updatedAt": "2026-11-13T00:40:00Z",
+  "attachments": [
+    {
+      "id": "HBL-ADR-003-md",
+      "title": "ADR-003.md",
+      "path": "documents/adr/ADR-003-published-progress-only.md",
+      "mimeType": "text/markdown"
+    }
+  ],
+  "actions": [
+    "copy",
+    "open-detail",
+    "download",
+    "bulk-download",
+    "mark-read"
+  ],
+  "notifyUser": false
+}

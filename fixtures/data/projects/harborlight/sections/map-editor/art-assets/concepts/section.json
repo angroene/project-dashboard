@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "concept-art",
+  "displayType": "expandable-card",
+  "title": "Concept art",
+  "order": 10,
+  "actions": [
+    "copy",
+    "open-detail",
+    "download",
+    "bulk-download",
+    "mark-read"
+  ]
+}

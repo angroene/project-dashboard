@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-034",
+  "recordType": "issue",
+  "title": "Playtest: Level glitch #34",
+  "summary": "SYNTHETIC FIXTURE playtest issue 34.",
+  "status": "in-progress",
+  "priority": "none",
+  "severity": "medium",
+  "area": "Animation",
+  "createdAt": "2026-11-05T20:03:00Z",
+  "updatedAt": "2026-11-05T20:48:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 34",
+  "metadata": {
+    "night": "2026-11-10",
+    "build": "CL1433"
+  },
+  "notifyUser": false
+}

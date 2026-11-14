@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "art-assets",
+  "displayType": "page-tab",
+  "title": "Art Assets",
+  "order": 30,
+  "icon": "image"
+}

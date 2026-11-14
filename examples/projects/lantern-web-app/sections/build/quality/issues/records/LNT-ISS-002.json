@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "LNT-ISS-002",
+  "recordType": "issue",
+  "title": "Export button has no label",
+  "status": "fixed",
+  "priority": "low",
+  "severity": "minor",
+  "area": "ui",
+  "updatedAt": "2026-11-09T10:00:00Z"
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-CR-0023",
+  "recordType": "review",
+  "title": "Review finding 23: race on save",
+  "summary": "SYNTHETIC FIXTURE code review finding.",
+  "status": "approved",
+  "priority": "medium",
+  "updatedAt": "2026-11-12T04:46:00Z",
+  "bodyMarkdown": "```cpp\n// synthetic snippet\nint x = 0;\n```\n\nSuggested fix: synthetic.",
+  "metadata": {
+    "file": "Source/Synthetic/File4.cpp",
+    "line": 164,
+    "category": "bug"
+  },
+  "notifyUser": false
+}

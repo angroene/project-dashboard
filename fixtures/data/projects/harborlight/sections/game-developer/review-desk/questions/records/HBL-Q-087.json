@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-087",
+  "recordType": "question",
+  "title": "How should combat behave in case 87?",
+  "summary": "SYNTHETIC FIXTURE question 87 (multiple-choice).",
+  "status": "processed",
+  "priority": "medium",
+  "createdAt": "2026-11-06T20:39:00Z",
+  "updatedAt": "2026-11-06T21:09:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 87 about Combat.\n\n1. Point one\n2. Point two\n\n**Answer (synthetic):** recorded outside the dashboard queue.",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "multiple-choice",
+    "options": [
+      {
+        "id": "opt-a",
+        "label": "Option A: Combat variant 1",
+        "description": "Synthetic recommended option."
+      },
+      {
+        "id": "opt-b",
+        "label": "Option B: Combat variant 2"
+      },
+      {
+        "id": "opt-c",
+        "label": "Option C: Combat variant 3"
+      },
+      {
+        "id": "opt-d",
+        "label": "Option D: Combat variant 4"
+      },
+      {
+        "id": "opt-e",
+        "label": "Option E: Combat variant 5"
+      }
+    ],
+    "allowOther": false,
+    "allowExplanation": true,
+    "required": true,
+    "minSelected": 1,
+    "maxSelected": 3
+  },
+  "dueAt": "2026-11-16T15:57:00Z"
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-PT-029",
+  "recordType": "issue",
+  "title": "Playtest: Audio glitch #29",
+  "summary": "SYNTHETIC FIXTURE playtest issue 29.",
+  "status": "open",
+  "priority": "none",
+  "severity": "low",
+  "area": "AI",
+  "createdAt": "2026-11-05T02:28:00Z",
+  "updatedAt": "2026-11-05T03:13:00Z",
+  "bodyMarkdown": "Steps (synthetic):\n\n1. Start mission\n2. Observe glitch 29",
+  "metadata": {
+    "night": "2026-11-05",
+    "build": "CL1428"
+  },
+  "notifyUser": false
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-DONE-001",
+  "recordType": "task",
+  "title": "Completed: Stealth polish 1",
+  "summary": "SYNTHETIC FIXTURE: completed item.",
+  "status": "done",
+  "priority": "low",
+  "percent": 100,
+  "updatedAt": "2026-11-11T00:00:00Z"
+}

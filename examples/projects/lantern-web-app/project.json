@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "lantern-web-app",
+  "displayName": "Lantern (example web app)",
+  "description": "EXAMPLE: a fictional note-taking web app. Three-level layout: main tabs, page tabs, expandable cards.",
+  "order": 10,
+  "theme": {
+    "accent": "indigo"
+  },
+  "progressStaleAfterDays": 30
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "HBL-Q-047",
+  "recordType": "question",
+  "title": "How should alarms behave in case 47?",
+  "summary": "SYNTHETIC FIXTURE question 47 (approval).",
+  "status": "processed",
+  "priority": "medium",
+  "createdAt": "2026-11-04T03:59:00Z",
+  "updatedAt": "2026-11-04T04:29:00Z",
+  "bodyMarkdown": "**SYNTHETIC FIXTURE.** Context for question 47 about Alarms.\n\n1. Point one\n2. Point two\n\n**Answer (synthetic):** recorded outside the dashboard queue.",
+  "requiresResponse": true,
+  "notifyUser": false,
+  "answerSchema": {
+    "type": "approval",
+    "required": true,
+    "allowRationale": true,
+    "requireRationaleOnReject": true
+  }
+}

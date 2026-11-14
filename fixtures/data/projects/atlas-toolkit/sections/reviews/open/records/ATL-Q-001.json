@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "ATL-Q-001",
+  "recordType": "question",
+  "title": "Atlas question 1",
+  "summary": "SYNTHETIC FIXTURE question inside a review card.",
+  "status": "open",
+  "requiresResponse": true,
+  "answerSchema": {
+    "type": "approval",
+    "required": true,
+    "allowRationale": true,
+    "requireRationaleOnReject": true
+  },
+  "updatedAt": "2026-11-05T05:00:00Z"
+}

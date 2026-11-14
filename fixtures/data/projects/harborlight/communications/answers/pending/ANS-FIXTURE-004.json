@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "projectId": "harborlight",
+  "answerId": "ANS-FIXTURE-004",
+  "questionId": "HBL-Q-004",
+  "questionRevision": 1,
+  "submittedAt": "2026-11-01T08:28:00Z",
+  "source": "dashboard",
+  "submittedBy": "fixture-operator",
+  "idempotencyKey": "fixture-key-004",
+  "answers": [
+    {
+      "fieldId": "response",
+      "kind": "text",
+      "text": "Synthetic free-text answer."
+    }
+  ],
+  "attachments": [],
+  "processingState": "pending",
+  "attempts": 0,
+  "audit": [
+    {
+      "at": "2026-11-01T08:28:00Z",
+      "event": "submitted",
+      "by": "fixture-operator"
+    }
+  ]
+}
