@@ -1,0 +1,196 @@
+{
+  "$id": "project.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "description": {
+      "default": "",
+      "type": "string",
+      "maxLength": 500
+    },
+    "enabled": {
+      "default": true,
+      "type": "boolean"
+    },
+    "order": {
+      "default": 100,
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "rootSection": {
+      "default": "sections",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "progressFile": {
+      "default": "progress.json",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "allowedAttachmentRoot": {
+      "default": "attachments",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "artifactRoots": {
+      "default": [],
+      "maxItems": 16,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      }
+    },
+    "activityDir": {
+      "default": "activity/events",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "theme": {
+      "default": {
+        "accent": "indigo"
+      },
+      "type": "object",
+      "properties": {
+        "accent": {
+          "default": "indigo",
+          "type": "string",
+          "enum": [
+            "indigo",
+            "teal",
+            "amber",
+            "rose",
+            "violet",
+            "slate"
+          ]
+        }
+      }
+    },
+    "progressStaleAfterDays": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 365
+    },
+    "workflows": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "enum": [
+          "task",
+          "issue",
+          "review",
+          "progress",
+          "activity",
+          "document",
+          "generic"
+        ]
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "statuses": {
+            "minItems": 1,
+            "maxItems": 64,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                },
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "open",
+                    "active",
+                    "waiting",
+                    "blocked",
+                    "done",
+                    "closed"
+                  ]
+                },
+                "tone": {
+                  "type": "string",
+                  "enum": [
+                    "neutral",
+                    "info",
+                    "ok",
+                    "warn",
+                    "danger"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "label",
+                "category"
+              ]
+            }
+          },
+          "unknownStatus": {
+            "default": "warn",
+            "type": "string",
+            "enum": [
+              "warn",
+              "strict"
+            ]
+          }
+        },
+        "required": [
+          "statuses"
+        ]
+      }
+    },
+    "publishing": {
+      "default": {
+        "enabled": false
+      },
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "type": "boolean"
+        },
+        "sections": {
+          "maxItems": 200,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "displayName"
+  ]
+}

@@ -33,6 +33,9 @@ reused unchanged.
 | Discover sections, statuses, answer types, limits | `GET /capabilities` *agent API* | `apd capabilities` |
 | Publish or replace a question, task, issue, review, document | `PUT /records/:recordId` *agent API* | `apd ask`, `apd publish` |
 | Change status, percent, summary, add a history note | `PATCH /records/:recordId` *agent API* | `apd update` |
+| Set agent-editable tracked fields, replace external references | `PATCH /records/:recordId` (`fields`, `external`) | `apd update --field id=value --external refs.json` |
+| Find records by status, text or field value (summaries, paged) | `GET /sections/:sectionId/records?status=&q=&field.<id>=` | `apd list` |
+| See recurring templates and their state | `GET /templates` | `apd templates` |
 | Read a record as stored, with its revision | `GET /records/:recordId/source` *agent API* | `apd source` |
 | Publish an activity event | `PUT /activity/:eventId` *agent API* | `apd event` |
 | Publish project progress | `PUT /progress` *agent API* | `apd progress` |
@@ -144,10 +147,11 @@ outbox. For a self-signed certificate start Node with `NODE_EXTRA_CA_CERTS=/path
 
 | Command | Does |
 |---|---|
-| `projects`, `capabilities` | discovery |
+| `projects`, `capabilities`, `templates` | discovery |
+| `list --section S [--status a,b] [--field id=v,w]... [--q text] [--limit n] [--cursor c]` | one page of record summaries, filtered on the server |
 | `ask --section S --id ID (--file f.json \| --json '{...}')` | publish a question (fills `recordType`, `status: open`, `requiresResponse`, `questionRevision: 1`) |
 | `publish --section S --id ID (--file \| --json)` | publish any record |
-| `update ID [--status] [--label] [--summary] [--percent n\|none] [--priority] [--notify] [--note text] [--by name]` | `PATCH` |
+| `update ID [--status] [--label] [--summary] [--percent n\|none] [--priority] [--notify] [--note text] [--by name] [--field id=value]... [--external refs.json] [--if-revision r]` | `PATCH`. `--field` values: `true`/`false` (checkbox), `none` (clear), anything else as text or option id. `--external` reads a JSON array and replaces the list. |
 | `event ID --action A --summary S [--status] [--area] [--record] [--source]` | activity event |
 | `progress (--file \| --percent n [--label] [--method])` | project progress |
 | `upload FILE... [--question QID]` | upload, prints attachment ids |
@@ -168,6 +172,19 @@ Output is one JSON line on stdout; errors are one JSON line on stderr (`error`, 
 | 2 | usage or local configuration error |
 | 3 | server unreachable or failing after retries; publish calls were queued in the outbox |
 | 4 | outcome unknown: a claim, complete, fail or upload was interrupted after it was sent; check `status` |
+
+## Tracked fields, external references and recurring records
+
+- A card's `fields` say who may change each value (`editableBy`). Agents can set `agent` fields with `apd update
+  --field`; a user-only field (for example "Reviewed") is refused with `403 field-not-editable`, also inside a full
+  `publish`. Read the definitions from `apd list` (`fieldDefs`) or the section's `section.json`.
+- `external` references record what another system reported (`status`, `statusAt`). Refresh them from that system;
+  never copy them into the record's own `status`.
+- Recurring records are created by the server from `templates/` files, not by agents. They are ordinary records:
+  answer handling, `update` and the queue work the same. A question's `default` is never an answer; only answers the
+  user submitted appear in `apd pending`.
+- To avoid reading every record, ask the server: `apd list --section reviews --field reviewed=true --status needs-review`
+  returns only matching summaries, 50 per page.
 
 ## Queue lifecycle for agents
 

@@ -39,6 +39,7 @@ overridden by environment variables. Secrets are never stored in the config: the
 | | `uploads.maxBytes`, `uploads.maxFiles`, `uploads.allowedMimeTypes` | 20 MB, 10, built-in list | Upload limits; the MIME list can only narrow the built-in one. |
 | | `xlsx.maxBytes`, `xlsx.maxRows` | 5 MB, 5000 | Excel import limits. |
 | | `watch`, `reconcileSeconds` | `true`, `60` | File watching and the stat-based safety net (`0` disables the latter). |
+| | `recurrenceSeconds` | `60` | How often recurring templates are checked for due occurrences (`0` disables the scheduler). |
 | | `logLevel` | `info` | `fatal error warn info debug silent`. |
 
 Example `pcc.config.json`:

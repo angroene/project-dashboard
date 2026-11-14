@@ -22,7 +22,14 @@ data format depends on any of them.
 - **Records with stable ids:** questions, tasks, issues, reviews, progress, activity, documents and generic records,
   with attachments, links, history and Markdown bodies loaded on demand.
 - **Questions you can answer in the UI:** single choice, multiple choice, free text, approvals, file uploads, and
-  composites. Answers are validated on the server and enter a file queue.
+  composites. Answers are validated on the server and enter a file queue. Questions can suggest a default answer
+  that the form pre-selects; it is never submitted on the user's behalf.
+- **Actionable cards:** per-card tracked fields (checkbox, choice, text, date) such as "Reviewed" or "Decision", each
+  editable by the user, by agents or both, with filters, comments, attached files and a change history.
+- **External references** to work items in other systems (change requests, tickets, builds) with branch or revision
+  and the status that system reported, shown apart from the dashboard's own status.
+- **Recurring records:** daily templates with time zone, start and end date create one record per day, exactly once,
+  without an agent; pause and resume from the card.
 - **Answer queue with leases:** pending, processing, processed, failed; claim, complete, fail and retry; at-least-once
   delivery with crash recovery. Consumers list compact ids and never scan old question files.
 - **Real `.xlsx` export and import** with a preview step; invalid, stale or duplicate rows never overwrite anything.
@@ -109,7 +116,9 @@ A project is `<dataRoot>/projects/<folder>/project.json` plus `sections/<...>/se
 No code changes, no registry. Minimal example in [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md#3-create-your-own-project);
 everything about it is in [docs/PROJECT_FORMAT.md](docs/PROJECT_FORMAT.md): display types and allowed nesting, ordering,
 published progress, notifications, status workflows, record types and schemas, question types (options, free text,
-approvals, uploads), attachments, stable ids, and every validation message. Two complete projects are in
+approvals, uploads, default answers), tracked fields, external references, recurring templates, attachments, stable
+ids, and every validation message. Machine-readable JSON Schemas are in [docs/schemas/](docs/schemas/) (`npm run
+schemas` regenerates them; the server's own validation also checks rules a JSON Schema cannot express). Two complete projects are in
 [examples/](examples/README.md).
 
 ## Questions, answers and the queue
@@ -184,7 +193,7 @@ Known limitations are in [docs/LIMITATIONS.md](docs/LIMITATIONS.md). In particul
 [Agent integration](docs/AGENT_INTEGRATION.md) · [Skills](docs/SKILLS.md) · [Agent kit](agent-kit/README.md) ·
 [Excel](docs/EXCEL.md) · [API](docs/API.md) · [Deployment](docs/DEPLOYMENT.md) · [Security model](docs/SECURITY_MODEL.md) ·
 [Performance](docs/PERFORMANCE.md) · [Limitations](docs/LIMITATIONS.md) · [Decisions (ADRs)](docs/adr/) ·
-[Third-party licenses](docs/THIRD_PARTY_LICENSES.md) · [Examples](examples/README.md)
+[Third-party licenses](docs/THIRD_PARTY_LICENSES.md) · [Examples](examples/README.md) · [JSON Schemas](docs/schemas/)
 
 ## Contributing and license
 

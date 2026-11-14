@@ -31,8 +31,17 @@
 - **Search** is a plain substring match on id, title and summary within one section; bodies are not searched.
 - **File watching.** Recursive `fs.watch` works on Windows and Linux; network shares and some container mounts may not
   deliver events, so a 60 second stat reconciliation applies and changes there can take up to a minute.
-- **Records and manifests are read-only for the dashboard.** It never edits question records or manifests; status
-  changes made by users happen only through answers and read state.
+- **What the dashboard writes.** It never edits manifests, question contents or a record's `status`. It writes answer
+  files, read state, the user's tracked-field values, comments and attachments on records of cards that allow them
+  (ADR 0012), occurrence records of recurring templates, and a template's `state` when it is paused or resumed.
+- **Recurring templates are daily only.** No weekly, monthly or cron schedules. Missed days beyond `catchUpDays` are
+  skipped, not created. The schedule is checked every `recurrenceSeconds` (60), so a day can appear up to a minute
+  after its time.
+- **External references are not refreshed.** The dashboard never contacts other systems; a reported status is as old as
+  its `statusAt`.
+- **Tracked fields** are limited to checkbox, choice, text and date, 20 per card. Changes are attributed to the token
+  name or to "user" (one operator identity). `apd update --field id=true` always sends a boolean; to store the text
+  "true" in a text field use the API.
 - **Browsers.** The automated end-to-end walk uses one Chromium-based browser. Phones, screen readers and other
   browsers were not systematically tested.
 - **Status workflows replace, not merge.** A project that declares a workflow for a record type must list every status

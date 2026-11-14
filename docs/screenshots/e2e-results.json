@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-14T08:10:23.987Z",
+  "generatedAt": "2026-11-14T16:13:04.424Z",
   "note": "Measured on the local dev machine against synthetic fixtures (in-process server, headless Edge). Timings are in-page performance.now() deltas unless noted.",
   "environment": {
     "node": "v24.19.0",
@@ -8,35 +8,35 @@
     "browser": "msedge 157.0.4341.46"
   },
   "metrics": {
-    "serverStartupIndexMs": 450,
+    "serverStartupIndexMs": 566,
     "browser": "msedge 157.0.4341.46",
-    "coldLandingFirstCardMs": 282,
+    "coldLandingFirstCardMs": 249,
     "coldLandingNavigation": {
-      "domContentLoaded": 193,
-      "load": 194
+      "domContentLoaded": 164,
+      "load": 164
     },
-    "coldLandingTransferBytes": 309970,
-    "projectOpenUncachedMs": 33,
+    "coldLandingTransferBytes": 319006,
+    "projectOpenUncachedMs": 30,
     "mainTabOpenMs": 47,
-    "recordExpandMs": 112,
-    "recordDetailRequestMs": 8,
-    "pageTabSwitchUncachedMs": 63,
-    "issueList100PlusFirstPageMs": 63,
-    "pageTabSwitchCachedMs": 14,
-    "projectOpenCachedMs": 15,
-    "newProjectVisibleMs": 347,
-    "changePropagationMs": 341,
-    "questionsFilterAllMs": 37,
-    "questionsLoadAllMs": 176,
+    "recordExpandMs": 108,
+    "recordDetailRequestMs": 10,
+    "pageTabSwitchUncachedMs": 34,
+    "issueList100PlusFirstPageMs": 34,
+    "pageTabSwitchCachedMs": 12,
+    "projectOpenCachedMs": 28,
+    "newProjectVisibleMs": 385,
+    "changePropagationMs": 325,
+    "questionsFilterAllMs": 29,
+    "questionsLoadAllMs": 135,
     "questionsRendered": 116,
-    "jsHeapUsedBytesAfterWalks": 13131343
+    "jsHeapUsedBytesAfterWalks": 13866424
   },
   "walks": [
     {
       "n": 1,
       "name": "All Projects: cards, progress and attention match fixtures",
       "pass": true,
-      "ms": 778,
+      "ms": 742,
       "details": [
         "harborlight 64% q=54 u=57",
         "atlas-toolkit Not reported q=3 u=6",
@@ -47,10 +47,10 @@
       "n": 2,
       "name": "Workspace navigation; record detail loads lazily",
       "pass": true,
-      "ms": 753,
+      "ms": 697,
       "details": [
-        "detail fetched only on expand (112 ms)",
-        "tab switch uncached 63 ms, cached 14 ms (0 list refetch)"
+        "detail fetched only on expand (108 ms)",
+        "tab switch uncached 34 ms, cached 12 ms (0 list refetch)"
       ]
     },
     {
@@ -59,33 +59,33 @@
       "pass": true,
       "ms": 590,
       "details": [
-        "requests during return: none; open 15 ms"
+        "requests during return: none; open 28 ms"
       ]
     },
     {
       "n": 4,
       "name": "Answer with Other + explanation → pending queue file",
       "pass": true,
-      "ms": 2709,
+      "ms": 2578,
       "details": [
-        "HBL-Q-114 → ANS-MWG4L75S-046C105762EA; awaitingResponse 54 → 53"
+        "HBL-Q-114 → ANS-MWGLTTJQ-D48B598B365A; awaitingResponse 54 → 53"
       ]
     },
     {
       "n": 5,
       "name": "Upload artwork + note → stored attachment and queued envelope",
       "pass": true,
-      "ms": 1019,
+      "ms": 1160,
       "details": [
         "resolved to #/p/harborlight/map-editor/map-questions?record=HBL-MQ-003",
-        "HBL-MQ-003 → ANS-MWG4L7ZW-3F48DC27F13B, attachment UPL-MWG4L7Z0-D13A899789F8"
+        "HBL-MQ-003 → ANS-MWGLTUG2-0C937FD57505, attachment UPL-MWGLTUF1-69C72F8E7B4F"
       ]
     },
     {
       "n": 6,
       "name": "Export 3 questions to .xlsx → edit → import preview → commit; stale row rejected",
       "pass": true,
-      "ms": 2193,
+      "ms": 2409,
       "details": [
         "ready HBL-Q-113, HBL-Q-102; stale HBL-Q-110 (rev 2) rejected"
       ]
@@ -94,7 +94,7 @@
       "n": 7,
       "name": "Select ADRs → ZIP with original files and manifest",
       "pass": true,
-      "ms": 418,
+      "ms": 362,
       "details": [
         "harborlight_documents_2026-11-14.zip: HBL-ADR-001/ADR-001-folder-driven-navigation.md, HBL-ADR-002/ADR-002-per-answer-queue-files.md, manifest.json"
       ]
@@ -103,16 +103,16 @@
       "n": 8,
       "name": "New project folder appears without code changes or reload",
       "pass": true,
-      "ms": 453,
+      "ms": 487,
       "details": [
-        "card visible after 347 ms (no page reload)"
+        "card visible after 385 ms (no page reload)"
       ]
     },
     {
       "n": 9,
       "name": "Malformed section JSON → diagnostics; other projects unaffected",
       "pass": true,
-      "ms": 935,
+      "ms": 933,
       "details": [
         "diagnostics: 5; other projects render"
       ]
@@ -121,28 +121,38 @@
       "n": 10,
       "name": "Mobile 360 px, keyboard-only tabs, ARIA labels; change propagation",
       "pass": true,
-      "ms": 1296,
+      "ms": 1359,
       "details": [
         "keyboard tabs OK; 15 progress bars and 2 unread dots labelled",
-        "new record visible after 341 ms"
+        "new record visible after 325 ms"
       ]
     },
     {
       "n": 11,
       "name": "100+ question list: All filter and Load more through every page",
       "pass": true,
-      "ms": 343,
+      "ms": 270,
       "details": [
-        "All filter 37 ms; 116 rows after paging in 176 ms"
+        "All filter 29 ms; 116 rows after paging in 135 ms"
       ]
     },
     {
       "n": 12,
       "name": "Failed answer: failure reason, Answer again → new pending queue file",
       "pass": true,
-      "ms": 1938,
+      "ms": 2058,
       "details": [
-        "HBL-Q-011: ANS-FIXTURE-008 (failed) → ANS-MWG4LDV7-16D542928F57 (pending)"
+        "HBL-Q-011: ANS-FIXTURE-008 (failed) → ANS-MWGLU0J9-2A68746FFBD2 (pending)"
+      ]
+    },
+    {
+      "n": 13,
+      "name": "Defaults, tracked fields, comments, external refs, recurring template (example projects)",
+      "pass": true,
+      "ms": 4871,
+      "details": [
+        "default shown, 2 fields + comment saved with history, field filter works",
+        "resumed → 2 occurrences, idempotent re-run, paused"
       ]
     }
   ],
