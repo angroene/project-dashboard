@@ -181,17 +181,27 @@ export class Store extends EventEmitter {
     this.projects.set(res.manifest.id, res);
   }
 
+  /**
+   * Full reloads and in-place refreshes run one at a time. A reload builds a new project object from what it reads and
+   * swaps it in at the end; a refresh applied to the old object meanwhile would be lost with the swap.
+   */
+  private indexLock<T>(fn: () => Promise<T>): Promise<T> {
+    return this.reloading.run("index", fn);
+  }
+
   /** Re-read a whole project (or discover a new/removed one). */
   async reloadDir(dir: string): Promise<void> {
-    await this.reloading.run(dir, async () => {
-      if (!fs.existsSync(path.join(dir, PROJECT_FILE)) && !fs.existsSync(dir)) {
-        for (const [id, p] of this.projects) if (p.dir === dir) this.projects.delete(id);
-        this.broken = this.broken.filter((b) => b.dir !== dir);
-      } else {
-        await this.loadProjectDir(dir);
-      }
-      this.indexedAt = new Date().toISOString();
-    });
+    await this.indexLock(() => this.reloadDirLocked(dir));
+  }
+
+  private async reloadDirLocked(dir: string): Promise<void> {
+    if (!fs.existsSync(path.join(dir, PROJECT_FILE)) && !fs.existsSync(dir)) {
+      for (const [id, p] of this.projects) if (p.dir === dir) this.projects.delete(id);
+      this.broken = this.broken.filter((b) => b.dir !== dir);
+    } else {
+      await this.loadProjectDir(dir);
+    }
+    this.indexedAt = new Date().toISOString();
   }
 
   get(projectId: string): ProjectState | undefined {
@@ -474,9 +484,13 @@ export class Store extends EventEmitter {
 
   /** Decide the cheapest correct refresh for a set of changed paths in one project dir. */
   async applyChanges(dir: string, files: string[]): Promise<void> {
+    await this.indexLock(() => this.applyChangesLocked(dir, files));
+  }
+
+  private async applyChangesLocked(dir: string, files: string[]): Promise<void> {
     const p = [...this.projects.values()].find((x) => x.dir === dir || x.dir === safeReal(dir));
     if (!p) {
-      await this.reloadDir(dir);
+      await this.reloadDirLocked(dir);
       this.invalidate({ projectId: null, scopes: ["projects"] });
       return;
     }
@@ -493,6 +507,8 @@ export class Store extends EventEmitter {
       else if (f === p.manifest.progressFile.replace(/\\/g, "/")) progress = true;
       else if (under(f, p.manifest.allowedAttachmentRoot)) uploads = true;
       else if (/\/records\/[^/]+\.json$/.test(f)) recordFiles.push(f);
+      // A folder-only event for a records folder: its files report their own events.
+      else if (/(^|\/)records$/.test(f) && fs.existsSync(path.join(p.dir, f))) continue;
       else structural = true;
     }
     if (!structural && recordFiles.length <= 50) {
@@ -517,7 +533,7 @@ export class Store extends EventEmitter {
         return;
       }
     }
-    await this.reloadDir(p.dir);
+    await this.reloadDirLocked(p.dir);
     this.invalidate({ projectId: id, scopes: ["projects", "navigation", "records", "progress", "activity", "answers"] });
   }
 

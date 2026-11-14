@@ -32,6 +32,30 @@ describe("index consistency", () => {
     expect(after.progress.overallPercent).toBe(91);
   });
 
+  it("a record applied while a full reload is running is not lost when the reload finishes", async () => {
+    const t = await setup();
+    const dir = t.store.get("alpha")!.dir;
+    const missing: string[] = [];
+    for (let i = 0; i < 20; i++) {
+      const id = `TR${i}`;
+      const reload = t.store.reloadDir(dir); // e.g. started by a folder event from the watcher
+      await new Promise((r) => setTimeout(r, i * 3)); // land the write at different points of the reload
+      writeJson(path.join(dir, "sections", "dev", "work", "tasks", "records", `${id}.json`), task(id));
+      await t.store.applyChanges(dir, [`sections/dev/work/tasks/records/${id}.json`]);
+      if (!t.store.get("alpha")!.records.has(id)) missing.push(`${id} right after apply`);
+      await reload;
+      if (!t.store.get("alpha")!.records.has(id)) missing.push(`${id} after the reload`);
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it("a folder-only event for a records folder does not rebuild the project", async () => {
+    const t = await setup();
+    const before = t.store.get("alpha")!;
+    await t.store.applyChanges(before.dir, ["sections/dev/work/tasks/records"]);
+    expect(t.store.get("alpha")).toBe(before);
+  });
+
   it("a structural change still rebuilds the project", async () => {
     const t = await setup();
     const before = t.store.get("alpha")!;
