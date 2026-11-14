@@ -78,11 +78,15 @@ ensure_secrets() {
     touch "$SECRETS/.self-signed"
     say "created a self-signed certificate for $san (valid 365 days; browsers will warn)"
   fi
+  # The certificate is public; the token and key are private.
+  if [ -O "$token" ]; then chmod 600 "$token" "$key"; chmod 644 "$cert"; fi
   # The container runs as uid/gid 1000 and reads the files through Compose secrets, which keep host ownership. If the
-  # operator is not uid 1000, the files get group 1000 and mode 640 (needs membership of that group, root or sudo -n).
+  # operator is not uid 1000, the token and key get group 1000 and mode 640 (needs membership of that group, root or
+  # sudo -n).
   if [ "$(uname -s)" = Linux ] && [ "$(stat -c %u "$token")" != 1000 ]; then
     if [ "$(stat -c %g "$token")" != 1000 ] || [ "$(stat -c %g "$key")" != 1000 ]; then
-      chgrp 1000 "$token" "$key" 2>/dev/null || sudo -n chgrp 1000 "$token" "$key" 2>/dev/null         || die "the container user (uid/gid 1000) cannot read $token and $key. Run once:
+      chgrp 1000 "$token" "$key" 2>/dev/null || sudo -n chgrp 1000 "$token" "$key" 2>/dev/null \
+        || die "the container user (uid/gid 1000) cannot read $token and $key. Run once:
   sudo chgrp 1000 $token $key && chmod 640 $token $key"
     fi
     chmod 640 "$token" "$key"
@@ -104,8 +108,13 @@ wait_healthy() {
   die "the container did not become healthy (state: $state)"
 }
 
+# A self-signed certificate (generated here or brought along) is trusted explicitly; others go through the system store.
+self_signed() {
+  [ -f "$SECRETS/.self-signed" ] && return 0
+  [ "$(openssl x509 -in "$SECRETS/tls_cert.pem" -noout -subject 2>/dev/null | sed 's/^subject=//')" =     "$(openssl x509 -in "$SECRETS/tls_cert.pem" -noout -issuer 2>/dev/null | sed 's/^issuer=//')" ]
+}
 curl_tls() {
-  if [ -f "$SECRETS/.self-signed" ]; then curl --cacert "$SECRETS/tls_cert.pem" "$@"; else curl "$@"; fi
+  if self_signed; then curl --cacert "$SECRETS/tls_cert.pem" "$@"; else curl "$@"; fi
 }
 
 cmd_health() {

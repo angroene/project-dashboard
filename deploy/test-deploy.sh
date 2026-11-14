@@ -32,6 +32,8 @@ check "up creates secrets, builds and starts healthy" "$D" up
 [ "$fail" = 0 ] || { echo "first deployment failed; stopping"; exit 1; }
 mode="$(stat -c %a "$APD_SECRETS_DIR/pcc_token.txt" 2>/dev/null || stat -f %Lp "$APD_SECRETS_DIR/pcc_token.txt")"
 case "$mode" in 600|640) ok "token file is private ($mode)" ;; *) bad "token file is private ($mode)" ;; esac
+cmode="$(stat -c %a "$APD_SECRETS_DIR/tls_cert.pem" 2>/dev/null || stat -f %Lp "$APD_SECRETS_DIR/tls_cert.pem")"
+[ "$cmode" = 644 ] && ok "certificate readable by the container user (644)" || bad "certificate readable by the container user ($cmode)"
 check "health passes (TLS, plain HTTP refused, 401 without token)" "$D" health
 [ "$(projects)" = 0 ] && ok "clean deployment has no projects" || bad "clean deployment has no projects"
 refuses "up refuses while running (no silent upgrade)" "$D" up
