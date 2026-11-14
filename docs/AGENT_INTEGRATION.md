@@ -24,20 +24,20 @@ both, and switching between them needs no migration. Answers are always consumed
 
 ## Contract inventory
 
-What an agent needs, and what provides it. Rows marked *Phase 2* were added for agents; everything else existed and is
+What an agent needs, and what provides it. Rows marked *agent API* were added for agents; everything else existed and is
 reused unchanged.
 
 | Agent operation | Endpoint (under `/api/projects/:projectId`) | CLI |
 |---|---|---|
 | Discover projects | `GET /api/projects` (filtered to the token's projects) | `apd projects` |
-| Discover sections, statuses, answer types, limits | `GET /capabilities` *Phase 2* | `apd capabilities` |
-| Publish or replace a question, task, issue, review, document | `PUT /records/:recordId` *Phase 2* | `apd ask`, `apd publish` |
-| Change status, percent, summary, add a history note | `PATCH /records/:recordId` *Phase 2* | `apd update` |
-| Read a record as stored, with its revision | `GET /records/:recordId/source` *Phase 2* | `apd source` |
-| Publish an activity event | `PUT /activity/:eventId` *Phase 2* | `apd event` |
-| Publish project progress | `PUT /progress` *Phase 2* | `apd progress` |
+| Discover sections, statuses, answer types, limits | `GET /capabilities` *agent API* | `apd capabilities` |
+| Publish or replace a question, task, issue, review, document | `PUT /records/:recordId` *agent API* | `apd ask`, `apd publish` |
+| Change status, percent, summary, add a history note | `PATCH /records/:recordId` *agent API* | `apd update` |
+| Read a record as stored, with its revision | `GET /records/:recordId/source` *agent API* | `apd source` |
+| Publish an activity event | `PUT /activity/:eventId` *agent API* | `apd event` |
+| Publish project progress | `PUT /progress` *agent API* | `apd progress` |
 | Upload evidence or a file for a record | `POST /uploads` | `apd upload` |
-| List pending answer ids only | `GET /queue?state=pending[&taskId=][&questionId=]` (filters *Phase 2*) | `apd pending`, `apd hint` |
+| List pending answer ids only | `GET /queue?state=pending[&taskId=][&questionId=]` (filters: *agent API*) | `apd pending`, `apd hint` |
 | Read one answer | `GET /queue/:answerId` | `apd answer`, `apd status` |
 | Download an answer's file | `GET /attachments/:attachmentId` | `apd download` |
 | Claim, complete, fail or requeue an answer | `POST /queue/claim`, `/queue/:id/complete`, `/queue/:id/fail` | `apd claim`, `complete`, `fail [--retry]` |

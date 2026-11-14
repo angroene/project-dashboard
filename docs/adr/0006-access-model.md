@@ -1,6 +1,6 @@
 # ADR 0006 — Access model
 
-**Status:** Accepted for Phase 1 · **Date:** 2026-11-13
+**Status:** Accepted for the first release · **Date:** 2026-11-13
 
 - Bound to `127.0.0.1` (default): no login.
 - Any other bind address **refuses to start** unless `auth.mode = "token"` with a token file (at least 16
@@ -13,4 +13,4 @@
 - Single user (`auth.user`, default "operator"); read state is per that user. Sessions are in memory
   (a restart signs everyone out).
 
-**Rejected for Phase 1:** multi-user accounts/OAuth (no requirement yet); no auth on the LAN (unsafe).
+**Rejected for the first release:** multi-user accounts/OAuth (no requirement yet); no auth on the LAN (unsafe).

@@ -1,4 +1,4 @@
-/** Phase 1 negative-path coverage that the other suites do not exercise. */
+/** Negative-path coverage that the other suites do not exercise. */
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";

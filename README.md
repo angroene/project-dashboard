@@ -10,8 +10,8 @@ can be a CI job, a shell script, a person editing files, or an AI coding agent. 
 data format depends on any of them.
 
 > **Status:** pre-release. The dashboard, API, queue, Excel round trip and examples work and are tested. The Docker
-> setup is verified on linux/arm64 only. The agent kit (CLI and skills) is tested against the API and was run in Claude
-> Code; Codex support is documented but not validated (see [Limitations](#limitations-and-later-phases)).
+> image and deploy script are tested on linux/amd64 and linux/arm64. The agent kit (CLI and skills) is tested against the API and was run in Claude
+> Code; Codex support is documented but not validated (see [Limitations](#limitations)).
 
 ## What it does
 
@@ -83,7 +83,18 @@ creating your own project: [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md).
 ## Docker
 
 `Dockerfile` and `docker-compose.yml` are provided with a named data volume, a configurable port, secrets for the token
-and TLS certificate, a non-root user, and the port published on loopback only. Built and run on linux/arm64 (Docker 29.5, Compose 5.1); amd64 has not been tried. Steps, limitations and upgrade notes: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#docker-and-docker-compose).
+and TLS certificate, a non-root user, and the port published on loopback only. `deploy/apd-deploy.sh` does the rest on
+Linux and macOS hosts:
+
+```sh
+deploy/apd-deploy.sh up --demo        # or `up` for an empty dashboard; creates the token and a self-signed certificate
+deploy/apd-deploy.sh health --auth
+deploy/apd-deploy.sh backup           # also: upgrade, rollback, restore, reset (the last two ask for confirmation)
+```
+
+Image build, startup and every script command are tested on linux/amd64 and linux/arm64 (CI runs
+`deploy/test-deploy.sh` on both; also run on a Raspberry Pi). Windows hosts: use WSL or Docker Desktop with a bash shell (not tested). Commands, settings and upgrade notes:
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#deploy-script).
 
 ## Self-hosting
 
@@ -155,7 +166,7 @@ is *not* protected: [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md). Reporting 
 Do not expose the server to a network without a token and HTTPS, and read the
 [exposure checklist](docs/DEPLOYMENT.md#exposure-checklist).
 
-## Limitations and later phases
+## Limitations
 
 Known limitations are in [docs/LIMITATIONS.md](docs/LIMITATIONS.md). In particular:
 
@@ -163,9 +174,9 @@ Known limitations are in [docs/LIMITATIONS.md](docs/LIMITATIONS.md). In particul
   the queue at work boundaries with the CLI or skills in `agent-kit/`.
 - The skills were validated in Claude Code only; Codex support is documentation only.
 - Single shared human access level; per-project limits exist only for scoped agent tokens.
-- Docker is verified on linux/arm64 only.
-- Later phases can build on the publish and queue APIs, the update event stream and the closed schema lists
-  (see [extension points](docs/LIMITATIONS.md#extension-points-for-later-phases)).
+- Docker is tested on Linux hosts (amd64, arm64); macOS and Windows hosts are not tested.
+- Extensions can build on the publish and queue APIs, the update event stream and the closed schema lists
+  (see [extension points](docs/LIMITATIONS.md#extension-points)).
 
 ## Documentation map
 

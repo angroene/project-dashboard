@@ -1,6 +1,6 @@
 # ADR 0001 — Backend runtime: TypeScript on Node.js with Fastify
 
-**Status:** Accepted (Phase 1) · **Date:** 2026-11-13
+**Status:** Accepted (first release) · **Date:** 2026-11-13
 
 ## Context
 The UI is React and a typed backend that shares schemas with the UI is wanted; no runtime was fixed in advance.

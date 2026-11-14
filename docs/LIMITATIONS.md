@@ -19,7 +19,8 @@
 - **Transport security is deployment work.** Remote use needs a token and HTTPS; the server enforces both at startup
   (built-in TLS or a same-host proxy), unless `allowInsecureRemote` is set. A proxy on another host is not supported
   as a trusted proxy. Only failed logins are rate limited.
-- **Docker is verified on linux/arm64 only**, not yet on amd64. No image is published; build it locally.
+- **Docker is tested on Linux hosts only** (amd64 and arm64). macOS and Windows hosts are untested. No image is
+  published; build it locally (`deploy/apd-deploy.sh up`).
 - **Uploads are not virus-scanned.** Type is checked by extension allowlist and content signature, size is capped,
   files are stored under opaque names and never executed; Office files are served as downloads only.
 - **Cross-machine projects.** The server only reads folders it can see. There is no sync between machines; mount shared
@@ -35,10 +36,10 @@
   browsers were not systematically tested.
 - **Status workflows replace, not merge.** A project that declares a workflow for a record type must list every status
   it uses ([ADR 0008](adr/0008-configurable-status-workflows.md)). Question statuses are not configurable.
-- **Dependency licenses.** One transitive dependency of the Excel library (`buffers`) declares no license
-  ([THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)).
+- **Dependency override.** `package.json` overrides the Excel library's `unzipper` version so that no dependency without
+  a license is installed; remove it once the Excel library updates ([THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)).
 
-## Extension points for later phases
+## Extension points
 
 These are seams that exist; nothing beyond them is built:
 
