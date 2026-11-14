@@ -5,8 +5,8 @@ Two fictional, self-contained projects. They contain no real data, no external d
 
 | Project | Layout | Shows |
 |---|---|---|
-| [`lantern-web-app`](projects/lantern-web-app) | `main-tab` -> `page-tab` -> `expandable-card` | Overview tab with progress, attention and activity panels; Build tab with Planning and Quality pages; tasks, issues, a review with an attachment; single-choice, approval and free-text questions; published progress; activity events |
-| [`tidepool-notebook`](projects/tidepool-notebook) | `expandable-card` directly at the root | A research notebook with no progress file ("Not reported"); a **custom issue workflow** (`observed`, `investigating`, `awaiting-data`, `confirmed`, `dismissed`, strict); multiple-choice and composite questions; generic records with metadata |
+| [`lantern-web-app`](projects/lantern-web-app) | `main-tab` -> `page-tab` -> `expandable-card` | Overview tab with progress, attention and activity panels; Build tab with Planning and Quality pages; tasks, issues, a review with an attachment, tracked fields ("Reviewed", "Decision", agent-set "Checks passed"), comments and an external code-review reference; single-choice, approval (with a default answer) and free-text questions; published progress; activity events |
+| [`tidepool-notebook`](projects/tidepool-notebook) | `expandable-card` directly at the root | A research notebook with no progress file ("Not reported"); a **custom issue workflow** (`observed`, `investigating`, `awaiting-data`, `confirmed`, `dismissed`, strict); multiple-choice and composite questions; generic records with metadata; a **daily recurring template** ("Daily field log", Honolulu time, shipped `paused`; resume it in the Observations card) with one earlier occurrence and default answers |
 
 Both load with zero diagnostics.
 

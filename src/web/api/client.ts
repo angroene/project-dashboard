@@ -160,6 +160,8 @@ export interface RecordListParams {
   q: string;
   sort: string;
   limit: number;
+  /** Tracked-field filters as `field.<id>=<values>` query pairs ("" when none). */
+  fields?: string;
 }
 
 /** React-query keys. Everything project-scoped starts with ["project", pid, <scope>] so SSE invalidation can target scopes. */

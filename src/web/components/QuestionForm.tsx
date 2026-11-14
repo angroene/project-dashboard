@@ -29,15 +29,17 @@ type FieldState =
   | { kind: "approval"; decision: "" | "approve" | "reject"; rationale: string }
   | { kind: "files"; files: FileItem[]; comment: string };
 
+/** A field starts from its configured default (pre-filled only; the user still has to submit the form). */
 function initialState(def: PlainFieldDef): FieldState {
   switch (def.type) {
     case "single-choice":
+      return { kind: "choice", optionIds: def.default ? [def.default] : [], otherText: "", explanation: "" };
     case "multiple-choice":
-      return { kind: "choice", optionIds: [], otherText: "", explanation: "" };
+      return { kind: "choice", optionIds: def.default ? [...def.default] : [], otherText: "", explanation: "" };
     case "free-text":
-      return { kind: "text", text: "" };
+      return { kind: "text", text: def.default ?? "" };
     case "approval":
-      return { kind: "approval", decision: "", rationale: "" };
+      return { kind: "approval", decision: def.default ?? "", rationale: "" };
     case "file-upload":
       return { kind: "files", files: [], comment: "" };
   }
@@ -224,8 +226,25 @@ export function QuestionForm({ detail }: { detail: RecordDetail }) {
   );
 }
 
+/** Plain description of a field's configured default, or null when it has none. */
+export function defaultText(def: PlainFieldDef): string | null {
+  switch (def.type) {
+    case "single-choice":
+      return def.default ? def.options.find((o) => o.id === def.default)?.label ?? def.default : null;
+    case "multiple-choice":
+      return def.default ? (def.default.map((id) => def.options.find((o) => o.id === id)?.label ?? id).join(", ") || "none") : null;
+    case "free-text":
+      return def.default !== undefined ? "pre-filled text" : null;
+    case "approval":
+      return def.default ? (def.default === "approve" ? "Approve" : "Reject") : null;
+    default:
+      return null;
+  }
+}
+
 function FieldBlock({ spec, idBase, errors, composite, children }: { spec: FieldSpec; idBase: string; errors?: string[]; composite: boolean; children: ReactNode }) {
   const required = spec.def.required;
+  const dflt = defaultText(spec.def);
   return (
     <fieldset id={idBase} className={`field${errors ? " has-error" : ""}`} aria-describedby={[spec.help ? `${idBase}-help` : "", errors ? `${idBase}-err` : ""].filter(Boolean).join(" ") || undefined}>
       <legend className="field-label">
@@ -235,6 +254,11 @@ function FieldBlock({ spec, idBase, errors, composite, children }: { spec: Field
       {spec.help && (
         <p id={`${idBase}-help`} className="small muted">
           {spec.help}
+        </p>
+      )}
+      {dflt && (
+        <p className="small muted field-default" data-testid="field-default">
+          Suggested default: <strong>{dflt}</strong>. Change it if needed; nothing is sent until you submit.
         </p>
       )}
       {children}

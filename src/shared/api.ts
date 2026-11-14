@@ -4,7 +4,7 @@
  * Errors: HTTP 4xx/5xx with body ApiError.
  */
 import type {
-  Action, ActivityEvent, AnswerSchema, AnswerValue, DisplayType, ProcessingState, ProgressFile, RecordType, StatusCategory, StatusTone,
+  Action, ActivityEvent, AnswerSchema, AnswerValue, DisplayType, ProcessingState, ProgressFile, RecordType, StatusCategory, StatusTone, ExternalRef, TrackedFieldDef, TrackedFieldValue, TemplateState,
 } from "./schemas.js";
 
 export interface ApiError {
@@ -116,6 +116,12 @@ export interface RecordSummary {
   attachmentCount: number;
   unread: boolean;
   actions: Action[];
+  /** Tracked field values (only when the record has any). */
+  fields?: Record<string, TrackedFieldValue>;
+  /** References to work items in other systems; their status is as reported by that system. */
+  external?: ExternalRef[];
+  /** Set on records generated from a recurring template. */
+  occurrence?: { templateId: string; date: string };
   /** Questions only. */
   question?: {
     uiState: QuestionUiState;
@@ -144,8 +150,38 @@ export interface RecordPage {
   statusLabels: Record<string, string>;
   /** Questions in the section still needing a response; present only when the section has answerable questions. */
   needsResponseCount?: number;
+  /** The card's tracked field definitions (empty when it has none). */
+  fieldDefs: TrackedFieldDef[];
+  /** Counts per value of each filterable field, over the unfiltered records ("" = not set). */
+  fieldCounts: Record<string, Record<string, number>>;
+  /** Recurring templates of this card. */
+  templates: TemplateSummary[];
+  /** The dashboard user may comment on and attach files to records of this card. */
+  canComment: boolean;
   items: RecordSummary[];
   nextCursor: string | null;
+}
+
+export interface TemplateSummary {
+  id: string;
+  sectionId: string;
+  title: string;
+  state: TemplateState;
+  schedule: { frequency: "daily"; time: string; timezone: string; startDate: string; endDate?: string; catchUpDays: number };
+  /** Last occurrence date created by the scheduler. */
+  lastDate?: string;
+  /** Problem with the template file, if any (it then creates nothing). */
+  error?: string;
+}
+
+/** POST /api/projects/:projectId/records/:recordId/user-update (dashboard user) */
+export interface UserRecordUpdate {
+  fields?: Record<string, TrackedFieldValue>;
+  comment?: string;
+  /** Uploaded files (POST /uploads) to attach to the record. */
+  attach?: { uploadId: string; title?: string }[];
+  /** Revision from the record detail; a newer record makes the update fail with 409 revision-mismatch. */
+  ifRevision?: string;
 }
 
 export interface AttachmentRef {
@@ -161,6 +197,11 @@ export interface AttachmentRef {
 
 /** GET /api/projects/:projectId/records/:recordId */
 export interface RecordDetail extends RecordSummary {
+  /** Content revision of the record file, for ifRevision on updates. */
+  revision: string;
+  /** The card's tracked field definitions, and whether the user may comment and attach files. */
+  fieldDefs: TrackedFieldDef[];
+  canComment: boolean;
   createdAt?: string;
   bodyMarkdown: string;
   attachments: AttachmentRef[];

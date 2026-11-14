@@ -16,6 +16,7 @@
     "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.web.json --noEmit && tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "fixtures": "tsx scripts/gen-fixtures.ts",
+    "schemas": "tsx scripts/gen-schemas.ts",
     "perf": "tsx scripts/perf.ts",
     "e2e": "tsx scripts/e2e.ts",
     "test:unit": "vitest run --project unit",

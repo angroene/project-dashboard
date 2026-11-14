@@ -9,6 +9,7 @@ import { projectHref } from "../routes";
 import { AttachmentList, ErrorNote, Loading, ProgressBar, TimeAgo } from "./common";
 import { useCopy, useToast } from "./Toasts";
 import { lazyModule } from "../lazyModule";
+import { CommentBox, ExternalRefs, TrackedFields } from "./RecordFields";
 
 // Markdown rendering and answer forms are only needed once a record is expanded: separate chunks.
 const markdownChunk = lazyModule(() => import("./MarkdownBody"));
@@ -69,6 +70,14 @@ function DetailBody({ d }: { d: RecordDetail }) {
         </div>
       )}
 
+      <TrackedFields d={d} />
+
+      {d.occurrence && (
+        <p className="small muted occurrence-note">
+          Created from recurring template <span className="mono">{d.occurrence.templateId}</span> for {d.occurrence.date}.
+        </p>
+      )}
+
       {(metaEntries.length > 0 || d.createdAt || d.taskId || d.question) && (
         <dl className="meta-table">
           {d.question && <MetaPair term="Question revision" value={String(d.question.revision)} />}
@@ -95,6 +104,8 @@ function DetailBody({ d }: { d: RecordDetail }) {
           </ul>
         </div>
       )}
+
+      <ExternalRefs items={d.external ?? []} />
 
       {d.linkedRecords.length > 0 && (
         <div className="detail-block">
@@ -133,6 +144,8 @@ function DetailBody({ d }: { d: RecordDetail }) {
           </ol>
         </div>
       )}
+
+      <CommentBox d={d} />
 
       <RecordActions d={d} />
     </div>

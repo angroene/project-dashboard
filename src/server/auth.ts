@@ -65,6 +65,7 @@ const AGENT_ROUTES: Record<string, AgentScope> = {
   "GET /api/projects/:projectId/attachments/:attachmentId": "read",
   "GET /api/projects/:projectId/queue": "read",
   "GET /api/projects/:projectId/queue/:answerId": "read",
+  "GET /api/projects/:projectId/templates": "read",
   "PUT /api/projects/:projectId/records/:recordId": "publish",
   "PATCH /api/projects/:projectId/records/:recordId": "publish",
   "PUT /api/projects/:projectId/activity/:eventId": "publish",

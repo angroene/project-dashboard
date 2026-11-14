@@ -7,10 +7,11 @@ import fsp from "node:fs/promises";
 import path from "node:path";
 import { EventEmitter } from "node:events";
 import {
-  ActivityEvent, AnyRecord, ALLOWED_CHILDREN, MAX_SECTION_DEPTH, ProgressFile, ProjectManifest, ReadState,
+  ActivityEvent, AnyRecord, ALLOWED_CHILDREN, RecurringTemplate, MAX_SECTION_DEPTH, ProgressFile, ProjectManifest, ReadState,
   SectionManifest, UploadMeta, PROCESSING_STATES, type Action, type DisplayType, type ProcessingState,
-  type RecordAttachment, type RecordType,
+  type ExternalRef, type RecordAttachment, type RecordType, type TrackedFieldValue,
 } from "../shared/schemas.js";
+import { fieldErrors } from "../shared/fields.js";
 import type {
   Diagnostic, InvalidateEvent, NavNode, ProgressSummary, ProjectCard, QuestionUiState, RecordSummary,
 } from "../shared/api.js";
@@ -44,6 +45,10 @@ export interface RecordEntry {
   notifyUser: boolean;
   actions: Action[];
   attachments: RecordAttachment[];
+  /** Tracked field values that are valid for the card's field definitions. */
+  fields: Record<string, TrackedFieldValue>;
+  external: ExternalRef[];
+  occurrence?: { templateId: string; date: string };
   question?: {
     requiresResponse: boolean;
     revision: number;
@@ -60,6 +65,17 @@ export interface ClaimEntry {
   submittedAt?: string;
 }
 
+export interface TemplateEntry {
+  id: string;
+  sectionId: string;
+  file: string;
+  template?: RecurringTemplate;
+  /** Why the template file cannot be used; it then creates nothing. */
+  error?: string;
+  /** Why the last scheduler run could not create an occurrence (cleared on the next run). */
+  runError?: string;
+}
+
 export interface ProjectState {
   key: string;
   dir: string;
@@ -73,6 +89,10 @@ export interface ProjectState {
   attachments: Map<string, { recordId: string; att: RecordAttachment }>;
   uploads: Map<string, UploadMeta>;
   claims: Map<string, ClaimEntry>;
+  /** Recurring templates by id (see recurrence.ts). */
+  templates: Map<string, TemplateEntry>;
+  /** Last occurrence date the scheduler handled, per template id. */
+  recurrenceCursor: Record<string, string>;
   answerStates: Map<string, ProcessingState>;
   activity: ActivityEvent[];
   readState: ReadState;
@@ -89,6 +109,8 @@ export interface BrokenProject {
 
 const PROJECT_FILE = "project.json";
 const SECTION_FILE = "section.json";
+/** Folder of recurring templates inside an expandable-card section. */
+export const TEMPLATES_DIR = "templates";
 export const COMM_DIR = "communications";
 export const ANSWERS_DIR = path.join(COMM_DIR, "answers");
 export const CLAIMS_DIR = path.join(COMM_DIR, "claims");
@@ -259,6 +281,9 @@ export class Store extends EventEmitter {
       attachmentCount: r.attachments.length,
       unread: this.isUnread(p, r),
       actions: r.actions,
+      ...(Object.keys(r.fields).length ? { fields: r.fields } : {}),
+      ...(r.external.length ? { external: r.external } : {}),
+      ...(r.occurrence ? { occurrence: r.occurrence } : {}),
     };
     if (r.question) {
       const claim = p.claims.get(claimKey(r.id, r.question.revision));
@@ -567,6 +592,11 @@ function safeReal(p: string): string {
   try { return fs.realpathSync.native(p); } catch { return path.resolve(p); }
 }
 
+/** Scheduler bookkeeping; a dot name so it can never clash with a user's read-state file. */
+export function recurrenceCursorFile(projectDir: string): string {
+  return path.join(projectDir, USER_STATE_DIR, ".recurrence.json");
+}
+
 export function readStateFile(projectDir: string, user: string): string {
   const safeUser = user.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 60) || "operator";
   return path.join(projectDir, USER_STATE_DIR, `${safeUser}.json`);
@@ -593,7 +623,7 @@ export async function loadProject(dirIn: string): Promise<ProjectState | BrokenP
     progressBreakdown: [],
     sections: new Map(), rootIds: [], rootChildType: null,
     records: new Map(), attachments: new Map(), uploads: new Map(),
-    claims: new Map(), answerStates: new Map(), activity: [],
+    claims: new Map(), answerStates: new Map(), activity: [], templates: new Map(), recurrenceCursor: {},
     readState: { schemaVersion: 1, user: "operator", seen: {} },
     diagnostics: [], indexMs: 0, signature: "",
   };
@@ -654,7 +684,8 @@ export async function loadProject(dirIn: string): Promise<ProjectState | BrokenP
       if (s.manifest.visible) ids.push(s.manifest.id);
       if (s.manifest.displayType === "expandable-card") {
         await loadRecords(p, s, diag);
-        const stray = (await fsp.readdir(s.dir, { withFileTypes: true })).filter((d) => d.isDirectory() && d.name !== "records" && fs.existsSync(path.join(s.dir, d.name, SECTION_FILE)));
+        await loadTemplates(p, s, diag);
+        const stray = (await fsp.readdir(s.dir, { withFileTypes: true })).filter((d) => d.isDirectory() && d.name !== "records" && d.name !== TEMPLATES_DIR && fs.existsSync(path.join(s.dir, d.name, SECTION_FILE)));
         for (const d of stray) diag("error", path.join(s.dir, d.name, SECTION_FILE), "expandable-card cannot contain sections — ignored");
       } else {
         s.childIds = await walk(s.dir, s.manifest.id, s.manifest.displayType, depth + 1);
@@ -671,6 +702,10 @@ export async function loadProject(dirIn: string): Promise<ProjectState | BrokenP
   p.claims = ans.claims;
   p.answerStates = ans.states;
   p.uploads = await loadUploads(p);
+  const cur = await readJson(recurrenceCursorFile(dir));
+  if (cur.ok && cur.value && typeof cur.value === "object") {
+    for (const [k, v] of Object.entries(cur.value as Record<string, unknown>)) if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) p.recurrenceCursor[k] = v;
+  }
 
   p.signature = await projectSignature(dir, manifest);
   p.indexMs = Math.round((performance.now() - t0) * 10) / 10;
@@ -707,6 +742,9 @@ function entryFromRecord(rec: AnyRecord, sectionId: string, file: string, sectio
     notifyUser: rec.notifyUser,
     actions: (rec.actions ?? sectionActions).filter((a) => sectionActions.includes(a) || !rec.actions),
     attachments: rec.attachments,
+    fields: rec.fields,
+    external: rec.external,
+    occurrence: rec.occurrence,
   };
   if (rec.recordType === "question") {
     e.question = {
@@ -729,6 +767,29 @@ export async function parseRecordFile(file: string): Promise<{ ok: true; record:
   const parsed = AnyRecord.safeParse(raw.value);
   if (!parsed.success) return { ok: false, error: `invalid record: ${zodMessage(parsed.error)}` };
   return { ok: true, record: parsed.data, mtimeMs: raw.mtimeMs };
+}
+
+async function loadTemplates(p: ProjectState, s: SectionState, diag: DiagFn): Promise<void> {
+  const tdir = path.join(s.dir, TEMPLATES_DIR);
+  let files: string[];
+  try { files = (await fsp.readdir(tdir)).filter((f) => f.endsWith(".json") && !f.startsWith(".")).sort(); } catch { return; }
+  for (const f of files) {
+    const file = path.join(tdir, f);
+    const raw = await readJson(file, 256 * 1024);
+    const fallbackId = f.slice(0, -5);
+    if (!raw.ok) { diag("error", file, raw.error); p.templates.set(fallbackId, { id: fallbackId, sectionId: s.manifest.id, file, error: raw.error }); continue; }
+    const parsed = RecurringTemplate.safeParse(raw.value);
+    if (!parsed.success) {
+      const error = `invalid template: ${zodMessage(parsed.error)}`;
+      diag("error", file, error);
+      if (!p.templates.has(fallbackId)) p.templates.set(fallbackId, { id: fallbackId, sectionId: s.manifest.id, file, error });
+      continue;
+    }
+    const t = parsed.data;
+    const prev = p.templates.get(t.id);
+    if (prev && prev.file !== file) { diag("error", file, `duplicate template id '${t.id}' (first in ${path.relative(p.dir, prev.file)}) — ignored`); continue; }
+    p.templates.set(t.id, { id: t.id, sectionId: s.manifest.id, file, template: t });
+  }
 }
 
 async function loadRecords(p: ProjectState, s: SectionState, diag: DiagFn): Promise<void> {
@@ -761,6 +822,14 @@ function addRecord(p: ProjectState, s: SectionState, file: string, rec: AnyRecor
       const msg = `status '${rec.status}' is not in this project's ${rec.recordType} workflow`;
       if (wf.unknownStatus === "strict") { diag("error", file, `${msg} — ignored`); return false; }
       diag("warning", file, `${msg} — shown as open`);
+    }
+  }
+  if (Object.keys(rec.fields).length) {
+    const bad = fieldErrors(s.manifest.fields, rec.fields);
+    for (const e of bad) diag("warning", file, `field '${e.fieldId}': ${e.message} — ignored`);
+    if (bad.length) {
+      const drop = new Set(bad.map((e) => e.fieldId));
+      rec = { ...rec, fields: Object.fromEntries(Object.entries(rec.fields).filter(([k]) => !drop.has(k))) };
     }
   }
   const entry = entryFromRecord(rec, s.manifest.id, file, s.manifest.actions);

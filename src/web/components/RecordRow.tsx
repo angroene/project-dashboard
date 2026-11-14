@@ -1,5 +1,7 @@
 import { memo, useEffect, useId, useRef, useState } from "react";
 import type { RecordSummary } from "../../shared/api";
+import type { TrackedFieldDef } from "../../shared/schemas";
+import { fieldValueText } from "../../shared/fields";
 import { prefersReducedMotion } from "../context";
 import { humanize, uiStateInfo } from "../format";
 import { Pill, ProgressBar, TimeAgo, UnreadDot } from "./common";
@@ -11,10 +13,14 @@ interface Props {
   selected: boolean;
   onSelect: (r: RecordSummary, on: boolean) => void;
   focused?: boolean;
+  /** The card's tracked fields; set values are listed under the title. */
+  fieldDefs?: TrackedFieldDef[];
 }
 
+const NO_FIELDS: TrackedFieldDef[] = [];
+
 /** One record row. Memoized: selecting or refetching one row does not re-render the others. Detail loads only when expanded. */
-export const RecordRow = memo(function RecordRow({ summary: r, selectable, selected, onSelect, focused }: Props) {
+export const RecordRow = memo(function RecordRow({ summary: r, selectable, selected, onSelect, focused, fieldDefs = NO_FIELDS }: Props) {
   const [expanded, setExpanded] = useState(!!focused);
   const ref = useRef<HTMLLIElement>(null);
   const detailId = useId();
@@ -62,6 +68,18 @@ export const RecordRow = memo(function RecordRow({ summary: r, selectable, selec
           <span>
             {" "}
             · {r.attachmentCount} {r.attachmentCount === 1 ? "attachment" : "attachments"}
+          </span>
+        )}
+        {fieldDefs.filter((d) => r.fields?.[d.id] != null && r.fields[d.id] !== "").map((d) => (
+          <span key={d.id} className="record-field">
+            {" "}
+            · {d.label}: {fieldValueText(d, r.fields![d.id])}
+          </span>
+        ))}
+        {r.external && r.external.length > 0 && (
+          <span>
+            {" "}
+            · {r.external.map((x) => `${x.system} ${x.id}${x.status ? ` (${x.status})` : ""}`).join(", ")}
           </span>
         )}
         {r.question?.dueAt && (

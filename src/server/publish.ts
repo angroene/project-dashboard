@@ -12,14 +12,15 @@ import { z } from "zod";
 import type { FieldError } from "../shared/validate.js";
 import {
   ActivityEvent, ANSWER_TYPES, AnswerSchema, AnyRecord, DEFAULT_WORKFLOWS, Id, IsoTime, PRIORITIES, PROCESSING_STATES, ProgressFile,
-  QUESTION_STATUSES, RECORD_TYPES, SCHEMA_VERSION, Slug, type RecordType,
+  QUESTION_STATUSES, RECORD_TYPES, SCHEMA_VERSION, Slug, ExternalRef, TrackedFieldValue, type RecordType,
 } from "../shared/schemas.js";
+import { fieldErrors, fieldValueText } from "../shared/fields.js";
 import { statusInfo, workflowFor } from "../shared/workflow.js";
 import { agentOf } from "./auth.js";
 import { ApiFailure } from "./answers.js";
 import type { Config } from "./config.js";
 import { atomicWriteFile, safeResolve } from "./fsutil.js";
-import { claimKey, UPLOAD_SUBDIR, type ProjectState, type SectionState, type Store } from "./store.js";
+import { claimKey, UPLOAD_SUBDIR, type ProjectState, type RecordEntry, type SectionState, type Store } from "./store.js";
 import { uploadMeta } from "./uploads.js";
 
 /** Version of the agent-facing contract (capabilities, publish calls, queue listing filters). */
@@ -32,13 +33,13 @@ export function revisionOf(content: string | Buffer): string {
 
 const Revision = z.string().regex(/^[a-f0-9]{16}$/, "16 hex characters expected");
 
-const serialize = (v: unknown) => JSON.stringify(v, null, 2) + "\n";
+export const serialize = (v: unknown) => JSON.stringify(v, null, 2) + "\n";
 
 function zodFieldErrors(e: z.ZodError): FieldError[] {
   return e.issues.slice(0, 20).map((i) => ({ fieldId: i.path.join(".") || "(root)", message: i.message }));
 }
 
-function invalid(what: string, e: z.ZodError): ApiFailure {
+export function invalid(what: string, e: z.ZodError): ApiFailure {
   const fe = zodFieldErrors(e);
   return new ApiFailure(422, "validation", `${what} is invalid: ${fe.slice(0, 3).map((f) => `${f.fieldId}: ${f.message}`).join("; ")}`, fe);
 }
@@ -60,11 +61,15 @@ function publishSection(p: ProjectState, sectionId: string): SectionState {
   return s;
 }
 
-/** Validates a full record and the project's status workflow; returns the parsed record. */
-function validateRecord(p: ProjectState, raw: Record<string, unknown>): AnyRecord {
+/** Validates a full record, the project's status workflow and the card's tracked fields; returns the parsed record. */
+export function validateRecord(p: ProjectState, raw: Record<string, unknown>, section: SectionState): AnyRecord {
   const parsed = AnyRecord.safeParse(raw);
   if (!parsed.success) throw invalid("record", parsed.error);
   const rec = parsed.data;
+  const fe = fieldErrors(section.manifest.fields, rec.fields);
+  if (fe.length) {
+    throw new ApiFailure(422, "validation", `fields: ${fe.slice(0, 3).map((e) => `${e.fieldId}: ${e.message}`).join("; ")}`, fe.map((e) => ({ fieldId: `fields.${e.fieldId}`, message: e.message })));
+  }
   if (!statusInfo(p.manifest, rec.recordType, rec.status).known) {
     const allowed = rec.recordType === "question" ? [...QUESTION_STATUSES] : workflowFor(p.manifest, rec.recordType).statuses.map((s) => s.id);
     throw new ApiFailure(422, "validation", `status '${rec.status}' is not in this project's ${rec.recordType} workflow`, [
@@ -86,7 +91,7 @@ function uploadPath(p: ProjectState, uploadId: string): string | undefined {
 }
 
 /** `{uploadId, title?}` attachment shorthand → a normal record attachment pointing at the stored upload. */
-function expandUploads(p: ProjectState, raw: Record<string, unknown>): void {
+export function expandUploads(p: ProjectState, raw: Record<string, unknown>): void {
   if (!Array.isArray(raw.attachments)) return;
   raw.attachments = raw.attachments.map((a: unknown, i: number) => {
     if (!a || typeof a !== "object" || !("uploadId" in a)) return a;
@@ -100,7 +105,7 @@ function expandUploads(p: ProjectState, raw: Record<string, unknown>): void {
   });
 }
 
-async function readRaw(file: string): Promise<{ text: string; json: Record<string, unknown> } | null> {
+export async function readRaw(file: string): Promise<{ text: string; json: Record<string, unknown> } | null> {
   let text: string;
   try { text = await fsp.readFile(file, "utf8"); } catch { return null; }
   try {
@@ -111,7 +116,7 @@ async function readRaw(file: string): Promise<{ text: string; json: Record<strin
   }
 }
 
-const rel = (p: ProjectState, file: string) => path.relative(p.dir, file).split(path.sep).join("/");
+export const rel = (p: ProjectState, file: string) => path.relative(p.dir, file).split(path.sep).join("/");
 
 export function registerPublishRoutes(app: FastifyInstance, store: Store, cfg: Config): void {
   const project = (id: string): ProjectState => {
@@ -186,9 +191,17 @@ export function registerPublishRoutes(app: FastifyInstance, store: Store, cfg: C
       if (raw.id !== recordId) throw new ApiFailure(400, "bad-request", "record.id differs from the id in the URL");
       raw.updatedAt ??= new Date().toISOString();
       expandUploads(p, raw);
-      const rec = validateRecord(p, raw);
+      const rec = validateRecord(p, raw, section);
 
       const existing = p.records.get(recordId);
+      // Fields only the dashboard user may change keep their stored value; an agent's full write cannot alter them.
+      const kept = existing ? existing.fields : {};
+      for (const def of section.manifest.fields) {
+        if (def.editableBy.includes("agent")) continue;
+        if ((rec.fields[def.id] ?? null) !== (kept[def.id] ?? null)) {
+          throw new ApiFailure(403, "field-not-editable", `field '${def.id}' can only be changed by: ${def.editableBy.join(", ")}`);
+        }
+      }
       if (existing && existing.sectionId !== section.manifest.id) {
         throw new ApiFailure(409, "id-conflict", `record ${recordId} already exists in section ${existing.sectionId}; record ids are unique per project`);
       }
@@ -226,49 +239,46 @@ export function registerPublishRoutes(app: FastifyInstance, store: Store, cfg: C
     priority: z.enum(PRIORITIES).optional(),
     notifyUser: z.boolean().optional(),
     history: z.object({ at: IsoTime.optional(), text: z.string().min(1).max(2000), by: z.string().max(80).optional() }).optional(),
+    fields: z.record(z.string().max(40), TrackedFieldValue).optional(),
+    /** Replaces the record's external references. */
+    external: z.array(ExternalRef).max(20).optional(),
     ifRevision: Revision.optional(),
   }).strict();
 
   app.patch<{ Params: { projectId: string; recordId: string } }>("/api/projects/:projectId/records/:recordId", async (req) => {
     const recordId = Id.parse(req.params.recordId);
     const body = PatchRecordBody.parse(req.body);
+    const grant = agentOf(req);
     return exclusive(project(req.params.projectId), async () => {
       const p = fresh(project(req.params.projectId));
       requirePublishing(p);
       const existing = p.records.get(recordId);
       if (!existing) throw new ApiFailure(404, "not-found", "record not found");
       publishSection(p, existing.sectionId);
-      const current = await readRaw(existing.file);
-      if (!current) throw new ApiFailure(404, "not-found", "record not found");
-      if (body.ifRevision && revisionOf(current.text) !== body.ifRevision) {
-        throw new ApiFailure(409, "revision-mismatch", "the record changed since you read it", undefined, { revision: revisionOf(current.text) });
+      return updateRecord(store, p, existing, body, { kind: "agent", name: grant ? grant.name : "api" });
+    });
+  });
+
+  // A dashboard user's own changes to a record: tracked fields, comments, attachments. Agents use PATCH instead.
+  const UserUpdateBody = z.object({
+    fields: z.record(z.string().max(40), TrackedFieldValue).optional(),
+    comment: z.string().trim().min(1).max(2000).optional(),
+    attach: z.array(z.object({ uploadId: Id, title: z.string().max(200).optional() })).max(10).optional(),
+    ifRevision: Revision.optional(),
+  }).strict();
+
+  app.post<{ Params: { projectId: string; recordId: string } }>("/api/projects/:projectId/records/:recordId/user-update", async (req) => {
+    const recordId = Id.parse(req.params.recordId);
+    const body = UserUpdateBody.parse(req.body);
+    return exclusive(project(req.params.projectId), async () => {
+      const p = fresh(project(req.params.projectId));
+      const existing = p.records.get(recordId);
+      if (!existing) throw new ApiFailure(404, "not-found", "record not found");
+      const section = p.sections.get(existing.sectionId)!;
+      if ((body.comment || body.attach) && !section.manifest.actions.includes("comment")) {
+        throw new ApiFailure(403, "not-allowed", `comments and attachments are not enabled for section ${section.manifest.id}`);
       }
-      const next: Record<string, unknown> = { ...current.json };
-      let changed = false;
-      const set = (k: string, v: unknown) => {
-        if (v === undefined) return;
-        if (v === null) { if (k in next) { delete next[k]; changed = true; } return; }
-        if (next[k] !== v) { next[k] = v; changed = true; }
-      };
-      set("status", body.status);
-      set("statusLabel", body.statusLabel);
-      set("summary", body.summary);
-      set("percent", body.percent);
-      set("priority", body.priority);
-      set("notifyUser", body.notifyUser);
-      if (body.history) {
-        const entry = { at: body.history.at ?? new Date().toISOString(), text: body.history.text, ...(body.history.by ? { by: body.history.by } : {}) };
-        const hist = Array.isArray(next.history) ? [...(next.history as Record<string, unknown>[])] : [];
-        // Same `at` and text = the same entry (a retried call); never append it twice.
-        if (!hist.some((h) => h && h.at === entry.at && h.text === entry.text)) { hist.push(entry); next.history = hist; changed = true; }
-      }
-      if (!changed) return { recordId, sectionId: existing.sectionId, revision: revisionOf(current.text), unchanged: true };
-      next.updatedAt = new Date().toISOString();
-      validateRecord(p, next);
-      const text = serialize(next);
-      await atomicWriteFile(existing.file, text);
-      await store.applyChanges(p.dir, [rel(p, existing.file)]);
-      return { recordId, sectionId: existing.sectionId, revision: revisionOf(text), unchanged: false };
+      return updateRecord(store, p, existing, body, { kind: "user", name: "user" });
     });
   });
 
@@ -328,4 +338,106 @@ export function registerPublishRoutes(app: FastifyInstance, store: Store, cfg: C
       return { revision: revisionOf(text), unchanged: false };
     });
   });
+}
+
+export interface RecordUpdate {
+  status?: string;
+  statusLabel?: string | null;
+  summary?: string;
+  percent?: number | null;
+  priority?: (typeof PRIORITIES)[number];
+  notifyUser?: boolean;
+  history?: { at?: string; text: string; by?: string };
+  fields?: Record<string, TrackedFieldValue>;
+  external?: ExternalRef[];
+  comment?: string;
+  attach?: { uploadId: string; title?: string }[];
+  ifRevision?: string;
+}
+
+/**
+ * The one place a stored record is changed in part: by an agent (PATCH) or by the dashboard user. Checks the revision
+ * and who may change which tracked field, validates the result, records each field change and comment in the history,
+ * writes atomically and re-indexes. Callers hold the project's publish lock.
+ */
+export async function updateRecord(
+  store: Store, p: ProjectState, existing: RecordEntry, u: RecordUpdate, actor: { kind: "user" | "agent"; name: string },
+): Promise<{ recordId: string; sectionId: string; revision: string; unchanged: boolean }> {
+  const section = p.sections.get(existing.sectionId)!;
+  const current = await readRaw(existing.file);
+  if (!current) throw new ApiFailure(404, "not-found", "record not found");
+  if (u.ifRevision && revisionOf(current.text) !== u.ifRevision) {
+    throw new ApiFailure(409, "revision-mismatch", "the record changed since you read it; reload and try again", undefined, { revision: revisionOf(current.text) });
+  }
+  const next: Record<string, unknown> = { ...current.json };
+  const now = new Date().toISOString();
+  const notes: { at: string; text: string; by?: string }[] = [];
+  let changed = false;
+  const set = (k: string, v: unknown) => {
+    if (v === undefined) return;
+    if (v === null) { if (k in next) { delete next[k]; changed = true; } return; }
+    if (JSON.stringify(next[k]) !== JSON.stringify(v)) { next[k] = v; changed = true; }
+  };
+  set("status", u.status);
+  set("statusLabel", u.statusLabel);
+  set("summary", u.summary);
+  set("percent", u.percent);
+  set("priority", u.priority);
+  set("notifyUser", u.notifyUser);
+  set("external", u.external);
+
+  if (u.fields && Object.keys(u.fields).length) {
+    const defs = new Map(section.manifest.fields.map((d) => [d.id, d]));
+    const fe = fieldErrors(section.manifest.fields, u.fields);
+    if (fe.length) {
+      throw new ApiFailure(422, "validation", `fields: ${fe.map((e) => `${e.fieldId}: ${e.message}`).join("; ")}`, fe.map((e) => ({ fieldId: `fields.${e.fieldId}`, message: e.message })));
+    }
+    const values = { ...((next.fields as Record<string, TrackedFieldValue> | undefined) ?? {}) };
+    let fieldChanged = false;
+    for (const [id, v] of Object.entries(u.fields)) {
+      const def = defs.get(id)!;
+      if (!def.editableBy.includes(actor.kind)) {
+        throw new ApiFailure(403, "field-not-editable", `field '${id}' can only be changed by: ${def.editableBy.join(", ")}`);
+      }
+      const before = values[id] ?? null;
+      if (before === v) continue;
+      if (v === null) delete values[id]; else values[id] = v;
+      fieldChanged = true;
+      notes.push({ at: now, text: `${def.label}: ${fieldValueText(def, before)} → ${fieldValueText(def, v)}`, by: actor.name });
+    }
+    if (fieldChanged) { next.fields = values; changed = true; }
+  }
+  if (u.attach?.length) {
+    const atts = Array.isArray(next.attachments) ? [...(next.attachments as { id?: string }[])] : [];
+    for (const a of u.attach) {
+      const up = uploadMeta(p, a.uploadId);
+      if (up?.answerId || up?.questionId) throw new ApiFailure(409, "id-conflict", `upload ${a.uploadId} belongs to a question's answer`);
+    }
+    const added = { attachments: u.attach.map((a) => ({ uploadId: a.uploadId, ...(a.title ? { title: a.title } : {}) })) } as Record<string, unknown>;
+    expandUploads(p, added);
+    for (const a of added.attachments as { id: string; title?: string }[]) {
+      if (atts.some((x) => x.id === a.id)) continue;
+      atts.push(a);
+      notes.push({ at: now, text: `Attached ${a.title ?? a.id}`, by: actor.name });
+      changed = true;
+    }
+    next.attachments = atts;
+  }
+  if (u.comment) notes.push({ at: now, text: u.comment, by: actor.name });
+  if (u.history) notes.push({ at: u.history.at ?? now, text: u.history.text, ...(u.history.by ? { by: u.history.by } : {}) });
+  if (notes.length) {
+    const hist = Array.isArray(next.history) ? [...(next.history as Record<string, unknown>[])] : [];
+    for (const n of notes) {
+      // Same `at` and text = the same entry (a retried call); never append it twice.
+      if (!hist.some((h) => h && h.at === n.at && h.text === n.text)) { hist.push(n); changed = true; }
+    }
+    next.history = hist.slice(-500);
+  }
+  if (!changed) return { recordId: existing.id, sectionId: existing.sectionId, revision: revisionOf(current.text), unchanged: true };
+  next.updatedAt = now;
+  validateRecord(p, next, section);
+  const text = serialize(next);
+  await atomicWriteFile(existing.file, text);
+  await store.applyChanges(p.dir, [rel(p, existing.file)]);
+  return { recordId: existing.id, sectionId: existing.sectionId, revision: revisionOf(text), unchanged: false };
 }

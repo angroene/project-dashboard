@@ -4,6 +4,7 @@
  * frontend (form hints only; the server always re-validates).
  */
 import { z } from "zod";
+import { defaultErrors } from "./validate.js";
 
 export const SCHEMA_VERSION = 1 as const;
 
@@ -73,6 +74,7 @@ export type DisplayType = z.infer<typeof DisplayType>;
 
 export const ACTIONS = [
   "copy", "download", "bulk-download", "export-xlsx", "import-xlsx", "respond", "upload", "mark-read", "open-detail",
+  "comment",
 ] as const;
 export const Action = z.enum(ACTIONS);
 export type Action = z.infer<typeof Action>;
@@ -101,6 +103,14 @@ export const SectionManifest = z.object({
     })
     .default({ sort: "updated-desc" }),
   pageSize: z.number().int().min(5).max(200).default(25),
+  /** Tracked fields: independent, typed values on every record of this card, edited by the user and/or agents. */
+  fields: z.lazy(() => z.array(TrackedFieldDef).max(20)).default([]).superRefine((list, ctx) => {
+    const seen = new Set<string>();
+    for (const f of list) {
+      if (seen.has(f.id)) ctx.addIssue({ code: "custom", message: `duplicate field '${f.id}'` });
+      seen.add(f.id);
+    }
+  }),
 });
 export type SectionManifest = z.infer<typeof SectionManifest>;
 
@@ -115,6 +125,33 @@ export const ALLOWED_CHILDREN: Record<"root" | DisplayType, readonly DisplayType
   "expandable-card": [],
 };
 export const MAX_SECTION_DEPTH = 3;
+
+// --------------------------------------------------------- tracked fields --
+export const TRACKED_FIELD_TYPES = ["checkbox", "choice", "text", "date"] as const;
+export const FIELD_EDITORS = ["user", "agent"] as const;
+/** One independently tracked value per record, e.g. "Reviewed" (checkbox) next to "Decision" (choice). */
+export const TrackedFieldDef = z.object({
+  id: z.string().regex(/^[a-z][a-zA-Z0-9_-]{0,39}$/, "field id: letter first, then letters, digits, _ or - (max 40)"),
+  label: z.string().min(1).max(60),
+  type: z.enum(TRACKED_FIELD_TYPES),
+  help: z.string().max(300).optional(),
+  /** For type "choice". */
+  options: z.array(ChoiceOptionLazy()).min(1).max(30).optional(),
+  /** Who may change it: the dashboard user, agents (publish scope), or both (default). */
+  editableBy: z.array(z.enum(FIELD_EDITORS)).min(1).max(2).default(["user", "agent"]),
+  /** Show a filter for this field in the card header (checkbox and choice fields). */
+  filter: z.boolean().default(false),
+}).superRefine((f, ctx) => {
+  if (f.type === "choice" && !f.options) ctx.addIssue({ code: "custom", message: "a choice field needs options", path: ["options"] });
+  if (f.type !== "choice" && f.options) ctx.addIssue({ code: "custom", message: "options are only for choice fields", path: ["options"] });
+});
+export type TrackedFieldDef = z.infer<typeof TrackedFieldDef>;
+function ChoiceOptionLazy() {
+  return z.object({ id: z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/), label: z.string().min(1).max(60) });
+}
+/** A tracked field's stored value: checkbox → boolean, choice → option id, text → string, date → YYYY-MM-DD; null = cleared. */
+export const TrackedFieldValue = z.union([z.boolean(), z.string().max(2000), z.null()]);
+export type TrackedFieldValue = z.infer<typeof TrackedFieldValue>;
 
 // -------------------------------------------------------------- progress ---
 export const ProgressFile = z.object({
@@ -148,12 +185,15 @@ const ChoiceBase = {
   allowExplanation: z.boolean().default(false),
   required: z.boolean().default(true),
 };
-export const SingleChoiceField = z.object({ type: z.literal("single-choice"), ...ChoiceBase });
+// `default` on a field is shown pre-selected in the form. It is never submitted on the user's behalf: an answer exists
+// only after the user submits it. Defaults are checked against the field (see defaultErrors in validate.ts).
+export const SingleChoiceField = z.object({ type: z.literal("single-choice"), ...ChoiceBase, default: Id.optional() });
 export const MultipleChoiceField = z.object({
   type: z.literal("multiple-choice"),
   ...ChoiceBase,
   minSelected: z.number().int().min(0).max(50).default(1),
   maxSelected: z.number().int().min(1).max(50).optional(),
+  default: z.array(Id).max(50).optional(),
 });
 export const FreeTextField = z.object({
   type: z.literal("free-text"),
@@ -162,12 +202,15 @@ export const FreeTextField = z.object({
   maxLength: z.number().int().min(1).max(20000).default(5000),
   multiline: z.boolean().default(true),
   placeholder: z.string().max(200).optional(),
+  default: z.string().max(20000).optional(),
 });
 export const ApprovalField = z.object({
   type: z.literal("approval"),
   required: z.boolean().default(true),
   allowRationale: z.boolean().default(true),
   requireRationaleOnReject: z.boolean().default(false),
+  /** Yes/no questions use this type; `default` pre-selects approve (yes) or reject (no). */
+  default: z.enum(["approve", "reject"]).optional(),
 });
 export const FileUploadField = z.object({
   type: z.literal("file-upload"),
@@ -265,6 +308,22 @@ export const RecordLink = z.object({
   url: z.string().url().refine((u) => /^https?:\/\//i.test(u), "only http(s) links"),
 });
 
+/**
+ * A reference to a work item elsewhere (a change request, a ticket, a build). Display only: the dashboard never acts
+ * on it. `status` is what the source system reported, as of `statusAt`, and is shown as such.
+ */
+export const ExternalRef = z.object({
+  system: z.string().min(1).max(40),
+  id: z.string().min(1).max(120),
+  title: z.string().max(300).optional(),
+  url: z.string().max(2000).url().refine((u) => /^https?:\/\//i.test(u), "only http(s) links").optional(),
+  /** Branch, revision or change reference. */
+  ref: z.string().max(200).optional(),
+  status: z.string().max(60).optional(),
+  statusAt: IsoTime.optional(),
+}).strict();
+export type ExternalRef = z.infer<typeof ExternalRef>;
+
 const RecordBase = {
   schemaVersion: SchemaVersion,
   id: Id,
@@ -286,6 +345,12 @@ const RecordBase = {
   /** When true this record counts as an unread update until the user marks it read (per updatedAt). */
   notifyUser: z.boolean().default(false),
   percent: z.number().min(0).max(100).nullable().optional(),
+  /** Values of the card's tracked fields (see SectionManifest.fields). */
+  fields: z.record(z.string().max(40), TrackedFieldValue).default({}),
+  /** References to work items in other systems. Their status is what that system reported, kept apart from fields. */
+  external: z.array(z.lazy(() => ExternalRef)).max(20).default([]),
+  /** Set on records generated from a recurring template. */
+  occurrence: z.object({ templateId: Id, date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).optional(),
 };
 
 export const QuestionRecord = z.object({
@@ -317,8 +382,45 @@ export const AnyRecord = z.discriminatedUnion("recordType", [
   if (r.recordType === "question" && r.requiresResponse && !r.answerSchema) {
     ctx.addIssue({ code: "custom", message: "requiresResponse=true needs answerSchema", path: ["answerSchema"] });
   }
+  if (r.recordType === "question" && r.answerSchema) {
+    for (const e of defaultErrors(r.answerSchema)) {
+      ctx.addIssue({ code: "custom", message: `default for field '${e.fieldId}': ${e.message}`, path: ["answerSchema"] });
+    }
+  }
 });
 export type AnyRecord = z.infer<typeof AnyRecord>;
+
+// ------------------------------------------------------ recurring records --
+export const TEMPLATE_STATES = ["active", "paused", "disabled"] as const;
+const LocalDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date as YYYY-MM-DD").refine((d) => !Number.isNaN(Date.parse(`${d}T00:00:00Z`)) && new Date(`${d}T00:00:00Z`).toISOString().startsWith(d), "not a calendar date");
+export function isTimeZone(tz: string): boolean {
+  try { new Intl.DateTimeFormat("en-US", { timeZone: tz }); return true; } catch { return false; }
+}
+/**
+ * A template the server turns into one record per day (`<template id>-<YYYY-MM-DD>`), in the card whose `templates/`
+ * folder holds it. Occurrences are ordinary records; a template never answers its questions.
+ */
+export const RecurringTemplate = z.object({
+  schemaVersion: SchemaVersion,
+  /** At most 117 characters so that "<id>-YYYY-MM-DD" is a valid record id. */
+  id: Id.refine((v) => v.length <= 117, "template id: at most 117 characters"),
+  title: z.string().min(1).max(200),
+  state: z.enum(TEMPLATE_STATES).default("active"),
+  schedule: z.object({
+    frequency: z.literal("daily"),
+    /** Local wall-clock time in `timezone` from which the day's occurrence is created. */
+    time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "time as HH:MM").default("00:00"),
+    timezone: z.string().max(64).refine(isTimeZone, "unknown time zone"),
+    startDate: LocalDate,
+    endDate: LocalDate.optional(),
+    /** After downtime, also create up to this many missed earlier days (0 = only today). */
+    catchUpDays: z.number().int().min(0).max(31).default(0),
+  }).refine((s) => !s.endDate || s.endDate >= s.startDate, { message: "endDate before startDate", path: ["endDate"] }),
+  /** The record each occurrence starts from, without id. "{date}" in title, summary and bodyMarkdown is replaced. */
+  record: z.record(z.string(), z.unknown()).refine((r) => !("id" in r) && !("occurrence" in r), "the template's record must not set id or occurrence (the server sets them)"),
+});
+export type RecurringTemplate = z.infer<typeof RecurringTemplate>;
+export type TemplateState = (typeof TEMPLATE_STATES)[number];
 
 // --------------------------------------------------------------- activity --
 export const ActivityEvent = z.object({

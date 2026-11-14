@@ -193,3 +193,59 @@ describe("apd CLI", () => {
     expect(d.question.uiState).toBe("failed");
   });
 });
+
+describe("apd CLI: tracked fields, external references, listing, templates", () => {
+  async function withFields() {
+    const s = await server({ auth: true });
+    const a = path.join(s.root, "projects", "alpha", "sections", "dev", "work");
+    writeJson(path.join(a, "reviews", "section.json"), { schemaVersion: 1, id: "reviews", displayType: "expandable-card", title: "Reviews", fields: [
+      { id: "built", label: "Built", type: "checkbox", editableBy: ["agent"], filter: true },
+      { id: "reviewed", label: "Reviewed", type: "checkbox", editableBy: ["user"] },
+      { id: "note", label: "Note", type: "text" },
+    ] });
+    writeJson(path.join(a, "reviews", "records", "R1.json"), { schemaVersion: 1, id: "R1", recordType: "review", title: "R1", status: "needs-review", updatedAt: "2026-11-01T10:00:00Z" });
+    writeJson(path.join(a, "reviews", "records", "R2.json"), { schemaVersion: 1, id: "R2", recordType: "review", title: "R2", status: "needs-review", updatedAt: "2026-11-01T10:00:00Z" });
+    writeJson(path.join(a, "reviews", "templates", "daily.json"), { schemaVersion: 1, id: "daily", title: "Daily", state: "paused",
+      schedule: { frequency: "daily", timezone: "UTC", startDate: "2026-11-01" }, record: { recordType: "review", status: "needs-review" } });
+    const re = await s.app.inject({ method: "POST", url: "/api/admin/reindex", headers: { ...POST_HEADERS, authorization: `Bearer ${OPERATOR}` }, payload: "{}" });
+    expect(re.statusCode).toBe(200);
+    return s;
+  }
+
+  it("sets agent fields and external references, and lists filtered summaries", async () => {
+    const s = await withFields();
+    const refs = path.join(s.work, "refs.json");
+    fs.writeFileSync(refs, "﻿" + JSON.stringify([{ system: "ci", id: "build-41", url: "https://ci.example/41", status: "passed" }]));
+    const up = await s.apd(["update", "R1", "--field", "built=true", "--field", "note=green on main", "--external", refs]);
+    expect(up.code, up.stderr).toBe(0);
+    const list = await s.apd(["list", "--section", "reviews", "--field", "built=true"]);
+    expect(list.code, list.stderr).toBe(0);
+    const items = list.out.items as { id: string; fields: Record<string, unknown>; external: { id: string }[] }[];
+    expect(items.map((i) => i.id)).toEqual(["R1"]);
+    expect(items[0].fields).toEqual({ built: true, note: "green on main" });
+    expect(items[0].external[0].id).toBe("build-41");
+    const clear = await s.apd(["update", "R1", "--field", "note=none"]);
+    expect(clear.code).toBe(0);
+    const none = await s.apd(["list", "--section", "reviews", "--field", "built="]);
+    expect((none.out.items as { id: string }[]).map((i) => i.id)).toEqual(["R2"]);
+  });
+
+  it("is refused for user-only fields and stale revisions; bad flags are usage errors", async () => {
+    const s = await withFields();
+    const user = await s.apd(["update", "R1", "--field", "reviewed=true"]);
+    expect(user.code).toBe(1);
+    expect(user.err?.error).toBe("field-not-editable");
+    const stale = await s.apd(["update", "R1", "--field", "built=true", "--if-revision", "0000000000000000"]);
+    expect(stale.code).toBe(1);
+    expect(stale.err?.error).toBe("revision-mismatch");
+    expect((await s.apd(["update", "R1", "--field", "built"])).code).toBe(2);
+    expect((await s.apd(["list"])).code).toBe(2);
+  });
+
+  it("lists templates", async () => {
+    const s = await withFields();
+    const r = await s.apd(["templates"]);
+    expect(r.code, r.stderr).toBe(0);
+    expect(r.out.templates).toMatchObject([{ id: "daily", sectionId: "reviews", state: "paused" }]);
+  });
+});

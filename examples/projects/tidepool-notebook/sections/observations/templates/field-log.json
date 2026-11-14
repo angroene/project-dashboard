@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "field-log",
+  "title": "Daily field log",
+  "state": "paused",
+  "schedule": {
+    "frequency": "daily",
+    "time": "07:00",
+    "timezone": "Pacific/Honolulu",
+    "startDate": "2026-11-01",
+    "catchUpDays": 1
+  },
+  "record": {
+    "recordType": "question",
+    "title": "Field log {date}",
+    "summary": "Did you visit the tide pools today?",
+    "status": "open",
+    "requiresResponse": true,
+    "questionRevision": 1,
+    "answerSchema": {
+      "type": "composite",
+      "fields": [
+        {
+          "id": "visited",
+          "label": "Visited the pools",
+          "type": "approval",
+          "default": "approve"
+        },
+        {
+          "id": "tide",
+          "label": "Tide",
+          "type": "single-choice",
+          "options": [
+            {
+              "id": "low",
+              "label": "Low"
+            },
+            {
+              "id": "mid",
+              "label": "Mid"
+            },
+            {
+              "id": "high",
+              "label": "High"
+            }
+          ],
+          "default": "low"
+        },
+        {
+          "id": "notes",
+          "label": "Notes",
+          "type": "free-text",
+          "required": false,
+          "maxLength": 2000
+        }
+      ]
+    }
+  }
+}

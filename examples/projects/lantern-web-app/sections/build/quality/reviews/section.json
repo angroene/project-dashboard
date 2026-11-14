@@ -8,6 +8,51 @@
     "copy",
     "open-detail",
     "download",
-    "mark-read"
+    "mark-read",
+    "comment"
+  ],
+  "fields": [
+    {
+      "id": "reviewed",
+      "label": "Reviewed",
+      "type": "checkbox",
+      "editableBy": [
+        "user"
+      ],
+      "filter": true
+    },
+    {
+      "id": "decision",
+      "label": "Decision",
+      "type": "choice",
+      "options": [
+        {
+          "id": "approve",
+          "label": "Approve"
+        },
+        {
+          "id": "changes",
+          "label": "Request changes"
+        }
+      ],
+      "editableBy": [
+        "user"
+      ],
+      "filter": true
+    },
+    {
+      "id": "checks",
+      "label": "Checks passed",
+      "type": "checkbox",
+      "editableBy": [
+        "agent"
+      ],
+      "help": "Set by the build agent."
+    },
+    {
+      "id": "followUp",
+      "label": "Follow-up by",
+      "type": "date"
+    }
   ]
 }

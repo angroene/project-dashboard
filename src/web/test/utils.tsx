@@ -2,7 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 import { render } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { vi } from "vitest";
-import type { NavNode, ProjectCard, RecordDetail, RecordSummary, SessionInfo } from "../../shared/api";
+import type { NavNode, ProjectCard, RecordDetail, RecordPage, RecordSummary, SessionInfo } from "../../shared/api";
 import { buildNavIndex, ProjectContext, SessionContext, type ProjectCtx } from "../context";
 import { ToastProvider } from "../components/Toasts";
 
@@ -141,6 +141,9 @@ export function summary(over: Partial<RecordSummary> & Pick<RecordSummary, "id" 
 export function detail(over: Partial<RecordDetail> & Pick<RecordDetail, "id" | "title">): RecordDetail {
   return {
     ...summary(over),
+    revision: "0123456789abcdef",
+    fieldDefs: [],
+    canComment: false,
     bodyMarkdown: "",
     attachments: [],
     links: [],
@@ -151,10 +154,11 @@ export function detail(over: Partial<RecordDetail> & Pick<RecordDetail, "id" | "
   };
 }
 
-export function page(items: RecordSummary[], extra: Partial<{ statusCounts: Record<string, number>; statusLabels: Record<string, string>; unfilteredTotal: number; nextCursor: string | null; needsResponseCount: number }> = {}) {
+export function page(items: RecordSummary[], extra: Partial<{ statusCounts: Record<string, number>; statusLabels: Record<string, string>; unfilteredTotal: number; nextCursor: string | null; needsResponseCount: number } & Pick<RecordPage, "fieldDefs" | "fieldCounts" | "templates" | "canComment">> = {}) {
   return {
     sectionId: "cards", total: items.length, unfilteredTotal: extra.unfilteredTotal ?? items.length, statusCounts: extra.statusCounts ?? {}, statusLabels: extra.statusLabels ?? {},
     ...(extra.needsResponseCount !== undefined ? { needsResponseCount: extra.needsResponseCount } : {}),
+    fieldDefs: extra.fieldDefs ?? [], fieldCounts: extra.fieldCounts ?? {}, templates: extra.templates ?? [], canComment: extra.canComment ?? false,
     items, nextCursor: extra.nextCursor ?? null,
   };
 }

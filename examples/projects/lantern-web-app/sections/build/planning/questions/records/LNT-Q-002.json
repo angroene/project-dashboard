@@ -11,6 +11,7 @@
     "type": "approval",
     "required": true,
     "allowRationale": true,
-    "requireRationaleOnReject": true
+    "requireRationaleOnReject": true,
+    "default": "approve"
   }
 }

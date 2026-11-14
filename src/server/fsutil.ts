@@ -81,6 +81,46 @@ export async function createExclusive(file: string, data: unknown): Promise<bool
   }
 }
 
+/**
+ * Create a complete file only if none exists: the content is written and synced to a temp file first, then
+ * hard-linked into place (atomic, and fails with EEXIST when the target exists, also across processes). Readers never
+ * see a partial file. Falls back to O_EXCL creation on filesystems without hard links. Returns false when it existed.
+ */
+export async function createExclusiveAtomic(file: string, content: string): Promise<boolean> {
+  const dir = path.dirname(file);
+  await fsp.mkdir(dir, { recursive: true });
+  const tmp = path.join(dir, `.${path.basename(file)}.${process.pid}.${crypto.randomBytes(6).toString("hex")}.tmp`);
+  const fh = await fsp.open(tmp, "wx");
+  try {
+    await fh.writeFile(content);
+    await fh.sync();
+  } finally {
+    await fh.close();
+  }
+  try {
+    await fsp.link(tmp, file);
+    return true;
+  } catch (e) {
+    const code = (e as NodeJS.ErrnoException).code;
+    if (code === "EEXIST") return false;
+    if (code !== "EPERM" && code !== "ENOTSUP" && code !== "ENOSYS" && code !== "EXDEV") throw e;
+    return createExclusiveText(file, content);
+  } finally {
+    await fsp.rm(tmp, { force: true });
+  }
+}
+
+async function createExclusiveText(file: string, content: string): Promise<boolean> {
+  try {
+    const fh = await fsp.open(file, "wx");
+    try { await fh.writeFile(content); await fh.sync(); } finally { await fh.close(); }
+    return true;
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "EEXIST") return false;
+    throw e;
+  }
+}
+
 /** Windows can briefly lock files (AV, indexer); retry renames a few times. */
 export async function renameWithRetry(from: string, to: string): Promise<void> {
   let last: unknown;

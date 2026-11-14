@@ -9,17 +9,17 @@ import yazl from "yazl";
 import { z } from "zod";
 import type {
   ActivityPage, AttentionResponse, DiagnosticsResponse, ImportCommitResponse, MarkReadResponse, NavigationResponse,
-  ProgressResponse, ProjectsResponse, RecordDetail, RecordPage, SessionInfo, SubmitAnswerResponse, UploadResponse, ZipPreflight,
+  ProgressResponse, ProjectsResponse, RecordDetail, RecordPage, SessionInfo, SubmitAnswerResponse, TemplateSummary, UploadResponse, ZipPreflight,
 } from "../shared/api.js";
-import { Id, SubmitAnswerRequest, type QuestionRecord } from "../shared/schemas.js";
+import { Id, RecurringTemplate, SubmitAnswerRequest, TEMPLATE_STATES, type QuestionRecord } from "../shared/schemas.js";
 import { agentMayUseProject, agentOf, Auth } from "./auth.js";
 import { statusInfo } from "../shared/workflow.js";
 import { ApiFailure, claimNext, completeAnswer, failAnswer, listQueue, readAnswer, recoverExpiredLeases, recoverStaging, submitAnswer } from "./answers.js";
 import { attachmentRef, inlineSafe, resolveAttachment, type ResolvedAttachment } from "./attachments.js";
 import type { Config } from "./config.js";
-import { sanitizeFileName } from "./fsutil.js";
-import { registerPublishRoutes } from "./publish.js";
-import { claimKey, parseRecordFile, Store, type ProjectState, type RecordEntry } from "./store.js";
+import { atomicWriteFile, sanitizeFileName } from "./fsutil.js";
+import { readRaw, registerPublishRoutes, revisionOf, serialize } from "./publish.js";
+import { claimKey, parseRecordFile, Store, type ProjectState, type RecordEntry, type TemplateEntry } from "./store.js";
 import { storeUpload, UploadRejected } from "./uploads.js";
 import { buildWorkbook, commitImport, previewImport } from "./xlsx.js";
 
@@ -153,6 +153,13 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
         rows = rows.filter((r) => wanted.has(r.status) || (r.question && wanted.has(store.questionUiState(p, r)!)));
       }
       if (q.unread === "1") rows = rows.filter((r) => store.isUnread(p, r));
+      // Tracked-field filters: `field.<id>=a,b` keeps records whose value is one of a, b ("" = not set; true/false for checkboxes).
+      for (const def of s.manifest.fields) {
+        const want = q[`field.${def.id}`];
+        if (want === undefined) continue;
+        const allowed = new Set(String(want).split(","));
+        rows = rows.filter((r) => allowed.has(fieldKey(r.fields[def.id])));
+      }
       if (q.q) {
         const needle = String(q.q).toLowerCase().slice(0, 200);
         rows = rows.filter((r) => r.title.toLowerCase().includes(needle) || r.summary.toLowerCase().includes(needle) || r.id.toLowerCase().includes(needle));
@@ -183,6 +190,14 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
         statusCounts,
         statusLabels,
         ...(answerable ? { needsResponseCount: needsResponse } : {}),
+        fieldDefs: s.manifest.fields,
+        fieldCounts: Object.fromEntries(s.manifest.fields.filter((d) => d.filter).map((d) => {
+          const counts: Record<string, number> = {};
+          for (const r of all) { const k = fieldKey(r.fields[d.id]); counts[k] = (counts[k] ?? 0) + 1; }
+          return [d.id, counts];
+        })),
+        templates: [...p.templates.values()].filter((t) => t.sectionId === s.manifest.id).map((t) => templateSummary(p, t)),
+        canComment: s.manifest.actions.includes("comment"),
         items: page.map((r) => store.summary(p, r)),
         nextCursor: last && start + limit < rows.length
           ? encodeCursor({ id: last.id, updatedAt: last.updatedAt, priority: last.priority, title: last.title, order: last.order })
@@ -195,12 +210,16 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
     const p = project(req.params.projectId);
     const entry = p.records.get(req.params.recordId);
     if (!entry) throw new ApiFailure(404, "not-found", "record not found");
-    const parsed = await parseRecordFile(entry.file);
-    if (!parsed.ok) throw new ApiFailure(409, "unavailable", `record cannot be read: ${parsed.error}`);
+    const [parsed, raw] = await Promise.all([parseRecordFile(entry.file), readRaw(entry.file)]);
+    if (!parsed.ok || !raw) throw new ApiFailure(409, "unavailable", `record cannot be read: ${parsed.ok ? "file vanished" : parsed.error}`);
     const rec = parsed.record;
     const pid = p.manifest.id;
+    const section = p.sections.get(entry.sectionId)!;
     const detail: RecordDetail = {
       ...store.summary(p, entry),
+      revision: revisionOf(raw.text),
+      fieldDefs: section.manifest.fields,
+      canComment: section.manifest.actions.includes("comment"),
       createdAt: rec.createdAt,
       bodyMarkdown: rec.bodyMarkdown,
       attachments: rec.attachments.map((a) => {
@@ -230,6 +249,33 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
       }
     }
     return detail;
+  });
+
+  // ------------------------------------------------------- recurring templates --
+  app.get<{ Params: { projectId: string } }>("/api/projects/:projectId/templates", async (req): Promise<{ templates: TemplateSummary[] }> => {
+    const p = project(req.params.projectId);
+    return { templates: [...p.templates.values()].sort((a, b) => a.id.localeCompare(b.id)).map((t) => templateSummary(p, t)) };
+  });
+
+  const TemplateStateBody = z.object({ state: z.enum(TEMPLATE_STATES) }).strict();
+  app.post<{ Params: { projectId: string; templateId: string } }>("/api/projects/:projectId/templates/:templateId/state", async (req): Promise<TemplateSummary> => {
+    const body = TemplateStateBody.parse(req.body);
+    const id = req.params.projectId;
+    return store.mutex.run(`publish:${project(id).manifest.id}`, async () => {
+      const p = project(id);
+      const entry = p.templates.get(req.params.templateId);
+      if (!entry) throw new ApiFailure(404, "not-found", "template not found");
+      const raw = await readRaw(entry.file);
+      if (!raw) throw new ApiFailure(404, "not-found", "template not found");
+      const parsed = RecurringTemplate.safeParse({ ...raw.json, state: body.state });
+      if (!parsed.success) throw new ApiFailure(409, "unavailable", `template file is invalid; fix it first (${entry.error ?? parsed.error.issues[0]?.message})`);
+      if (raw.json.state !== body.state) {
+        await atomicWriteFile(entry.file, serialize({ ...raw.json, state: body.state }));
+        await store.applyChanges(p.dir, [path.relative(p.dir, entry.file).split(path.sep).join("/")]);
+      }
+      const after = project(id);
+      return templateSummary(after, after.templates.get(entry.id) ?? entry);
+    });
   });
 
   app.get<{ Params: { projectId: string } }>("/api/projects/:projectId/progress", async (req): Promise<ProgressResponse> => {
@@ -562,4 +608,22 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
 function contentDisposition(kind: "inline" | "attachment", name: string): string {
   const ascii = name.replace(/[^\x20-\x7e]/g, "_").replace(/["\\]/g, "_");
   return `${kind}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name)}`;
+}
+
+/** Filter/count key of a tracked field value: "" when not set, "true"/"false" for checkboxes. */
+function fieldKey(v: unknown): string {
+  return v === undefined || v === null ? "" : String(v);
+}
+
+function templateSummary(p: ProjectState, t: TemplateEntry): TemplateSummary {
+  const tpl = t.template;
+  return {
+    id: t.id,
+    sectionId: t.sectionId,
+    title: tpl?.title ?? t.id,
+    state: tpl?.state ?? "disabled",
+    schedule: tpl ? { ...tpl.schedule } : { frequency: "daily", time: "00:00", timezone: "UTC", startDate: "", catchUpDays: 0 },
+    ...(p.recurrenceCursor[t.id] ? { lastDate: p.recurrenceCursor[t.id] } : {}),
+    ...(t.error ?? t.runError ? { error: t.error ?? t.runError } : {}),
+  };
 }

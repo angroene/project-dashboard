@@ -335,3 +335,49 @@ describe("QuestionForm: composite and server errors", () => {
     expect(screen.getByRole("radio", { name: "Red" })).toBeChecked();
   });
 });
+
+describe("configured defaults", () => {
+  it("pre-selects the default, says so, and sends nothing until the user submits", async () => {
+    const api = mockFetch({ [`POST ${SUBMIT}`]: accepted });
+    renderForm(single({ default: "blue" }));
+    expect(screen.getByRole("radio", { name: /Blue/ })).toBeChecked();
+    expect(screen.getByTestId("field-default")).toHaveTextContent("Suggested default: Blue");
+    await new Promise((r) => setTimeout(r, 20));
+    expect(api.calls).toHaveLength(0);
+  });
+
+  it("the user can change the default; the changed value is what is submitted", async () => {
+    const api = mockFetch({ [`POST ${SUBMIT}`]: accepted });
+    renderForm(single({ default: "blue" }));
+    await userEvent.click(screen.getByRole("radio", { name: "Red" }));
+    await userEvent.click(submitBtn());
+    await screen.findByText("Submitted · Awaiting pickup");
+    expect((api.calls[0].body as { answers: unknown[] }).answers).toEqual([{ fieldId: "response", kind: "choice", optionIds: ["red"] }]);
+  });
+
+  it("an accepted default is submitted as an ordinary answer only when the user submits", async () => {
+    const api = mockFetch({ [`POST ${SUBMIT}`]: accepted });
+    renderForm({ type: "approval", required: true, allowRationale: true, requireRationaleOnReject: false, default: "approve" });
+    expect(screen.getByRole("radio", { name: "Approve" })).toBeChecked();
+    expect(screen.getByTestId("field-default")).toHaveTextContent("Suggested default: Approve");
+    await userEvent.click(submitBtn());
+    await screen.findByText("Submitted · Awaiting pickup");
+    expect((api.calls[0].body as { answers: unknown[] }).answers).toEqual([{ fieldId: "response", kind: "approval", decision: "approve" }]);
+  });
+
+  it("pre-fills multiple-choice and free-text defaults", () => {
+    mockFetch({});
+    renderForm({
+      type: "composite",
+      fields: [
+        { id: "langs", label: "Languages", type: "multiple-choice", required: true, options: [{ id: "en", label: "English" }, { id: "nl", label: "Dutch" }], allowOther: false, allowExplanation: false, minSelected: 1, default: ["nl"] },
+        { id: "note", label: "Note", type: "free-text", required: false, minLength: 0, maxLength: 100, multiline: false, default: "as before" },
+        { id: "plain", label: "Plain", type: "free-text", required: false, minLength: 0, maxLength: 100, multiline: false },
+      ],
+    } as AnswerSchema);
+    expect(screen.getByRole("checkbox", { name: "Dutch" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "English" })).not.toBeChecked();
+    expect(screen.getByDisplayValue("as before")).toBeInTheDocument();
+    expect(screen.getAllByTestId("field-default")).toHaveLength(2);
+  });
+});

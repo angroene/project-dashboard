@@ -10,6 +10,7 @@ import { RecordRow } from "./RecordRow";
 import { useCopy, useToast } from "./Toasts";
 import { ZipDialog } from "./ZipDialog";
 import { ImportDialog } from "./ImportDialog";
+import { FieldFilter, Templates } from "./CardExtras";
 
 const SORTS: { value: string; label: string }[] = [
   { value: "updated-desc", label: "Recently updated" },
@@ -90,7 +91,9 @@ function RecordList({ node, focusId }: { node: NavNode; focusId?: string }) {
   const [qInput, setQInput] = useState("");
   const q = useDebounced(qInput.trim(), 300);
   const [sort, setSort] = useState(node.filters.sort);
-  const params: RecordListParams = useMemo(() => ({ status, q, sort, limit: node.pageSize }), [status, q, sort, node.pageSize]);
+  const [fieldFilter, setFieldFilter] = useState<Record<string, string>>({});
+  const fields = useMemo(() => new URLSearchParams(Object.entries(fieldFilter).filter(([, v]) => v !== "*").map(([k, v]) => [`field.${k}`, v])).toString(), [fieldFilter]);
+  const params: RecordListParams = useMemo(() => ({ status, q, sort, limit: node.pageSize, fields }), [status, q, sort, node.pageSize, fields]);
 
   const query = useInfiniteQuery({
     queryKey: qk.records(pid, node.id, params),
@@ -99,6 +102,7 @@ function RecordList({ node, focusId }: { node: NavNode; focusId?: string }) {
       // Without a status the server applies the section's defaultStatus; "all" disables status filtering.
       sp.set("status", params.status || "all");
       if (params.q) sp.set("q", params.q);
+      for (const [k, v] of new URLSearchParams(params.fields ?? "")) sp.set(k, v);
       if (pageParam) sp.set("cursor", pageParam);
       return apiGet<RecordPage>(`${projectApi(pid)}/sections/${enc(node.id)}/records?${sp}`, signal);
     },
@@ -125,7 +129,7 @@ function RecordList({ node, focusId }: { node: NavNode; focusId?: string }) {
   // Selection (records kept by id so bulk actions can use their summaries).
   const [selected, setSelected] = useState<Map<string, RecordSummary>>(() => new Map());
   // Changing the filter, search or sort clears the selection.
-  const filterKey = `${status}\u0000${q}\u0000${sort}`;
+  const filterKey = `${status}\u0000${q}\u0000${sort}\u0000${fields}`;
   const [selectionKey, setSelectionKey] = useState(filterKey);
   if (selectionKey !== filterKey) {
     setSelectionKey(filterKey);
@@ -240,8 +244,13 @@ function RecordList({ node, focusId }: { node: NavNode; focusId?: string }) {
               </option>
             ))}
           </select>
+          {(first?.fieldDefs ?? []).filter((d) => d.filter && (d.type === "checkbox" || d.type === "choice")).map((d) => (
+            <FieldFilter key={d.id} def={d} counts={first?.fieldCounts[d.id] ?? {}} value={fieldFilter[d.id] ?? "*"} onChange={(v) => setFieldFilter((f) => ({ ...f, [d.id]: v }))} />
+          ))}
         </div>
       </div>
+
+      {first && first.templates.length > 0 && <Templates items={first.templates} />}
 
       {(selectable || canImport) && (
         <div className="toolbar" role="toolbar" aria-label={`${node.title} actions`}>
@@ -291,7 +300,7 @@ function RecordList({ node, focusId }: { node: NavNode; focusId?: string }) {
       {items.length > 0 && (
         <ul className={`records${query.isPlaceholderData ? " stale" : ""}`} role="list" aria-busy={query.isFetching}>
           {items.map((r) => (
-            <RecordRow key={r.id} summary={r} selectable={selectable} selected={selected.has(r.id)} onSelect={onSelect} focused={r.id === focusId} />
+            <RecordRow key={r.id} summary={r} selectable={selectable} selected={selected.has(r.id)} onSelect={onSelect} focused={r.id === focusId} fieldDefs={first?.fieldDefs} />
           ))}
         </ul>
       )}

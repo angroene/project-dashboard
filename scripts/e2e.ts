@@ -18,10 +18,12 @@ import yauzl from "yauzl";
 import { chromium, type Browser, type BrowserContext, type Page, type Request } from "playwright-core";
 import { buildApp } from "../src/server/app.js";
 import { loadConfig } from "../src/server/config.js";
+import { runRecurrence } from "../src/server/recurrence.js";
 import type { DiagnosticsResponse, ProjectsResponse, RecordDetail, RecordPage } from "../src/shared/api.js";
 
 const REPO = path.resolve(import.meta.dirname, "..");
 const FIXTURES = path.join(REPO, "fixtures", "data");
+const EXAMPLES = path.join(REPO, "examples", "projects");
 const WEB_ROOT = path.join(REPO, "dist", "web");
 const SHOTS = path.join(REPO, "docs", "screenshots");
 const MW = "harborlight";
@@ -694,6 +696,70 @@ await walk(12, "Failed answer: failure reason, Answer again → new pending queu
   expect(env.answers[0].text === "E2E second attempt after a failed pickup.", "resubmitted text");
   expect(fs.existsSync(path.join(failedDir, failedFile)), "failed envelope must stay for the audit trail");
   log(`${qid}: ${old.answerId} (failed) → ${env.answerId} (pending)`);
+});
+
+// #13 — generic capabilities on the fictional example projects: default answer, tracked fields, filter, comment,
+// external reference, recurring template resume → occurrence → pause.
+await walk(13, "Defaults, tracked fields, comments, external refs, recurring template (example projects)", async (log) => {
+  for (const name of fs.readdirSync(EXAMPLES)) fs.cpSync(path.join(EXAMPLES, name), projDir(name), { recursive: true });
+  const LNT = "lantern-web-app";
+  const TP = "tidepool-notebook";
+  await until("example projects indexed", async () => (await api<ProjectsResponse>("/api/projects")).projects.some((p) => p.id === TP));
+
+  // Default answer: pre-selected, labelled, nothing submitted.
+  await page.goto(`${BASE}/#/p/${LNT}?record=LNT-Q-002`);
+  const q = page.locator('[data-record-id="LNT-Q-002"]').first();
+  await q.locator(".question-form").waitFor();
+  expect(await q.getByRole("radio", { name: "Approve" }).isChecked(), "default Approve not pre-selected");
+  expect(((await q.getByTestId("field-default").textContent()) ?? "").includes("Suggested default: Approve"), "default not labelled");
+  expect(listJson(pendingDir(LNT)).length === 0, "a default must not create an answer");
+  await shot(page, "desktop-default-answer");
+
+  // Tracked fields and the external reference on a review.
+  await page.goto(`${BASE}/#/p/${LNT}?record=LNT-REV-001`);
+  const rev = page.locator('[data-record-id="LNT-REV-001"]').first();
+  await rev.locator(".tracked-fields").waitFor();
+  expect(((await rev.locator(".external-refs").textContent()) ?? "").includes("code review reports open"), "external status not shown as reported");
+  expect((await rev.locator(".external-refs a").getAttribute("rel")) === "noopener noreferrer", "external link rel");
+  const recFile = path.join(projDir(LNT), "sections", "build", "quality", "reviews", "records", "LNT-REV-001.json");
+  await rev.getByRole("checkbox", { name: "Reviewed" }).check();
+  await until("reviewed saved", async () => readJson<{ fields?: Record<string, unknown> }>(recFile).fields?.reviewed === true);
+  await rev.getByRole("combobox", { name: "Decision" }).selectOption("changes");
+  await until("decision saved", async () => readJson<{ fields?: Record<string, unknown> }>(recFile).fields?.decision === "changes");
+  await rev.getByRole("textbox", { name: "Add a comment" }).fill("E2E: please split the sync notes.");
+  await rev.getByRole("button", { name: "Add" }).click();
+  const hist = await until("comment in history", async () => {
+    const h = readJson<{ history?: { text: string; by?: string }[] }>(recFile).history ?? [];
+    return h.some((x) => x.text === "E2E: please split the sync notes.") ? h : null;
+  });
+  expect(hist.some((x) => x.text === "Reviewed: — → yes" && x.by === "user"), "field change not in history");
+  await rev.locator(".history").getByText("Decision: — → Request changes").waitFor();
+  expect((await rev.getByRole("checkbox", { name: "Checks passed" }).count()) === 0, "agent-only field must not be editable");
+  await shot(page, "desktop-review-fields");
+
+  // Filter the card by the field.
+  const card = page.locator('[data-section-id="reviews"]');
+  await card.getByRole("combobox", { name: "Filter by Reviewed" }).selectOption("false");
+  await card.getByText("No records match the current filter.").waitFor();
+  await card.getByRole("combobox", { name: "Filter by Reviewed" }).selectOption("true");
+  await card.locator('[data-record-id="LNT-REV-001"]').waitFor();
+  log("default shown, 2 fields + comment saved with history, field filter works");
+
+  // Recurring template: resume, scheduler run, occurrence appears live, pause again.
+  await page.goto(`${BASE}/#/p/${TP}?record=field-log-2026-11-13`);
+  const obs = page.locator('[data-section-id="observations"]');
+  await obs.getByText("Recurring templates (1)").click();
+  await obs.getByRole("button", { name: "Resume" }).click();
+  const tplFile = path.join(projDir(TP), "sections", "observations", "templates", "field-log.json");
+  await until("template active", async () => readJson<{ state: string }>(tplFile).state === "active");
+  const made = await runRecurrence(store, TP, new Date("2026-11-20T18:00:00Z"));
+  expect(made.created.join() === "field-log-2026-11-19,field-log-2026-11-20", `occurrences: ${made.created.join()}`);
+  expect((await runRecurrence(store, TP, new Date("2026-11-20T18:05:00Z"))).created.length === 0, "second run must create nothing");
+  await obs.locator('[data-record-id="field-log-2026-11-20"]').waitFor({ timeout: 15_000 });
+  await obs.getByRole("button", { name: "Pause" }).click();
+  await until("template paused", async () => readJson<{ state: string }>(tplFile).state === "paused");
+  await shot(page, "desktop-recurring");
+  log(`resumed → ${made.created.length} occurrences, idempotent re-run, paused`);
 });
 
 // ------------------------------------------------- screenshots (mobile) --

@@ -144,3 +144,27 @@ export function validateAnswer(
   }
   return errors;
 }
+
+/**
+ * The answer values a question's configured defaults would give, for pre-filling the form. Fields without a default
+ * are left out. This is display data only: nothing is submitted until the user submits the form.
+ */
+export function defaultAnswers(schema: AnswerSchema): AnswerValue[] {
+  const out: AnswerValue[] = [];
+  for (const f of fieldsOf(schema)) {
+    const d = f.def;
+    if (d.type === "single-choice" && d.default !== undefined) out.push({ fieldId: f.id, kind: "choice", optionIds: [d.default] });
+    else if (d.type === "multiple-choice" && d.default !== undefined) out.push({ fieldId: f.id, kind: "choice", optionIds: [...d.default] });
+    else if (d.type === "free-text" && d.default !== undefined) out.push({ fieldId: f.id, kind: "text", text: d.default });
+    else if (d.type === "approval" && d.default !== undefined) out.push({ fieldId: f.id, kind: "approval", decision: d.default });
+  }
+  return out;
+}
+
+/** Errors in configured defaults: each default must itself be a valid answer for its field. */
+export function defaultErrors(schema: AnswerSchema): FieldError[] {
+  const values = defaultAnswers(schema);
+  const withDefault = new Set(values.map((v) => v.fieldId));
+  // "required" errors for fields without a default are expected here and not about defaults.
+  return validateAnswer(schema, values).filter((e) => withDefault.has(e.fieldId));
+}

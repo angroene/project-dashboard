@@ -1301,3 +1301,14 @@ label.upload:has(+ .file-input:focus-visible) {
     transform: none;
   }
 }
+
+/* Tracked fields, comments, external references, recurring templates */
+.tracked-fields .meta-pair dd { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.tracked-fields .input { width: auto; min-width: 10rem; padding: 0.25rem 0.5rem; }
+.inline-edit { display: inline-flex; gap: 0.5rem; align-items: center; }
+.comment-box textarea { width: 100%; max-width: 40rem; display: block; }
+.comment-actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-top: 0.5rem; }
+.external-refs .pill { font-size: 0.75rem; }
+.templates { margin: 0.5rem 0; }
+.template-list { margin: 0.5rem 0 0; padding-left: 1.25rem; }
+.template-list li { margin: 0.25rem 0; }

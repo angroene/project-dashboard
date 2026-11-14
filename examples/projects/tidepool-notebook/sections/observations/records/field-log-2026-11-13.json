@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "id": "field-log-2026-11-13",
+  "recordType": "question",
+  "title": "Field log 2026-11-13",
+  "summary": "Did you visit the tide pools today?",
+  "status": "open",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "occurrence": {
+    "templateId": "field-log",
+    "date": "2026-11-13"
+  },
+  "createdAt": "2026-11-13T17:00:00Z",
+  "updatedAt": "2026-11-13T17:00:00Z",
+  "answerSchema": {
+    "type": "composite",
+    "fields": [
+      {
+        "id": "visited",
+        "label": "Visited the pools",
+        "type": "approval",
+        "default": "approve"
+      },
+      {
+        "id": "tide",
+        "label": "Tide",
+        "type": "single-choice",
+        "options": [
+          {
+            "id": "low",
+            "label": "Low"
+          },
+          {
+            "id": "mid",
+            "label": "Mid"
+          },
+          {
+            "id": "high",
+            "label": "High"
+          }
+        ],
+        "default": "low"
+      },
+      {
+        "id": "notes",
+        "label": "Notes",
+        "type": "free-text",
+        "required": false,
+        "maxLength": 2000
+      }
+    ]
+  }
+}

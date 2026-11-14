@@ -21,11 +21,13 @@ import path from "node:path";
 import crypto from "node:crypto";
 
 const USAGE = `usage: apd <command> [arguments] [--flags]
-discover   projects | capabilities
+discover   projects | capabilities | templates
+           list --section <id> [--status s,s] [--field id=v,v]... [--q text] [--limit n] [--cursor c]
 publish    ask --section <id> (--file f.json | --json '{...}') [--id ID]
            publish --section <id> (--file f.json | --json '{...}') [--id ID]
            update <recordId> [--status s] [--label text|none] [--summary text] [--percent n|none]
                   [--priority p] [--notify true|false] [--note text] [--by name]
+                  [--field id=value]... (true|false|none|text) [--external refs.json] [--if-revision r]
            event <eventId> --action a --summary text [--status info|success|warning|failure] [--area a]
                   [--record id] [--source s]   (or --file f.json)
            progress (--file f.json | --percent n|none [--label text] [--method text])
@@ -188,7 +190,18 @@ function need(v, what) {
   return String(v);
 }
 
-function readJsonInput(flags) {
+/** `--field id=value` flags → tracked field values: true/false → checkbox, none → cleared, anything else → text. */
+function fieldFlags(raw) {
+  const out = {};
+  for (const f of [].concat(raw)) {
+    const m = /^([^=]+)=(.*)$/s.exec(String(f));
+    if (!m) throw new ApdError("usage", `--field expects id=value, got '${f}'`, 2);
+    out[m[1]] = m[2] === "true" ? true : m[2] === "false" ? false : m[2] === "none" ? null : m[2];
+  }
+  return out;
+}
+
+function readJsonInput(flags, { array = false } = {}) {
   let text;
   if (typeof flags.json === "string") text = flags.json;
   else if (typeof flags.file === "string") {
@@ -198,10 +211,10 @@ function readJsonInput(flags) {
   text = text.replace(/^\uFEFF/, "");
   try {
     const v = JSON.parse(text);
-    if (!v || typeof v !== "object" || Array.isArray(v)) throw new Error("object expected");
+    if (array ? !Array.isArray(v) : !v || typeof v !== "object" || Array.isArray(v)) throw new Error(array ? "array expected" : "object expected");
     return v;
   } catch (e) {
-    throw new ApdError("usage", `input is not a JSON object: ${e.message}`, 2);
+    throw new ApdError("usage", `input is not a JSON ${array ? "array" : "object"}: ${e.message}`, 2);
   }
 }
 
@@ -229,6 +242,21 @@ export async function run(argv, env = process.env) {
     }
     case "capabilities":
       return (await request(s, "GET", `${proj()}/capabilities`)).data;
+    case "templates":
+      return (await request(s, "GET", `${proj()}/templates`)).data;
+    case "list": {
+      // One page of record summaries, filtered on the server: agents need not read every record.
+      const q = new URLSearchParams({ status: String(flags.status ?? "all"), limit: String(flags.limit ?? 50) });
+      if (flags.q) q.set("q", String(flags.q));
+      if (flags.cursor) q.set("cursor", String(flags.cursor));
+      for (const f of [].concat(flags.field ?? [])) {
+        const m = /^([^=]+)=(.*)$/.exec(String(f));
+        if (!m) throw new ApdError("usage", `--field expects id=value, got '${f}'`, 2);
+        q.set(`field.${m[1]}`, m[2]);
+      }
+      const r = (await request(s, "GET", `${proj()}/sections/${enc(need(flags.section, "--section"))}/records?${q}`)).data;
+      return { total: r.total, items: r.items, nextCursor: r.nextCursor };
+    }
 
     case "ask":
     case "publish": {
@@ -255,6 +283,11 @@ export async function run(argv, env = process.env) {
       if (flags.notify !== undefined) body.notifyUser = bool(flags.notify);
       // The timestamp is fixed here so a retried or replayed call is recognised as the same history entry.
       if (flags.note !== undefined) body.history = { at: new Date().toISOString(), text: need(flags.note, "--note text"), ...(flags.by ? { by: String(flags.by) } : {}) };
+      if (flags.field !== undefined) body.fields = fieldFlags(flags.field);
+      if (flags.external !== undefined) {
+        body.external = readJsonInput({ file: need(flags.external, "--external file") }, { array: true });
+      }
+      if (flags["if-revision"] !== undefined) body.ifRevision = need(flags["if-revision"], "--if-revision value");
       if (!Object.keys(body).length) throw new ApdError("usage", "update needs at least one field flag", 2);
       return publishCall(s, "PATCH", `${proj()}/records/${enc(id)}`, body);
     }

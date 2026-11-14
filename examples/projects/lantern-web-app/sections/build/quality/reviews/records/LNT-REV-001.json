@@ -12,5 +12,19 @@
       "path": "documents/api-notes.md",
       "mimeType": "text/markdown"
     }
+  ],
+  "fields": {
+    "checks": true
+  },
+  "external": [
+    {
+      "system": "code review",
+      "id": "PR-17",
+      "title": "Sync API notes",
+      "url": "https://code.example.org/lantern/pull/17",
+      "ref": "feature/sync-notes@3f9c2e1",
+      "status": "open",
+      "statusAt": "2026-11-10T07:55:00Z"
+    }
   ]
 }
