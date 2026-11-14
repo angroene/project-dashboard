@@ -302,7 +302,9 @@ function RecordList({ node, focusId }: { node: NavNode; focusId?: string }) {
         </p>
       )}
       {query.hasNextPage && (
-        <button type="button" className="btn load-more" disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>
+        // Disabled during any fetch: fetching the next page while the loaded pages refresh would cancel that refresh
+        // and keep stale rows (TanStack Query's documented caveat for infinite queries).
+        <button type="button" className="btn load-more" disabled={query.isFetching} onClick={() => void query.fetchNextPage()}>
           {query.isFetchingNextPage ? "Loading…" : "Load more"}
         </button>
       )}

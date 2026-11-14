@@ -14,7 +14,7 @@ import {
 import { validateAnswer, type FieldError } from "../shared/validate.js";
 import { atomicWriteJson, createExclusive, newId, readJson, renameWithRetry } from "./fsutil.js";
 import { ANSWERS_DIR, CLAIMS_DIR, claimKey, parseRecordFile, type ProjectState, type Store } from "./store.js";
-import { markUploadsUsed } from "./uploads.js";
+import { markUploadsUsed, uploadMeta } from "./uploads.js";
 
 export class ApiFailure extends Error {
   constructor(readonly status: number, readonly code: string, message: string, readonly fieldErrors?: FieldError[], readonly details?: unknown) {
@@ -96,7 +96,7 @@ export async function submitAnswer(
     const errors = validateAnswer(q.answerSchema, req.answers, {
       questionId,
       uploads: (id) => {
-        const u = p.uploads.get(id);
+        const u = uploadMeta(p, id);
         return u ? { mimeType: u.mimeType, questionId: u.questionId, answerId: u.answerId } : undefined;
       },
     });
@@ -251,11 +251,20 @@ export interface QueueItem { answerId: string; state: QueueState; questionId?: s
  * Compact listing of one queue folder (ids + question reference only), oldest first. Consumers use this instead of
  * scanning question files; answer ids sort by submission time.
  */
-export async function listQueue(p: ProjectState, state: QueueState, limit: number, after?: string): Promise<{ items: QueueItem[]; next?: string }> {
+export async function listQueue(
+  p: ProjectState, state: QueueState, limit: number, after?: string, match?: (questionId: string | undefined) => boolean,
+): Promise<{ items: QueueItem[]; next?: string }> {
   let files: string[] = [];
   try { files = (await fsp.readdir(answersDir(p, state))).filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -5)).sort(); } catch { return { items: [] }; }
   const byAnswer = new Map<string, { questionId: string; revision: number; submittedAt?: string }>();
   for (const c of p.claims.values()) byAnswer.set(c.answerId, { questionId: c.questionId, revision: c.revision, submittedAt: c.submittedAt });
+  // An answer written moments ago may not be in the in-memory claim index yet; read just those envelopes.
+  for (const f of files) {
+    if (byAnswer.has(f)) continue;
+    const env = await readAnswer(p, f);
+    if (env) byAnswer.set(f, { questionId: env.questionId, revision: env.questionRevision, submittedAt: env.submittedAt });
+  }
+  if (match) files = files.filter((f) => match(byAnswer.get(f)?.questionId));
   const start = after ? files.findIndex((f) => f > after) : 0;
   const page = start < 0 ? [] : files.slice(start, start + limit);
   const items = page.map((answerId): QueueItem => {

@@ -4,7 +4,7 @@ import path from "node:path";
 import type { AttachmentRef } from "../shared/api.js";
 import { safeResolve, sanitizeFileName } from "./fsutil.js";
 import type { ProjectState } from "./store.js";
-import { uploadDir } from "./uploads.js";
+import { uploadDir, uploadMeta } from "./uploads.js";
 
 const EXT_MIME: Record<string, string> = {
   ".md": "text/markdown", ".markdown": "text/markdown", ".txt": "text/plain", ".log": "text/plain",
@@ -28,7 +28,7 @@ export interface ResolvedAttachment {
 }
 
 export function resolveAttachment(p: ProjectState, id: string): ResolvedAttachment | null {
-  const up = p.uploads.get(id);
+  const up = uploadMeta(p, id);
   if (up) {
     // Type comes from the stored extension (server allowlist), never from the metadata file.
     const mimeType = EXT_MIME[path.extname(up.storedName).toLowerCase()] ?? "application/octet-stream";

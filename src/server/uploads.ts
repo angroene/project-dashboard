@@ -8,7 +8,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { pipeline } from "node:stream/promises";
 import { Transform, type Readable } from "node:stream";
-import { UploadMeta } from "../shared/schemas.js";
+import { idPattern, UploadMeta } from "../shared/schemas.js";
 import { atomicWriteJson, newId, readJson, safeResolve, sanitizeFileName } from "./fsutil.js";
 import { UPLOAD_SUBDIR, type ProjectState } from "./store.js";
 import type { Config } from "./config.js";
@@ -17,6 +17,27 @@ export class UploadRejected extends Error {}
 
 export function uploadDir(p: ProjectState): string {
   return path.join(safeResolve(p.dir, p.manifest.allowedAttachmentRoot), UPLOAD_SUBDIR);
+}
+
+/**
+ * An upload's metadata from the index, or from its sidecar file when the index has not caught up yet (a file uploaded
+ * moments ago while the project's uploads were being re-read). The sidecar is validated as at load time.
+ */
+export function uploadMeta(p: ProjectState, id: string): UploadMeta | undefined {
+  const known = p.uploads.get(id);
+  if (known || !idPattern.test(id)) return known;
+  let raw: unknown;
+  try {
+    const file = path.join(uploadDir(p), `${id}.meta.json`);
+    if (fs.statSync(file).size > 16 * 1024) return undefined;
+    raw = JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    return undefined;
+  }
+  const parsed = UploadMeta.safeParse(raw);
+  if (!parsed.success || parsed.data.attachmentId !== id || !parsed.data.storedName.startsWith(`${id}.`)) return undefined;
+  p.uploads.set(id, parsed.data);
+  return parsed.data;
 }
 
 export function mimeForName(cfg: Config, name: string): string | null {

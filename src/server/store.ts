@@ -481,32 +481,21 @@ export class Store extends EventEmitter {
       return;
     }
     const id = p.manifest.id;
-    const answersOnly = files.every((f) => f.startsWith(`${COMM_DIR}/`) || f === COMM_DIR);
-    if (answersOnly) {
-      await this.reloadAnswers(p);
-      this.invalidate({ projectId: id, scopes: ["answers", "records", "projects", "navigation"] });
-      return;
+    // Classify every changed path. A batch made only of data files (answers, activity, progress, uploads, records) is
+    // refreshed in place on the live project object; only structural changes (manifests, sections, unknown paths)
+    // rebuild the project. A rebuild swaps the object, which briefly hides writes made through the old one.
+    const under = (f: string, rel: string) => { const r = rel.replace(/\\/g, "/"); return f === r || f.startsWith(`${r}/`); };
+    let answers = false, activity = false, progress = false, uploads = false, structural = false;
+    const recordFiles: string[] = [];
+    for (const f of files) {
+      if (under(f, COMM_DIR)) answers = true;
+      else if (under(f, p.manifest.activityDir)) activity = true;
+      else if (f === p.manifest.progressFile.replace(/\\/g, "/")) progress = true;
+      else if (under(f, p.manifest.allowedAttachmentRoot)) uploads = true;
+      else if (/\/records\/[^/]+\.json$/.test(f)) recordFiles.push(f);
+      else structural = true;
     }
-    const activityRel = p.manifest.activityDir.replace(/\\/g, "/");
-    if (files.every((f) => f.startsWith(`${activityRel}/`) || f === activityRel)) {
-      p.activity = await loadActivity(p);
-      this.invalidate({ projectId: id, scopes: ["activity", "projects"] });
-      return;
-    }
-    if (files.every((f) => f === p.manifest.progressFile.replace(/\\/g, "/"))) {
-      await loadProgressInto(p);
-      this.invalidate({ projectId: id, scopes: ["progress", "projects"] });
-      return;
-    }
-    const attRel = p.manifest.allowedAttachmentRoot.replace(/\\/g, "/");
-    if (files.every((f) => f.startsWith(`${attRel}/`) || f === attRel)) {
-      await this.reloadUploads(p);
-      this.invalidate({ projectId: id, scopes: ["records"] });
-      return;
-    }
-    // Record-file-only changes: update just those records when the set of sections is unchanged.
-    const recordFiles = files.filter((f) => /\/records\/[^/]+\.json$/.test(f));
-    if (recordFiles.length === files.length && recordFiles.length <= 50) {
+    if (!structural && recordFiles.length <= 50) {
       const changed: string[] = [];
       let ok = true;
       for (const f of recordFiles) {
@@ -515,8 +504,16 @@ export class Store extends EventEmitter {
         if (res) changed.push(res);
       }
       if (ok) {
-        p.signature = await projectSignature(p.dir, p.manifest);
-        this.invalidate({ projectId: id, scopes: ["records", "navigation", "projects"], recordIds: changed });
+        const scopes = new Set<InvalidateEvent["scopes"][number]>();
+        if (answers) { await this.reloadAnswers(p); for (const s of ["answers", "records", "projects", "navigation"] as const) scopes.add(s); }
+        if (activity) { p.activity = await loadActivity(p); scopes.add("activity").add("projects"); }
+        if (progress) { await loadProgressInto(p); scopes.add("progress").add("projects"); }
+        if (uploads) { await this.reloadUploads(p); scopes.add("records"); }
+        if (recordFiles.length) {
+          p.signature = await projectSignature(p.dir, p.manifest);
+          for (const s of ["records", "navigation", "projects"] as const) scopes.add(s);
+        }
+        this.invalidate({ projectId: id, scopes: [...scopes], ...(recordFiles.length ? { recordIds: changed } : {}) });
         return;
       }
     }
@@ -610,7 +607,8 @@ export async function loadProject(dirIn: string): Promise<ProjectState | BrokenP
       const sp = SectionManifest.safeParse(sraw.value);
       if (!sp.success) { diag("error", sfile, `section.json invalid: ${zodMessage(sp.error)}`); continue; }
       const m = sp.data;
-      if (p.sections.has(m.id)) { diag("error", sfile, `duplicate section id '${m.id}' — ignored`); continue; }
+      // Siblings are registered only after this loop, so check them here as well as the already-registered sections.
+      if (p.sections.has(m.id) || found.some((f) => f.manifest.id === m.id)) { diag("error", sfile, `duplicate section id '${m.id}' — ignored`); continue; }
       if (!ALLOWED_CHILDREN[parentType].includes(m.displayType)) {
         diag("error", sfile, `${m.displayType} not allowed inside ${parentType} — ignored`);
         continue;

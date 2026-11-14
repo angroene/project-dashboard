@@ -3,7 +3,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { NavNode } from "../../shared/api";
 import { CardPanel } from "./CardPanel";
-import { detail, mockFetch, node, page, renderWithProviders, summary, type Call } from "../test/utils";
+import { detail, mockFetch, newQueryClient, node, page, renderWithProviders, summary, type Call } from "../test/utils";
 
 const PID = "p1";
 const LIST = `/api/projects/${PID}/sections/cards/records`;
@@ -192,6 +192,30 @@ describe("CardPanel", () => {
     expect(await screen.findByText("Write release notes")).toBeInTheDocument();
     expect(api.calls.at(-1)!.query.get("cursor")).toBe("c2");
     expect(screen.queryByRole("button", { name: "Load more" })).toBeNull();
+  });
+});
+
+describe("load more during a background refresh", () => {
+  it("is disabled while the loaded pages are being refreshed, so the refresh is not discarded", async () => {
+    let release: (() => void) | null = null;
+    let firstPageCalls = 0;
+    mockFetch({
+      [`GET ${LIST}`]: async ({ query }: Call) => {
+        if (query.get("cursor")) return page([rowB]);
+        firstPageCalls++;
+        if (firstPageCalls > 1) await new Promise<void>((r) => { release = r; });
+        return page([rowA], { nextCursor: "c2", unfilteredTotal: 2 });
+      },
+    });
+    const client = newQueryClient();
+    renderWithProviders(<CardPanel node={cardNode({ defaultOpen: true })} />, { project: { pid: PID }, client });
+    await screen.findByText("Calibrate sensors");
+    expect(screen.getByRole("button", { name: "Load more" })).toBeEnabled();
+    void client.invalidateQueries();
+    await waitFor(() => expect(release).not.toBeNull());
+    expect(screen.getByRole("button", { name: "Load more" })).toBeDisabled();
+    release!();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Load more" })).toBeEnabled());
   });
 });
 
