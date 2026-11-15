@@ -41,3 +41,5 @@ with the findings as a Markdown list in `bodyMarkdown`: severity, file and line,
 - `verified` only with evidence: a passing test name or run, attached or quoted in a `--note`.
 - Change status with `node "$APD_CLI" update <ID> --status <s> --note "<evidence>"`.
 - Do not close issues you did not open unless your task says so.
+- Republishing an issue with the same id keeps the owner's comments, attachments and every tracked field you leave
+  out; send `null` for a field to clear it. `--by` names must not start with "user" (`403 reserved-actor`).

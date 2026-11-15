@@ -36,8 +36,11 @@ node "$APD_CLI" update LNT-REV-001 --external refs.json   # [{"system":"code rev
 - An external reference's `status` is what that system reported, kept apart from the dashboard's own fields. Set it
   only from the source system, never from a dashboard field.
 - Prefer `update` for changes. Republishing a whole record (`publish`) keeps the owner's comments, attachments and
-  every field you leave out; it can never write history or attachments as `user`. `--by` names must be printable
-  ASCII and must not start with "user".
+  every tracked field you leave out. To clear a field, name it with `null` (`"fields": {"checks": null}`), or use
+  `update --field checks=none`, which sends `null`. Leaving a field out never clears it.
+- `--by` names (and your token's name) must be printable ASCII and must not start with "user" in any case or
+  spelling (`user-bot`, `User2`, `u.s.e.r`): that name is the dashboard owner's. The server refuses them with
+  `403 reserved-actor`; pick a name such as your agent's name.
 - Recurring records are created by the server (`node "$APD_CLI" templates` lists them); do not publish daily copies
   yourself.
 

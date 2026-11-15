@@ -45,3 +45,4 @@ Do not interrupt a task in progress to check, and never poll in a loop. One chec
   `processed`, it was already acknowledged.
 - Exit code 4: the outcome of claim, complete or fail is unknown. Run `status` before anything else.
 - Exit code 3: unreachable. Continue other work and check again at the next boundary.
+- `--by` names must not start with "user" (any case or spelling): `403 reserved-actor`. Use your agent's name.

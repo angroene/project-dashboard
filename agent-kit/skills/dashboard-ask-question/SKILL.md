@@ -58,6 +58,8 @@ For long JSON write a file and pass `--file q.json`. Success prints `{"recordId"
 - If all remaining work is blocked, say so in one short chat line naming the question id.
 - To change an already answered question, raise `questionRevision`. The server refuses a changed `answerSchema` on
   an answered revision (`409 revision-required`).
+- Republishing the same id keeps the owner's comments and attachments, and every tracked field you leave out; send
+  `null` for a field to clear it.
 
 ## Errors
 

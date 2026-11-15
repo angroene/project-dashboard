@@ -26,9 +26,11 @@ discover   projects | capabilities | templates
            list --section <id> [--status s,s] [--field id=v,v]... [--q text] [--limit n] [--cursor c]
 publish    ask --section <id> (--file f.json | --json '{...}') [--id ID]
            publish --section <id> (--file f.json | --json '{...}') [--id ID]
+                  (replaces the record; tracked fields left out keep their value, "fields": {"id": null} clears)
            update <recordId> [--status s] [--label text|none] [--summary text] [--percent n|none]
                   [--priority p] [--notify true|false] [--note text] [--by name]
-                  [--field id=value]... (true|false|none|text) [--external refs.json] [--if-revision r]
+                  [--field id=value]... (true|false|none|text; none clears) [--external refs.json] [--if-revision r]
+                  --by names must not start with "user" (reserved for the dashboard user)
            event <eventId> --action a --summary text [--status info|success|warning|failure] [--area a]
                   [--record id] [--source s]   (or --file f.json)
            progress (--file f.json | --percent n|none [--label text] [--method text])

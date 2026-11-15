@@ -7,6 +7,7 @@
 import crypto from "node:crypto";
 import fsp from "node:fs/promises";
 import path from "node:path";
+import { isReservedActorName, RESERVED_ACTOR_RULE, USER_ACTOR } from "../shared/actor.js";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { FieldError } from "../shared/validate.js";
@@ -159,8 +160,7 @@ export async function readRaw(file: string): Promise<{ text: string; json: Recor
 
 export const rel = (p: ProjectState, file: string) => path.relative(p.dir, file).split(path.sep).join("/");
 
-/** The actor name of the dashboard user in history entries and attachments; agents cannot write under it. */
-export const USER_ACTOR = "user";
+export { USER_ACTOR };
 const isUserActor = (by: unknown) => by === USER_ACTOR;
 
 /**
@@ -170,9 +170,8 @@ const isUserActor = (by: unknown) => by === USER_ACTOR;
  */
 export function checkClientActor(by: unknown, what: string): void {
   if (typeof by !== "string") return; // absent, or reported by the schema
-  const letters = by.toLowerCase().replace(/[^a-z0-9]/g, "");
-  if (!/^[\x20-\x7e]*$/.test(by) || letters.startsWith(USER_ACTOR)) {
-    throw new ApiFailure(403, "reserved-actor", `${what}: 'by' must be printable ASCII and must not start with "${USER_ACTOR}" (reserved for the dashboard user)`);
+  if (!/^[\x20-\x7e]*$/.test(by) || isReservedActorName(by)) {
+    throw new ApiFailure(403, "reserved-actor", `${what}: 'by' must be printable ASCII and ${RESERVED_ACTOR_RULE}`);
   }
 }
 
