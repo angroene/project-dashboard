@@ -18,7 +18,8 @@ async function freePort(): Promise<number> {
 async function start(dataRoot: string, waitSeconds: number) {
   const port = await freePort();
   const config = path.join(dataRoot, "..", `config-${path.basename(dataRoot)}.json`);
-  fs.writeFileSync(config, JSON.stringify({ dataRoot, port, watch: false, recurrenceSeconds: 0, writerLockWaitSeconds: waitSeconds, logLevel: "info" }));
+  fs.writeFileSync(config, JSON.stringify({ dataRoot, port, watch: false, recurrenceSeconds: 0, writerLockWaitSeconds: waitSeconds, logLevel: "info",
+    auth: { mode: "local-network", trustedNetworks: ["127.0.0.1/32"] } }));
   const child = spawn(process.execPath, ["--import", "tsx", path.resolve("src/server/main.ts")], {
     env: { ...process.env, PCC_CONFIG: config, PCC_DATA_ROOT: "", PCC_PORT: "" },
     stdio: ["ignore", "pipe", "pipe"],

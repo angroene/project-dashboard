@@ -55,6 +55,19 @@ describe("App", () => {
     expect(api.count("GET", "/api/session")).toBe(2);
   });
 
+  it("warns on every page when sign-in is disabled, and not in the other modes", async () => {
+    mockFetch({ "GET /api/session": { ...open, authMode: "disabled" }, ...projectRoutes() });
+    const { unmount } = renderWithProviders(<App />);
+    expect(await screen.findByRole("link", { name: /Alpha Example/ })).toBeInTheDocument();
+    expect(screen.getByTestId("auth-disabled-warning")).toHaveTextContent("Sign-in is disabled on this server");
+    expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
+    unmount();
+    mockFetch({ "GET /api/session": { ...open, authMode: "local-network" }, ...projectRoutes() });
+    renderWithProviders(<App />);
+    expect(await screen.findByRole("link", { name: /Alpha Example/ })).toBeInTheDocument();
+    expect(screen.queryByTestId("auth-disabled-warning")).toBeNull();
+  });
+
   it("requires login when auth is required and the visitor is not authenticated: no project data is requested", async () => {
     const api = mockFetch({ "GET /api/session": locked, ...projectRoutes() });
     renderWithProviders(<App />);

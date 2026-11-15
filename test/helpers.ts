@@ -86,7 +86,8 @@ export function makeDataRoot(): string {
 }
 
 export async function makeApp(root: string, extra: Record<string, unknown> = {}) {
-  const cfg = loadConfig({ dataRoot: root, watch: false, reconcileSeconds: 0, logLevel: "silent", ...extra } as never);
+  // Tests that do not set auth run login-free (the former loopback "none" mode), stated explicitly (ADR 0019).
+  const cfg = loadConfig({ dataRoot: root, watch: false, reconcileSeconds: 0, logLevel: "silent", auth: { mode: "disabled" }, ...extra } as never);
   const h = await buildApp(cfg, { logger: false });
   return { ...h, cfg };
 }

@@ -3,7 +3,8 @@
 #
 # Defaults are the safe ones:
 #   - the port is published on the host's loopback address only (change PCC_BIND to expose it deliberately)
-#   - a token file and a TLS certificate and key are required, supplied as Compose secrets
+#   - login is required (PCC_AUTH_MODE=required); a token file and a TLS certificate and key are required, supplied
+#     as Compose secrets
 #   - project data lives in the named volume "pcc-data", mounted at /data inside the container
 services:
   dashboard:
@@ -16,6 +17,13 @@ services:
     environment:
       PCC_TLS_CERT: /run/secrets/pcc_tls_cert
       PCC_TLS_KEY: /run/secrets/pcc_tls_key
+      # Dashboard login (docs/DEPLOYMENT.md, "Login modes"). Empty values keep the defaults: login required, no
+      # trusted networks, no trusted proxies.
+      PCC_AUTH_MODE: ${PCC_AUTH_MODE:-required}
+      PCC_TRUSTED_NETWORKS: ${PCC_TRUSTED_NETWORKS:-}
+      PCC_TRUSTED_PROXIES: ${PCC_TRUSTED_PROXIES:-}
+      PCC_ALLOWED_HOSTS: ${PCC_ALLOWED_HOSTS:-}
+      PCC_AUTH_DISABLED_ON_NETWORK: ${PCC_AUTH_DISABLED_ON_NETWORK:-}
     secrets:
       - pcc_token
       - pcc_tls_cert

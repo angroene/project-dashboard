@@ -5,8 +5,9 @@ Types: `src/shared/api.ts` (responses) and `src/shared/schemas.ts` (request bodi
 **Rules for every call**
 - POST requests must send `X-PCC-Request: 1` (and `Content-Type: application/json` unless multipart).
   A cross-origin `Origin` header is rejected (403).
-- When auth is on, every endpoint except `/api/session`, `/api/auth/*` needs the session cookie or an
-  `Authorization: Bearer <token>` header (401 otherwise). Bearer tokens are the operator token (full access) or scoped
+- Every endpoint except `/api/session`, `/api/auth/*` needs the session cookie, an `Authorization: Bearer <token>`
+  header, or login-free access by the server's login mode (401 otherwise; see
+  [DEPLOYMENT.md](DEPLOYMENT.md#login-modes)). A bearer token is checked in every mode: an unknown one gets 401. Bearer tokens are the operator token (full access) or scoped
   agent tokens ([AGENT_INTEGRATION.md](AGENT_INTEGRATION.md#authentication)); an agent token gets `403 forbidden`
   outside its scopes and `404` for projects it may not use.
 - Errors: `{ error, message, fieldErrors?, details? }` with 4xx/5xx. `fieldErrors` = `[{fieldId, message}]`.
@@ -16,8 +17,8 @@ Types: `src/shared/api.ts` (responses) and `src/shared/schemas.ts` (request bodi
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/api/session` | `SessionInfo`: authRequired, authenticated, productName, upload limits |
-| POST | `/api/auth/login` | `{token}` → sets HttpOnly cookie; 401 wrong; 429 after repeated failures |
+| GET | `/api/session` | `SessionInfo`: authMode (`required`, `local-network`, `disabled`), authRequired (whether this client must sign in), authenticated, productName, upload limits |
+| POST | `/api/auth/login` | `{token}` → sets HttpOnly cookie; 401 wrong; 429 after repeated failures; 403 `login-unavailable` when the server has no token file and this client is not let in without login |
 | POST | `/api/auth/logout` | clears the session |
 
 ## Read
@@ -97,7 +98,8 @@ The dashboard runs no consumer: submitted answers show as "Submitted · Awaiting
 
 ## Authorization, CSRF and limits
 
-- **Authorization:** loopback servers need no login. Otherwise the server requires a token: `POST /api/auth/login`
+- **Authorization:** depends on the login mode (`required` by default; `local-network` lets configured address
+  ranges in without login; `disabled` lets everyone in). Otherwise the client signs in: `POST /api/auth/login`
   sets an HttpOnly, SameSite=Strict session cookie; send it on every later call (`curl -c jar -b jar`). See
   [SECURITY_MODEL.md](SECURITY_MODEL.md).
 - **CSRF:** every non-GET request needs `X-PCC-Request: 1`; a cross-origin `Origin` is rejected (403 `csrf`).

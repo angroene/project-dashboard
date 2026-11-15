@@ -50,6 +50,26 @@ inside 'echo kept > /data/projects/lantern-web-app/marker.txt && echo changed > 
 "$D" down >/dev/null; "$D" up --demo >/dev/null
 check "re-running demo up keeps existing project files" inside 'grep -q kept /data/projects/lantern-web-app/marker.txt'
 
+echo "== login modes"
+code() { curl -sk -o /dev/null -w '%{http_code}' "$@" "https://127.0.0.1:$PCC_HOST_PORT/api/projects"; }
+"$D" down >/dev/null
+refuses "local-network without trusted networks is refused" env PCC_AUTH_MODE=local-network "$D" up
+refuses "disabled without confirmation is refused" env PCC_AUTH_MODE=disabled "$D" up
+refuses "disabled with the wrong confirmation is refused" env PCC_AUTH_MODE=disabled APD_CONFIRM_AUTH_DISABLED=nope "$D" up
+refuses "an unknown login mode is refused" env PCC_AUTH_MODE=open "$D" up
+check "local-network with an explicit range starts" env PCC_AUTH_MODE=local-network PCC_TRUSTED_NETWORKS=192.0.2.0/24 "$D" up
+[ "$(code)" = 401 ] && ok "local-network: a client outside the range needs the token" || bad "local-network: a client outside the range needs the token"
+[ "$(code -H 'X-Forwarded-For: 192.0.2.5')" = 401 ] && ok "local-network: a forged X-Forwarded-For is ignored" || bad "local-network: a forged X-Forwarded-For is ignored"
+check "local-network: signing in with the token works" "$D" health --auth
+"$D" down >/dev/null
+check "disabled with confirmation starts" env PCC_AUTH_MODE=disabled APD_CONFIRM_AUTH_DISABLED="$APD_NAME" "$D" up
+[ "$(code)" = 200 ] && ok "disabled: the API answers without a token" || bad "disabled: the API answers without a token"
+[ "$(code -H 'Host: attacker.example')" = 401 ] && ok "disabled: an unknown Host name is refused (DNS rebinding)" || bad "disabled: an unknown Host name is refused"
+if "$D" logs 200 2>&1 | grep -q "AUTHENTICATION IS DISABLED"; then ok "disabled: the server log warns"; else bad "disabled: the server log warns"; fi
+"$D" down >/dev/null
+check "back to the default (login required)" "$D" up
+check "default: 401 without token again" "$D" health
+
 echo "== backup"
 check "backup" "$D" backup
 B="$(ls -1t "$APD_BACKUP_DIR"/*.tar.gz | head -1)"

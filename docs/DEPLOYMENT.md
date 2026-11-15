@@ -27,9 +27,14 @@ overridden by environment variables. Secrets are never stored in the config: the
 | `PCC_HOST` | `host` | `127.0.0.1` | Bind address. |
 | `PCC_PORT` | `port` | `8790` | Port. |
 | `PCC_WEB_ROOT` | `webRoot` | none | Built UI folder (`dist/web`). Without it only the API is served. |
-| `PCC_AUTH_TOKEN_FILE` | `auth.tokenFile` (and `auth.mode: "token"`) | none | File with the access token. Turns token auth on. |
+| `PCC_AUTH_MODE` | `auth.mode` | `required` | Dashboard login: `required`, `local-network` or `disabled`. See [Login modes](#login-modes). (`token` is accepted as the former name of `required`; `none` was removed.) |
+| `PCC_AUTH_TOKEN_FILE` | `auth.tokenFile` | none | File with the access token. Needed for `required`; optional otherwise (without it, nobody outside the trusted networks can sign in). |
+| `PCC_TRUSTED_NETWORKS` | `auth.trustedNetworks` | none | `local-network` only: comma-separated CIDR ranges or addresses that need no login. Never detected automatically. |
+| `PCC_TRUSTED_PROXIES` | `trustedProxies` | none | Addresses (or CIDR ranges) of reverse proxies whose `X-Forwarded-For` is believed. Without it the header is ignored. |
+| `PCC_ALLOWED_HOSTS` | `auth.allowedHosts` | none | Host names used to reach the dashboard login-free, besides IP addresses and `localhost` (protection against DNS rebinding). |
+| `PCC_AUTH_DISABLED_ON_NETWORK` | `auth.disabledOnNetwork` | `false` | Second, explicit opt-in for `disabled` on an address other machines can reach. |
 | `PCC_TLS_CERT`, `PCC_TLS_KEY` | `tls.certFile`, `tls.keyFile` | none | PEM files for built-in HTTPS. Both are required together. |
-| `PCC_BEHIND_HTTPS_PROXY` | `behindHttpsProxy` | `false` | `1` or `true` when a TLS-terminating proxy on the same machine forwards to the app. Marks the cookie Secure and trusts that proxy. |
+| `PCC_BEHIND_HTTPS_PROXY` | `behindHttpsProxy` | `false` | `1` or `true` when a TLS-terminating proxy forwards to the app. Marks the cookie Secure. It does not make the proxy trusted: list it in `PCC_TRUSTED_PROXIES`. |
 | `PCC_CONFIG` | | `./pcc.config.json` | Path of the JSON config. |
 | | `extraProjectRoots` | `[]` | Absolute paths of extra project folders registered by the operator. |
 | | `productName` | `Agents Project Dashboard` | Title shown in the UI. |
@@ -51,14 +56,18 @@ Example `pcc.config.json`:
   "host": "127.0.0.1",
   "port": 8790,
   "webRoot": "dist/web",
-  "auth": { "mode": "token", "tokenFile": "/etc/dashboard/token", "user": "operator", "sessionHours": 720 },
+  "auth": { "mode": "required", "tokenFile": "/etc/dashboard/token", "user": "operator", "sessionHours": 720 },
   "uploads": { "maxBytes": 20971520, "maxFiles": 10 }
 }
 ```
 
 **Startup rules (enforced, not advisory).** The server refuses to start when:
 
-- the host is not loopback (`127.0.0.1`, `::1`, `localhost`) and token auth is off;
+- `auth.mode` is `required` (the default) and there is no token file;
+- `auth.mode` is `local-network` without `trustedNetworks`, a range is malformed, or a range admits every address
+  or is wider than `/8` (for IPv6 unique-local addresses use `fd00::/8`, not `fc00::/7`); or `trustedNetworks` is set in another mode;
+- `auth.mode` is `disabled`, the host is not loopback (`127.0.0.1`, `::1`, `localhost`) and `disabledOnNetwork` is not set;
+- a trusted proxy entry is malformed or admits every address;
 - the host is not loopback and there is neither built-in TLS nor `behindHttpsProxy` (unless `allowInsecureRemote`);
 - the token file is missing or the token is shorter than 16 characters;
 - a TLS file is missing, or only one of cert and key is set.
@@ -69,15 +78,18 @@ Example `pcc.config.json`:
 npm ci
 npm run build
 mkdir -p ./my-data/projects            # or any folder; copy a project into projects/
-PCC_DATA_ROOT=./my-data PCC_WEB_ROOT=dist/web npm start
+PCC_DATA_ROOT=./my-data PCC_WEB_ROOT=dist/web \
+PCC_AUTH_MODE=local-network PCC_TRUSTED_NETWORKS=127.0.0.1/32,::1/128 npm start
 # http://127.0.0.1:8790
 ```
 
-- Loopback needs no login: anyone with a shell on the machine can use it. That is the trust boundary.
+- This setting lets programs on this machine in without a login: anyone with a shell on the machine can use it. That
+  is the trust boundary. Without it the server starts in `required` mode and needs `PCC_AUTH_TOKEN_FILE`.
 - The server writes into the data root (answers, uploads, read state), so use a copy of the examples, never the
   checked-in `examples/` folder.
 - Stop with Ctrl+C (SIGINT) or SIGTERM. Startup indexes all projects and repairs interrupted writes.
-- Development mode (two terminals): `npm run dev:server` (API) and `npm run dev:web` (Vite on 5173, proxies `/api`).
+- Development mode (two terminals): `npm run dev:server` (API, with the same `PCC_*` settings as above) and
+  `npm run dev:web` (Vite on 5173, proxies `/api`).
 
 ## Authentication token
 
@@ -97,6 +109,88 @@ the token in the browser (HttpOnly, SameSite=Strict cookie, 30 days by default);
 `POST /api/auth/login`. Sessions are kept in memory, so a restart signs everyone out. To rotate the token, replace the
 file and restart. There is one shared token and one operator identity; there are no per-user accounts or
 per-project permissions.
+
+## Login modes
+
+`auth.mode` (`PCC_AUTH_MODE`) decides who has to sign in to the dashboard. It applies to every page and API route:
+reading, downloads, uploads, answers, Excel and ZIP, changes and the live-update stream. The page shell (HTML,
+scripts) is public in every mode; it holds no project data.
+
+| Mode | Who needs to sign in | Needs |
+|---|---|---|
+| `required` (default) | everyone | `auth.tokenFile` |
+| `local-network` | everyone whose address is **not** in `auth.trustedNetworks` | `auth.trustedNetworks`; `auth.tokenFile` for everyone else to sign in |
+| `disabled` | nobody | an explicit choice; on a reachable address also `auth.disabledOnNetwork` |
+
+What the modes do not change:
+
+- **Agent tokens are always checked.** A request with `Authorization: Bearer …` is judged by that token in every mode:
+  an agent token keeps its projects and scopes, and an unknown token gets `401` even where no login is needed.
+  Login-free clients, however, have the operator's full access without any token, so scopes only bind agents that
+  cannot reach the server login-free. To confine agents by scope, run them from outside the trusted networks or use
+  `required`.
+- The CSRF guard (`X-PCC-Request` and same-origin `Origin`), input validation, project isolation and the HTTPS rules
+  for non-loopback addresses are the same in every mode.
+
+**Security implications.**
+
+- Login-free means full operator access: read and change every project's dashboard data, answer questions, upload
+  and download files. Only trust networks where everyone who can connect may do that.
+- The client address is the TCP peer's address. `X-Real-IP`, `Forwarded` and similar headers are never read.
+  `X-Forwarded-For` is ignored unless the request comes from an address in `trustedProxies`; then the address that
+  proxy appended is used (the right-most untrusted entry, so a client cannot prepend a forged one). Never list a range that contains clients
+  as a proxy.
+- Login-free access also requires the `Host` header to be an IP address, `localhost` or a name in
+  `auth.allowedHosts`. A web page on another domain that resolves its name to your server (DNS rebinding) is refused.
+  If you reach the dashboard by a name such as `dash.lan`, add that name.
+- `disabled` prints a prominent warning when the server starts and shows a warning on every page. On a non-loopback
+  bind it needs `auth.disabledOnNetwork: true`; the deploy script additionally asks you to type the instance name.
+- Ranges are never guessed from the machine's interfaces. VPNs, guest Wi-Fi, port forwarding and Docker networks can
+  put unexpected clients inside a range; choose ranges as narrow as possible.
+
+**Example: this machine only, no login.** `PCC_AUTH_MODE=local-network PCC_TRUSTED_NETWORKS=127.0.0.1/32,::1/128`
+on a loopback bind (see [Local](#local-loopback)).
+
+**Example: home or office LAN without login, token for everyone else.**
+
+```sh
+PCC_DATA_ROOT=/srv/dashboard-data PCC_WEB_ROOT=dist/web PCC_HOST=0.0.0.0 \
+PCC_AUTH_MODE=local-network PCC_TRUSTED_NETWORKS=192.168.1.0/24 \
+PCC_AUTH_TOKEN_FILE=/etc/dashboard/token \
+PCC_TLS_CERT=/etc/dashboard/cert.pem PCC_TLS_KEY=/etc/dashboard/key.pem \
+PCC_ALLOWED_HOSTS=dash.lan npm start
+```
+
+**Example: Docker.** The compose file passes `PCC_AUTH_MODE`, `PCC_TRUSTED_NETWORKS`, `PCC_TRUSTED_PROXIES` and
+`PCC_ALLOWED_HOSTS` from the environment or `.env`; the default stays `required`. Inside a container the client
+address depends on Docker's networking: connections that Docker's port proxy forwards (for example to a port
+published on `127.0.0.1`) arrive from the bridge gateway (such as `172.17.0.1`), not from the real client. Never put
+Docker's own ranges (`172.16.0.0/12`, the bridge subnet) in `PCC_TRUSTED_NETWORKS`: every forwarded connection would
+be trusted. On Linux, clients on the LAN keep their address when the port is published on the LAN address, so:
+
+```sh
+# .env next to docker-compose.yml
+PCC_BIND=192.168.1.10
+PCC_AUTH_MODE=local-network
+PCC_TRUSTED_NETWORKS=192.168.1.0/24
+PCC_ALLOWED_HOSTS=dash.lan
+```
+
+Check it after `deploy/apd-deploy.sh up`: from a machine outside the range, `/api/projects` must answer `401`
+(`deploy/apd-deploy.sh health` checks this from the host). If clients appear with the gateway address, use `required`.
+
+**Example: behind a reverse proxy.** Tell the server which address is the proxy; without that the forwarded header
+is ignored and every client looks like the proxy:
+
+```sh
+PCC_BEHIND_HTTPS_PROXY=1 PCC_TRUSTED_PROXIES=127.0.0.1 \
+PCC_AUTH_MODE=local-network PCC_TRUSTED_NETWORKS=10.20.0.0/16 PCC_ALLOWED_HOSTS=dashboard.example.org \
+PCC_AUTH_TOKEN_FILE=/etc/dashboard/token PCC_DATA_ROOT=/srv/dashboard-data PCC_WEB_ROOT=dist/web npm start
+```
+
+The proxy must add the client address (`proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` in nginx;
+Caddy does it by default) and pass the original `Host`. A proxy on another machine works the same way with its
+address in `PCC_TRUSTED_PROXIES`. In Docker, list the proxy container's fixed address, not a network range.
 
 ## HTTPS
 
@@ -122,8 +216,8 @@ certificates; use a certificate from your own CA or a public CA for real use. Ce
 **B. Reverse proxy.** Run the app on loopback and let Caddy, nginx or similar terminate TLS on the same machine:
 
 ```sh
-PCC_BEHIND_HTTPS_PROXY=1 PCC_AUTH_TOKEN_FILE=/etc/dashboard/token PCC_DATA_ROOT=/srv/dashboard-data \
-PCC_WEB_ROOT=dist/web npm start        # still bound to 127.0.0.1
+PCC_BEHIND_HTTPS_PROXY=1 PCC_TRUSTED_PROXIES=127.0.0.1 PCC_AUTH_TOKEN_FILE=/etc/dashboard/token \
+PCC_DATA_ROOT=/srv/dashboard-data PCC_WEB_ROOT=dist/web npm start        # still bound to 127.0.0.1
 ```
 
 Caddy (not executed here):
@@ -152,9 +246,9 @@ server {
 }
 ```
 
-`PCC_BEHIND_HTTPS_PROXY=1` trusts only a proxy connecting from `127.0.0.1`. A proxy on another host is not supported
-as a trusted proxy: terminate TLS in the app or on the same machine. If the proxy is not really on the same machine
-or is not terminating TLS, do not set this flag.
+`PCC_BEHIND_HTTPS_PROXY=1` marks the cookie Secure; set it only when the proxy terminates TLS.
+`PCC_TRUSTED_PROXIES=127.0.0.1` makes the server believe the client address this proxy reports (used for login
+throttling and for `local-network`); without it every client appears as the proxy. See [Login modes](#login-modes).
 
 ## Docker and Docker Compose
 
@@ -210,10 +304,9 @@ Files copied in as root may not be writable by the `node` user (the server needs
 To try the examples: copy `examples/projects/*` into `/data/projects/` of a **fresh** volume.
 
 Using a reverse proxy in front of the container instead of built-in TLS: remove the two `PCC_TLS_*` variables and the
-TLS secrets from the compose file and set `PCC_BEHIND_HTTPS_PROXY: "1"`. The proxy must be able to reach the published
-port and must itself be on the same host (the container sees the proxy as a non-loopback address, so the app's
-trusted-proxy handling does not apply and every client appears with the proxy's address for login throttling).
-This combination has not been tested.
+TLS secrets from the compose file and set `PCC_BEHIND_HTTPS_PROXY: "1"`, and `PCC_TRUSTED_PROXIES` to the address the
+proxy connects from as the container sees it (for a proxy container: its fixed address on a user-defined network).
+Without `PCC_TRUSTED_PROXIES` every client appears with the proxy's address. This combination has not been tested.
 
 Limitations: no image is published to a registry; the health check assumes built-in TLS; the first start of a new
 named volume takes its ownership from the image (`node` user); the examples are not baked into the image.
@@ -297,6 +390,7 @@ Environment=PCC_DATA_ROOT=/srv/dashboard-data
 Environment=PCC_WEB_ROOT=/srv/dashboard/app/dist/web
 Environment=PCC_AUTH_TOKEN_FILE=/etc/dashboard/token
 Environment=PCC_BEHIND_HTTPS_PROXY=1
+Environment=PCC_TRUSTED_PROXIES=127.0.0.1
 ExecStart=/usr/bin/node dist/server/server/main.js
 Restart=on-failure
 NoNewPrivileges=true
@@ -351,7 +445,8 @@ sudo systemctl start dashboard
 
 Before the dashboard is reachable by anyone but you:
 
-1. Token auth on, token at least 32 random characters, file mode 600.
+1. `auth.mode` `required` (or `local-network` with narrow, deliberate ranges), token at least 32 random characters,
+   file mode 600. Never `disabled` on a shared network.
 2. HTTPS end to end (built-in TLS or a proxy on the same host). Never send the token over plain HTTP on a shared network.
 3. Understand the trust model ([SECURITY_MODEL.md](SECURITY_MODEL.md)): anyone with the token has full access to
    every project on the server, can submit answers, upload allowed file types and download attachments. There are no

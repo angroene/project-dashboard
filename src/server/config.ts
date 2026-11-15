@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
+import { parseCidr } from "./netmatch.js";
 
 export const DEFAULT_UPLOAD_TYPES: Record<string, string[]> = {
   "image/png": [".png"],
@@ -19,6 +20,24 @@ export const DEFAULT_UPLOAD_TYPES: Record<string, string[]> = {
   "application/vnd.openxmlformats-officedocument.presentationml.presentation": [".pptx"],
 };
 
+export const AUTH_MODES = ["required", "local-network", "disabled"] as const;
+export type AuthMode = (typeof AUTH_MODES)[number];
+
+const list = (v: string) => v.split(",").map((s) => s.trim()).filter(Boolean);
+
+const AuthModeSchema = z.preprocess(
+  (v) => (v === "token" ? "required" : v), // "token" is the former name of "required"
+  z.string().superRefine((v, ctx) => {
+    if ((AUTH_MODES as readonly string[]).includes(v)) return;
+    ctx.addIssue({
+      code: "custom",
+      message: v === "none"
+        ? `auth.mode "none" was removed: use "local-network" with trustedNetworks (for example ["127.0.0.1/32","::1/128"]) or, deliberately, "disabled"`
+        : `auth.mode must be one of ${AUTH_MODES.join(", ")}`,
+    });
+  }),
+);
+
 const ConfigSchema = z.object({
   productName: z.string().min(1).max(80).default("Agents Project Dashboard"),
   dataRoot: z.string().min(1),
@@ -30,13 +49,29 @@ const ConfigSchema = z.object({
   webRoot: z.string().optional(),
   auth: z
     .object({
-      mode: z.enum(["none", "token"]).default("none"),
+      /**
+       * Dashboard login (ADR 0019). "required": every client signs in. "local-network": clients whose address is in
+       * trustedNetworks need no login, all others sign in. "disabled": nobody signs in. Agent tokens are checked in
+       * every mode.
+       */
+      mode: AuthModeSchema.default("required").transform((m) => m as AuthMode),
       /** File holding the access token (one line). Never logged. */
       tokenFile: z.string().optional(),
+      /** CIDR ranges allowed in without login in "local-network" mode. Never inferred. */
+      trustedNetworks: z.array(z.string()).default([]),
+      /** Host names (Host header) usable for login-free access besides IP addresses and "localhost" (DNS rebinding). */
+      allowedHosts: z.array(z.string().min(1).max(253)).default([]),
+      /** Second opt-in for "disabled" on an address other machines can reach. */
+      disabledOnNetwork: z.boolean().default(false),
       user: z.string().max(80).default("operator"),
       sessionHours: z.number().min(1).max(24 * 90).default(24 * 30),
     })
-    .default({ mode: "none", user: "operator", sessionHours: 720 }),
+    .default({ mode: "required", trustedNetworks: [], allowedHosts: [], disabledOnNetwork: false, user: "operator", sessionHours: 720 }),
+  /**
+   * Addresses or CIDR ranges of reverse proxies whose X-Forwarded-For header is believed. Empty (default): the header
+   * is ignored and the client address is the socket's.
+   */
+  trustedProxies: z.array(z.string()).default([]),
   /**
    * JSON file with scoped API tokens for agents and scripts. It holds SHA-256 hashes only, never tokens.
    * Scoped tokens are sent as `Authorization: Bearer <token>`; see docs/AGENT_INTEGRATION.md.
@@ -68,6 +103,52 @@ const ConfigSchema = z.object({
 });
 export type Config = z.infer<typeof ConfigSchema> & { allowedUploadTypes: Record<string, string[]> };
 
+/** Mode-specific rules (ADR 0019). Nothing is inferred: trusted networks and proxies are only what is configured. */
+function checkAuth(cfg: z.infer<typeof ConfigSchema>): void {
+  const a = cfg.auth;
+  if (a.mode === "required" && !a.tokenFile) {
+    throw new Error(`auth.mode "required" (the default) needs auth.tokenFile (PCC_AUTH_TOKEN_FILE). For login-free access on this machine only, set auth.mode "local-network" with trustedNetworks ["127.0.0.1/32","::1/128"].`);
+  }
+  if (a.mode === "local-network") {
+    if (!a.trustedNetworks.length) {
+      throw new Error(`auth.mode "local-network" needs auth.trustedNetworks (PCC_TRUSTED_NETWORKS), for example 192.168.1.0/24; ranges are never detected automatically`);
+    }
+    for (const n of a.trustedNetworks) {
+      const r = parseCidr(n);
+      // /0 admits everyone; split halves (0.0.0.0/1 + 128.0.0.0/1) would do the same. No LAN or VPN needs more than /8.
+      if (r.prefix === 0) throw new Error(`auth.trustedNetworks '${n}' admits every address; use auth.mode "disabled" if that is really intended`);
+      if (r.prefix < 8) throw new Error(`auth.trustedNetworks '${n}' is wider than /8; list the networks clients really use`);
+    }
+  } else if (a.trustedNetworks.length) {
+    throw new Error(`auth.trustedNetworks only applies to auth.mode "local-network" (mode is "${a.mode}")`);
+  }
+  if (a.mode === "disabled" && !isLoopback(cfg.host) && !a.disabledOnNetwork) {
+    throw new Error(`Refusing to bind ${cfg.host} with auth.mode "disabled": every machine that reaches it would have full access. Bind 127.0.0.1, use "required" or "local-network", or confirm with auth.disabledOnNetwork (PCC_AUTH_DISABLED_ON_NETWORK=1).`);
+  }
+  for (const p of cfg.trustedProxies) {
+    if (parseCidr(p).prefix === 0) throw new Error(`trustedProxies '${p}' would let any client forge its address; list the proxy's own address`);
+  }
+  for (const h of a.allowedHosts) {
+    if (!/^[a-z0-9.-]+$/i.test(h)) throw new Error(`auth.allowedHosts '${h}': host names only (no port, scheme or wildcard)`);
+  }
+}
+
+/** Lines printed prominently at start-up for modes that let clients in without signing in. */
+export function authWarnings(cfg: Config): string[] {
+  if (cfg.auth.mode === "disabled") {
+    return [
+      `AUTHENTICATION IS DISABLED (auth.mode "disabled").`,
+      `Anyone who can reach ${cfg.host}:${cfg.port} can read, change and delete dashboard data, answer questions and upload files.`,
+      isLoopback(cfg.host) ? "The server listens on this machine only." : `The server listens on ${cfg.host}: other machines can reach it.`,
+      `Use auth.mode "required" or "local-network" unless this is a deliberate, isolated setup.`,
+    ];
+  }
+  if (cfg.auth.mode === "local-network") {
+    return [`Login-free access for ${cfg.auth.trustedNetworks.join(", ")} (auth.mode "local-network"); every other address must sign in.`];
+  }
+  return [];
+}
+
 export function isLoopback(host: string): boolean {
   return host === "127.0.0.1" || host === "::1" || host === "localhost";
 }
@@ -87,24 +168,29 @@ export function loadConfig(overrides: Partial<z.input<typeof ConfigSchema>> = {}
   }
   if (process.env.PCC_AGENT_TOKENS_FILE) env.agentTokensFile = process.env.PCC_AGENT_TOKENS_FILE;
   if (process.env.PCC_BEHIND_HTTPS_PROXY) env.behindHttpsProxy = process.env.PCC_BEHIND_HTTPS_PROXY === "1" || process.env.PCC_BEHIND_HTTPS_PROXY === "true";
+  if (process.env.PCC_TRUSTED_PROXIES !== undefined) env.trustedProxies = list(process.env.PCC_TRUSTED_PROXIES);
+  const authEnv: Record<string, unknown> = {};
+  if (process.env.PCC_AUTH_MODE) authEnv.mode = process.env.PCC_AUTH_MODE;
+  if (process.env.PCC_AUTH_TOKEN_FILE) authEnv.tokenFile = process.env.PCC_AUTH_TOKEN_FILE;
+  if (process.env.PCC_TRUSTED_NETWORKS !== undefined) authEnv.trustedNetworks = list(process.env.PCC_TRUSTED_NETWORKS);
+  if (process.env.PCC_ALLOWED_HOSTS !== undefined) authEnv.allowedHosts = list(process.env.PCC_ALLOWED_HOSTS);
+  if (process.env.PCC_AUTH_DISABLED_ON_NETWORK) authEnv.disabledOnNetwork = process.env.PCC_AUTH_DISABLED_ON_NETWORK === "1" || process.env.PCC_AUTH_DISABLED_ON_NETWORK === "true";
   const merged = { ...fromFile, ...env, ...overrides } as Record<string, unknown>;
-  if (process.env.PCC_AUTH_TOKEN_FILE) {
-    merged.auth = { ...(merged.auth as object), mode: "token", tokenFile: process.env.PCC_AUTH_TOKEN_FILE };
+  if (Object.keys(authEnv).length) {
+    merged.auth = { ...(fromFile.auth as object), ...authEnv, ...((overrides.auth as object | undefined) ?? {}) };
   }
-  const cfg = ConfigSchema.parse(merged);
+  const parsed = ConfigSchema.safeParse(merged);
+  if (!parsed.success) {
+    throw new Error(`invalid configuration: ${parsed.error.issues.slice(0, 5).map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`).join("; ")}`);
+  }
+  const cfg = parsed.data;
   cfg.dataRoot = path.resolve(cfg.dataRoot);
   cfg.extraProjectRoots = cfg.extraProjectRoots.map((p) => path.resolve(p));
   const allowed = cfg.uploads.allowedMimeTypes
     ? Object.fromEntries(cfg.uploads.allowedMimeTypes.filter((m) => DEFAULT_UPLOAD_TYPES[m]).map((m) => [m, DEFAULT_UPLOAD_TYPES[m]]))
     : DEFAULT_UPLOAD_TYPES;
 
-  if (!isLoopback(cfg.host) && cfg.auth.mode !== "token") {
-    throw new Error(`Refusing to bind ${cfg.host} without authentication. Set auth.mode "token" with auth.tokenFile (or PCC_AUTH_TOKEN_FILE), or bind 127.0.0.1.`);
-  }
-  if (cfg.auth.mode === "token" && !cfg.auth.tokenFile) throw new Error("auth.mode token needs auth.tokenFile");
-  if (cfg.agentTokensFile && cfg.auth.mode !== "token") {
-    throw new Error("agentTokensFile needs auth.mode \"token\": without authentication every client already has full access, so scoped tokens would restrict nothing");
-  }
+  checkAuth(cfg);
   if (!isLoopback(cfg.host) && !cfg.tls && !cfg.behindHttpsProxy && !cfg.allowInsecureRemote) {
     throw new Error(`Refusing to bind ${cfg.host} without HTTPS. Set tls.certFile/tls.keyFile (PCC_TLS_CERT/PCC_TLS_KEY), or behindHttpsProxy when a TLS proxy is in front, or allowInsecureRemote to accept clear-text tokens.`);
   }

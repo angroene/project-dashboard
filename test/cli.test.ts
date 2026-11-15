@@ -35,7 +35,7 @@ async function server(opts: { auth?: boolean } = {}) {
     const agentTokensFile = path.join(root, "agents.json");
     writeJson(agentTokensFile, { schemaVersion: 1, tokens: [{ name: "cli-agent", sha256: tokenSha256(AGENT), projects: ["alpha"], scopes: ["read", "publish", "consume"] }] });
     fs.writeFileSync(path.join(root, "agent-token.txt"), AGENT + "\n");
-    extra = { auth: { mode: "token", tokenFile }, agentTokensFile };
+    extra = { auth: { mode: "required", tokenFile }, agentTokensFile };
   }
   const h = await makeApp(root, extra);
   apps.push(h);
@@ -261,6 +261,45 @@ describe("apd CLI: tracked fields, external references, listing, templates", () 
     expect(stale.err?.error).toBe("revision-mismatch");
     expect((await s.apd(["update", "R1", "--field", "built"])).code).toBe(2);
     expect((await s.apd(["list"])).code).toBe(2);
+  });
+
+  it("publish keeps fields it leaves out and the user's changes; only an explicit null clears", async () => {
+    const s = await withFields();
+    expect((await s.apd(["update", "R1", "--field", "built=true", "--field", "note=agent note"])).code).toBe(0);
+    const user = await s.app.inject({ method: "POST", url: "/api/projects/alpha/records/R1/user-update",
+      headers: { ...POST_HEADERS, authorization: `Bearer ${OPERATOR}` }, payload: { fields: { reviewed: true } } });
+    expect(user.statusCode, user.body).toBe(200);
+    // A republish from an old copy that has no fields at all: nothing is erased.
+    const old = { recordType: "review", title: "R1", status: "needs-review" };
+    const pub = await s.apd(["publish", "--section", "reviews", "--id", "R1", "--json", JSON.stringify(old)]);
+    expect(pub.code, pub.stderr).toBe(0);
+    let rec = (await s.apd(["source", "R1"])).out.record as { fields: Record<string, unknown>; history: { by?: string; text: string }[] };
+    expect(rec.fields).toEqual({ built: true, note: "agent note", reviewed: true });
+    expect(rec.history.some((h) => h.by === "user")).toBe(true); // the user's field-change entry survives
+    // Explicit null clears exactly the named field, through publish and through update --field id=none.
+    const cleared = await s.apd(["publish", "--section", "reviews", "--id", "R1", "--json", JSON.stringify({ ...old, fields: { note: null } })]);
+    expect(cleared.code, cleared.stderr).toBe(0);
+    rec = (await s.apd(["source", "R1"])).out.record as typeof rec;
+    expect(rec.fields).toEqual({ built: true, reviewed: true });
+    expect((await s.apd(["update", "R1", "--field", "built=none"])).code).toBe(0);
+    rec = (await s.apd(["source", "R1"])).out.record as typeof rec;
+    expect(rec.fields).toEqual({ reviewed: true });
+    // The user-only field cannot be cleared by an agent either.
+    const userOnly = await s.apd(["publish", "--section", "reviews", "--id", "R1", "--json", JSON.stringify({ ...old, fields: { reviewed: null } })]);
+    expect(userOnly.code).toBe(1);
+    expect(userOnly.err?.error).toBe("field-not-editable");
+  });
+
+  it("refuses --by names that read as the dashboard user's, with a clear message", async () => {
+    const s = await withFields();
+    for (const by of ["user", "user-bot", "User2", "u.s.e.r"]) {
+      const r = await s.apd(["update", "R1", "--note", "hi", "--by", by]);
+      expect(r.code, by).toBe(1);
+      expect(r.err?.error, by).toBe("reserved-actor");
+      expect(String(r.err?.message), by).toMatch(/must not start with "user"/);
+    }
+    const ok = await s.apd(["update", "R1", "--note", "hi", "--by", "review-bot"]);
+    expect(ok.code, ok.stderr).toBe(0);
   });
 
   it("lists templates", async () => {

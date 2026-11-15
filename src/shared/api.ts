@@ -16,6 +16,9 @@ export interface ApiError {
 }
 
 export interface SessionInfo {
+  /** The server's login mode; "disabled" means anyone who reaches the server has full access. */
+  authMode: "required" | "local-network" | "disabled";
+  /** Whether this client must sign in (false when its address or the mode lets it in without login). */
   authRequired: boolean;
   authenticated: boolean;
   user: string;

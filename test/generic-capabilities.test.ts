@@ -45,7 +45,7 @@ async function setup(opts: { root?: string; auth?: boolean } = {}) {
     fs.writeFileSync(tokenFile, OPERATOR);
     const agentTokensFile = path.join(root, "agent-tokens.json");
     writeJson(agentTokensFile, { schemaVersion: 1, tokens: [{ name: "alpha-publisher", sha256: tokenSha256(PUB), projects: ["alpha"], scopes: ["read", "publish"] }] });
-    extra = { auth: { mode: "token", tokenFile }, agentTokensFile };
+    extra = { auth: { mode: "required", tokenFile }, agentTokensFile };
   }
   const h = await makeApp(root, extra);
   apps.push(h);
@@ -514,6 +514,30 @@ describe("example projects", () => {
     expect(tpl.body.templates).toMatchObject([{ id: "field-log", state: "paused" }]);
     // Paused: the scheduler creates nothing for the example until someone resumes it.
     expect((await runRecurrence(t.store, "tidepool-notebook", new Date("2026-11-20T20:00:00Z"))).created).toEqual([]);
+  });
+
+  it("every example record can be read back and republished unchanged under the strict publish rules", async () => {
+    const root = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), "apd-examples-"));
+    fs.cpSync(path.resolve("examples"), root, { recursive: true });
+    const t = await setup({ root });
+    const files = (fs.readdirSync(path.join(root, "projects"), { recursive: true }) as string[])
+      .map((f) => f.split(path.sep).join("/")).filter((f) => /\/records\/[^/]+\.json$/.test(f));
+    expect(files.length).toBeGreaterThan(10);
+    for (const f of files) {
+      const projectId = f.split("/")[0];
+      const recordId = path.basename(f, ".json");
+      const src = await t.call<{ sectionId: string; record: Record<string, unknown> }>("GET", `/api/projects/${projectId}/records/${recordId}/source`);
+      expect(src.status, f).toBe(200);
+      const put = await t.call<{ error?: string }>("PUT", `/api/projects/${projectId}/records/${recordId}`, { sectionId: src.body.sectionId, record: src.body.record });
+      const manifest = JSON.parse(fs.readFileSync(path.join(root, "projects", projectId, "project.json"), "utf8")) as { publishing?: { enabled?: boolean } };
+      if (manifest.publishing?.enabled) {
+        expect(put.status, `${f}: ${JSON.stringify(put.body)}`).toBe(200);
+        // Same content (a hand-formatted file may be rewritten in the canonical layout).
+        expect(JSON.parse(fs.readFileSync(path.join(root, "projects", f), "utf8")), f).toEqual(src.body.record);
+      } else {
+        expect(put.body.error, f).toBe("publishing-disabled"); // a read-only example project stays read-only
+      }
+    }
   });
 });
 

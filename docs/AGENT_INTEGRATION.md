@@ -130,8 +130,11 @@ npm run agent-token -- lantern-agent ./lantern-agent.token --projects lantern-we
 - Never allowed for agent tokens: submitting answers, Excel import/export, ZIP downloads, marking read, diagnostics,
   reindex and the live-update stream. Those are the owner's (`403 forbidden`).
 - Wrong bearer tokens count as failed logins (429 after 5). Restart the server after editing the token file.
-- `agentTokensFile` requires token mode; the server refuses to start otherwise, with a malformed file, or when an agent
-  token equals the operator token.
+- Agent tokens work in every login mode (ADR 0019) and are always checked: a token keeps its projects and scopes, and
+  an unknown token gets `401`. In `local-network` and `disabled` mode, clients let in without login have the owner's
+  full access without any token, so scopes only restrict agents that cannot connect login-free: run agents from
+  outside the trusted ranges, or use `required`.
+- The server refuses to start with a malformed token file, or when an agent token equals the operator token.
 - Revoke a token by removing its entry and restarting.
 
 ## The `apd` CLI
@@ -154,8 +157,8 @@ outbox. For a self-signed certificate start Node with `NODE_EXTRA_CA_CERTS=/path
 | `projects`, `capabilities`, `templates` | discovery |
 | `list --section S [--status a,b] [--field id=v,w]... [--q text] [--limit n] [--cursor c]` | one page of record summaries, filtered on the server, plus the card's `fieldDefs` |
 | `ask --section S --id ID (--file f.json \| --json '{...}')` | publish a question (fills `recordType`, `status: open`, `requiresResponse`, `questionRevision: 1`) |
-| `publish --section S --id ID (--file \| --json)` | publish any record |
-| `update ID [--status] [--label] [--summary] [--percent n\|none] [--priority] [--notify] [--note text] [--by name] [--field id=value]... [--external refs.json] [--if-revision r]` | `PATCH`. `--field` values: `true`/`false` (checkbox), `none` (clear), anything else as text or option id. `--external` reads a JSON array and replaces the list. |
+| `publish --section S --id ID (--file \| --json)` | publish any record (`PUT`). Replacing a record keeps the user's comments, attachments and every tracked field the JSON leaves out; `"fields": {"id": null}` clears one |
+| `update ID [--status] [--label] [--summary] [--percent n\|none] [--priority] [--notify] [--note text] [--by name] [--field id=value]... [--external refs.json] [--if-revision r]` | `PATCH`. `--field` values: `true`/`false` (checkbox), `none` (sends `null`: clears the value), anything else as text or option id. `--external` reads a JSON array and replaces the list. |
 | `event ID --action A --summary S [--status] [--area] [--record] [--source]` | activity event |
 | `progress (--file \| --percent n [--label] [--method])` | project progress |
 | `upload FILE... [--question QID]` | upload, prints attachment ids |
@@ -182,6 +185,17 @@ Output is one JSON line on stdout; errors are one JSON line on stderr (`error`, 
 - A card's `fields` say who may change each value (`editableBy`). Agents can set `agent` fields with `apd update
   --field`; a user-only field (for example "Reviewed") is refused with `403 field-not-editable`, also inside a full
   `publish`. Read the definitions from `apd list` (`fieldDefs`) or the section's `section.json`.
+- Clearing a field always takes an explicit `null`. Leaving a field out of a full `publish` keeps its stored value
+  (ADR 0015), so an agent republishing from an old copy cannot erase what the user set:
+
+  ```sh
+  apd update LNT-REV-001 --field checks=none                       # PATCH {"fields": {"checks": null}}
+  apd publish --section reviews --id LNT-REV-001 --file rev.json   # rev.json: "fields": {"checks": null, ...}
+  ```
+
+- Names in `--by`, and agent token names, must not start with "user" in any case or spelling (`user-ci`, `User2`,
+  `u.s.e.r`). The server refuses such a `by` with `403 reserved-actor`, a token file with such a name stops start-up
+  naming the token, and `npm run agent-token` refuses to create one.
 - `external` references record what another system reported (`status`, `statusAt`). Refresh them from that system;
   never copy them into the record's own `status`.
 - Recurring records are created by the server from `templates/` files, not by agents. They are ordinary records:
@@ -219,7 +233,8 @@ never hold the same answer: claims are exclusive across processes.
 The agent needs only HTTPS access to the server and a token; it never needs the project folder. Recommended setup
 for an agent on another machine:
 
-1. Server in token mode with TLS ([DEPLOYMENT.md](DEPLOYMENT.md)), reachable on the LAN or a VPN only.
+1. Server in `required` login mode (the default) with TLS ([DEPLOYMENT.md](DEPLOYMENT.md)), reachable on the LAN
+   or a VPN only.
 2. A scoped token per agent or per project, with only the scopes it needs (`read,publish` for a reporter,
    `read,consume` for a consumer).
 3. On the agent host: `apd.mjs`, the token file (mode 600), `APD_URL`, `APD_PROJECT`, and `NODE_EXTRA_CA_CERTS` for a
@@ -254,5 +269,7 @@ with `{"uploadId": ...}`.
 `npm run build && npm run demo:agent` runs [scripts/agent-demo.ts](../scripts/agent-demo.ts) on a temporary copy of the
 example data, with token auth and a scoped agent token: the agent asks two questions with the CLI, the user answers
 one with a file and one through Excel, the agent finds both by task id, claims, downloads, completes, publishes
-progress, an issue with evidence, a review, an event and project progress, and after a server restart the API and
+progress, an issue with evidence, a review, an event and project progress, republishes the review after the user
+marked it (the user's field stays), clears its own field with an explicit `null`, is refused a `--by` name that reads
+as the user's, and after a server restart the API and
 the browser show the right states. It prints one PASS/FAIL line per check. CI runs it in the browser job.

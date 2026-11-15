@@ -23,7 +23,7 @@ const ms = (t0: number) => Math.round((performance.now() - t0) * 100) / 100;
 const results: Record<string, unknown> = { dataRoot: path.basename(src), node: process.version, platform: `${os.platform()} ${os.arch()}`, cpu: os.cpus()[0]?.model, at: new Date().toISOString() };
 
 const t0 = performance.now();
-const cfg = loadConfig({ dataRoot: tmp, watch: true, reconcileSeconds: 0, logLevel: "silent" } as never);
+const cfg = loadConfig({ dataRoot: tmp, watch: true, reconcileSeconds: 0, logLevel: "silent", auth: { mode: "disabled" } } as never);
 const { app, store } = await buildApp(cfg, { logger: false });
 results.startupIndexMs = ms(t0);
 results.projects = [...store.projects.values()].map((p) => ({ id: p.manifest.id, records: p.records.size, sections: p.sections.size, indexMs: p.indexMs }));

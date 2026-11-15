@@ -33,7 +33,7 @@ async function setupAuth() {
   const root = makeDataRoot();
   const tokenFile = path.join(root, "token.txt");
   fs.writeFileSync(tokenFile, TOKEN);
-  const h = await makeApp(root, { auth: { mode: "token", tokenFile } });
+  const h = await makeApp(root, { auth: { mode: "required", tokenFile } });
   apps.push(h);
   const login = await h.app.inject({ method: "POST", url: "/api/auth/login", headers: POST_HEADERS, payload: JSON.stringify({ token: TOKEN }) });
   const cookie = String(login.headers["set-cookie"]).split(";")[0];
@@ -332,7 +332,7 @@ describe("2. Config and manifests", () => {
 
   it("loadConfig refuses token mode without a token file and out-of-range or missing values", () => {
     const root = makeDataRoot();
-    expect(() => loadConfig({ dataRoot: root, auth: { mode: "token" } } as never)).toThrow(/tokenFile/);
+    expect(() => loadConfig({ dataRoot: root, auth: { mode: "required" } } as never)).toThrow(/tokenFile/);
     expect(() => loadConfig({ dataRoot: root, auth: { mode: "basic" } } as never)).toThrow();
     expect(() => loadConfig({ dataRoot: root, port: 0 } as never)).toThrow();
     expect(() => loadConfig({ dataRoot: root, port: 70000 } as never)).toThrow();
@@ -343,7 +343,8 @@ describe("2. Config and manifests", () => {
   it("every non-loopback host form is refused without a token", () => {
     const root = makeDataRoot();
     for (const host of ["0.0.0.0", "::", "192.168.1.5", "example.com", "127.0.0.2"]) {
-      expect(() => loadConfig({ dataRoot: root, host } as never), host).toThrow(/Refusing to bind/);
+      expect(() => loadConfig({ dataRoot: root, host } as never), host).toThrow(/needs auth.tokenFile/);
+      expect(() => loadConfig({ dataRoot: root, host, auth: { mode: "disabled" } } as never), host).toThrow(/Refusing to bind/);
     }
   });
 
@@ -352,25 +353,25 @@ describe("2. Config and manifests", () => {
     const cert = path.join(root, "cert.pem");
     fs.writeFileSync(cert, "x");
     const missing = path.join(root, "missing-key.pem");
-    expect(() => loadConfig({ dataRoot: root, tls: { certFile: cert, keyFile: missing } } as never)).toThrow(/TLS file not found: missing-key\.pem/);
-    try { loadConfig({ dataRoot: root, tls: { certFile: cert, keyFile: missing } } as never); } catch (e) { expect((e as Error).message).not.toContain(root); }
-    expect(() => loadConfig({ dataRoot: root, tls: { certFile: cert } } as never)).toThrow();
+    expect(() => loadConfig({ dataRoot: root, auth: { mode: "disabled" }, tls: { certFile: cert, keyFile: missing } } as never)).toThrow(/TLS file not found: missing-key\.pem/);
+    try { loadConfig({ dataRoot: root, auth: { mode: "disabled" }, tls: { certFile: cert, keyFile: missing } } as never); } catch (e) { expect((e as Error).message).not.toContain(root); }
+    expect(() => loadConfig({ dataRoot: root, auth: { mode: "disabled" }, tls: { certFile: cert } } as never)).toThrow();
   });
 
   it("refuses to start with a token shorter than 16 characters or an empty/missing token file", async () => {
     for (const short of ["", "short", "123456789012345"]) {
       const { root, tokenFile } = withToken(short);
-      const cfg = loadConfig({ dataRoot: root, watch: false, reconcileSeconds: 0, logLevel: "silent", auth: { mode: "token", tokenFile } } as never);
+      const cfg = loadConfig({ dataRoot: root, watch: false, reconcileSeconds: 0, logLevel: "silent", auth: { mode: "required", tokenFile } } as never);
       await expect(buildApp(cfg, { logger: false }), JSON.stringify(short)).rejects.toThrow(/at least 16 characters/);
     }
     const { root } = withToken("x");
-    const cfg = loadConfig({ dataRoot: root, watch: false, reconcileSeconds: 0, logLevel: "silent", auth: { mode: "token", tokenFile: path.join(root, "absent.txt") } } as never);
+    const cfg = loadConfig({ dataRoot: root, watch: false, reconcileSeconds: 0, logLevel: "silent", auth: { mode: "required", tokenFile: path.join(root, "absent.txt") } } as never);
     await expect(buildApp(cfg, { logger: false })).rejects.toThrow();
     const padded = withToken(" " + "a".repeat(15) + " ");
-    const cfg2 = loadConfig({ dataRoot: padded.root, watch: false, reconcileSeconds: 0, logLevel: "silent", auth: { mode: "token", tokenFile: padded.tokenFile } } as never);
+    const cfg2 = loadConfig({ dataRoot: padded.root, watch: false, reconcileSeconds: 0, logLevel: "silent", auth: { mode: "required", tokenFile: padded.tokenFile } } as never);
     await expect(buildApp(cfg2, { logger: false })).rejects.toThrow(/at least 16/);
     const ok = withToken("  " + "a".repeat(16) + "\n");
-    const h = await makeApp(ok.root, { auth: { mode: "token", tokenFile: ok.tokenFile } });
+    const h = await makeApp(ok.root, { auth: { mode: "required", tokenFile: ok.tokenFile } });
     apps.push(h);
     expect((await h.app.inject("/api/session")).statusCode).toBe(200);
   });

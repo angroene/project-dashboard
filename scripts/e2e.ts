@@ -60,7 +60,9 @@ async function freePort(): Promise<number> {
 const port = await freePort();
 const BASE = `http://127.0.0.1:${port}`;
 const tStart = performance.now();
-const cfg = loadConfig({ dataRoot: DATA, webRoot: WEB_ROOT, port, host: "127.0.0.1", watch: true, logLevel: "silent", reconcileSeconds: 3 });
+// The browser runs on this machine: login-free for loopback only (auth.mode "local-network"); walk 14 covers the others.
+const cfg = loadConfig({ dataRoot: DATA, webRoot: WEB_ROOT, port, host: "127.0.0.1", watch: true, logLevel: "silent", reconcileSeconds: 3,
+  auth: { mode: "local-network", trustedNetworks: ["127.0.0.1/32", "::1/128"] } });
 const { app, store } = await buildApp(cfg, { logger: false });
 const serverIndexMs = Math.round(performance.now() - tStart);
 store.startWatching();
@@ -764,6 +766,77 @@ await walk(13, "Defaults, tracked fields, comments, external refs, recurring tem
   await until("template paused", async () => readJson<{ state: string }>(tplFile).state === "paused");
   await shot(page, "desktop-recurring");
   log(`resumed → ${made.created.length} occurrences, idempotent re-run, paused`);
+});
+
+await walk(14, "Login modes: required, local-network (forged X-Forwarded-For ignored), disabled warning", async (log) => {
+  const OP = "e2e-operator-token-0123456789abcdef";
+  const servers: { close: () => Promise<unknown> }[] = [];
+  /** A separate server on its own copy of the fixtures, in the given login mode. */
+  const serve = async (auth: Record<string, unknown>) => {
+    const root = path.join(TMP, `auth-${servers.length}`);
+    fs.cpSync(FIXTURES, root, { recursive: true });
+    fs.writeFileSync(path.join(root, "op.txt"), OP);
+    const p = await freePort();
+    const c = loadConfig({ dataRoot: root, webRoot: WEB_ROOT, port: p, host: "127.0.0.1", watch: false, logLevel: "silent", reconcileSeconds: 0,
+      recurrenceSeconds: 0, auth: { tokenFile: path.join(root, "op.txt"), ...auth } });
+    const h = await buildApp(c, { logger: false });
+    await h.app.listen({ host: "127.0.0.1", port: p });
+    servers.push({ close: async () => { h.store.stop(); await h.app.close(); } });
+    return `http://127.0.0.1:${p}`;
+  };
+  // Own contexts without the console listener: the expected 401 responses are not page problems.
+  const page = async (headers?: Record<string, string>) => {
+    const ctx = await browser.newContext({ viewport: DESKTOP, extraHTTPHeaders: headers });
+    return { ctx, page: await ctx.newPage() };
+  };
+  try {
+    // required: the sign-in page, a wrong token is refused, the right one opens the projects.
+    const req = await serve({ mode: "required" });
+    const a = await page();
+    await a.page.goto(req + "/");
+    await a.page.getByRole("heading", { name: "Sign in" }).waitFor();
+    expect((await a.page.request.get(req + "/api/projects")).status() === 401, "required: API answered without a session");
+    await a.page.locator('input[type="password"]').fill("wrong-token-0123456789");
+    await a.page.getByRole("button", { name: "Sign in" }).click();
+    await a.page.getByText(/wrong access token/i).waitFor();
+    await a.page.locator('input[type="password"]').fill(OP);
+    await a.page.getByRole("button", { name: "Sign in" }).click();
+    await a.page.locator(".project").first().waitFor();
+    expect(await a.page.getByRole("button", { name: "Sign out" }).isVisible(), "required: no Sign out after login");
+    await a.ctx.close();
+    log("required: sign-in enforced");
+
+    // local-network trusting 10.0.0.0/8 only: this browser (127.0.0.1) must sign in, also when it forges its address.
+    const lan = await serve({ mode: "local-network", trustedNetworks: ["10.0.0.0/8"] });
+    const b = await page({ "X-Forwarded-For": "10.1.2.3", "X-Real-IP": "10.1.2.3", Forwarded: "for=10.1.2.3" });
+    await b.page.goto(lan + "/");
+    await b.page.getByRole("heading", { name: "Sign in" }).waitFor();
+    expect((await b.page.request.get(lan + "/api/projects")).status() === 401, "local-network: forged X-Forwarded-For was believed");
+    await b.ctx.close();
+    // local-network trusting loopback: no sign-in, no warning.
+    const lo = await serve({ mode: "local-network", trustedNetworks: ["127.0.0.1/32", "::1/128"] });
+    const c = await page();
+    await c.page.goto(lo + "/");
+    await c.page.locator(".project").first().waitFor();
+    expect(!(await c.page.getByRole("heading", { name: "Sign in" }).isVisible()), "local-network: trusted client asked to sign in");
+    expect((await c.page.getByTestId("auth-disabled-warning").count()) === 0, "local-network shows the disabled warning");
+    await c.ctx.close();
+    log("local-network: trusted range login-free, forged headers ignored");
+
+    // disabled: no sign-in, a warning on the page.
+    const off = await serve({ mode: "disabled", tokenFile: undefined });
+    const d = await page();
+    await d.page.goto(off + "/");
+    await d.page.locator(".project").first().waitFor();
+    const warn = d.page.getByTestId("auth-disabled-warning");
+    await warn.waitFor();
+    expect(/Sign-in is disabled/.test(await warn.innerText()), "disabled: warning text missing");
+    await shot(d.page, "desktop-auth-disabled-warning");
+    await d.ctx.close();
+    log("disabled: warning shown");
+  } finally {
+    for (const sv of servers) await sv.close();
+  }
 });
 
 // ------------------------------------------------- screenshots (mobile) --

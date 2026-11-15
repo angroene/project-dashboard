@@ -8,7 +8,7 @@ What the dashboard protects, what it trusts, and what it does not do. To report 
 | Party | Trusted to | Not trusted to |
 |---|---|---|
 | **Server operator** (controls config, data root, token file) | choose data roots, register extra project roots, set limits | |
-| **Authenticated user** (holds the token, or anyone on loopback) | read every project on this server, submit answers, upload allowed files, download attachments, trigger a reindex | write outside the project folders; see server file paths |
+| **Authenticated user** (holds the token, or is let in by the login mode: a trusted network in `local-network`, anyone in `disabled`) | read every project on this server, submit answers, upload allowed files, download attachments, trigger a reindex | write outside the project folders; see server file paths |
 | **Project files** (JSON, Markdown, attachments written by producers) | nothing: every file is parsed and validated, content is rendered as data | choose paths outside their own project, run code, inject HTML or scripts |
 | **Agent with a scoped token** (`agentTokensFile`) | only its listed projects and scopes: read, publish validated records/events/progress/uploads, consume answers | answer questions, use Excel/ZIP/read state/diagnostics/reindex/live updates, see other projects, choose file paths |
 | **Browser content** (answers, uploads, Excel files) | nothing | |
@@ -20,9 +20,18 @@ If two human audiences must not see each other's projects, run two server instan
 
 ## Network exposure and authentication
 
-- Default bind is `127.0.0.1` without login. A different bind address **refuses to start** without token
-  authentication and HTTPS (built-in TLS, or `PCC_BEHIND_HTTPS_PROXY` for a TLS proxy on the same machine). The
-  config-file option `allowInsecureRemote` is the one explicit opt-out; it sends the token in clear text.
+- Login mode ([ADR 0019](adr/0019-configurable-dashboard-login.md), [DEPLOYMENT.md](DEPLOYMENT.md#login-modes)):
+  `required` (default; everyone signs in), `local-network` (configured CIDR ranges need no login, everyone else signs
+  in) or `disabled` (nobody signs in; explicit, with a start-up warning, a page banner and a second opt-in for a
+  non-loopback bind). Trusted ranges are never inferred.
+- Client addresses come from the TCP connection. Forwarding headers are believed only from `trustedProxies`, and
+  then only the address that proxy appended. Login-free access also needs a `Host` that is an IP address,
+  `localhost` or an `allowedHosts` name, so DNS-rebinding pages are refused.
+- Bearer tokens are checked in every mode: agent tokens keep their projects and scopes, unknown tokens get `401`.
+  Clients let in without login have full operator access, so scopes restrict only agents that must authenticate.
+- Default bind is `127.0.0.1`. A different bind address **refuses to start** without HTTPS (built-in TLS, or
+  `PCC_BEHIND_HTTPS_PROXY` for a TLS proxy). The config-file option `allowInsecureRemote` is the one explicit
+  opt-out; it sends the token in clear text.
 - The token is read from a file (at least 16 characters, never logged) and compared in constant time after hashing.
   It is exchanged for a random 256-bit session id in an HttpOnly, SameSite=Strict cookie, Secure whenever TLS or a
   declared HTTPS proxy is in use. Sessions live in memory: at most 1000, and a restart signs everyone out.
@@ -32,7 +41,8 @@ If two human audiences must not see each other's projects, run two server instan
   match the host (CSRF defence). The auth decision uses the routed path after URL decoding, so encoded paths such as
   `/%61pi/...` do not bypass it.
 - The static UI shell is public (it contains no project data); every `/api` route except `/api/session` and
-  `/api/auth/*` requires the session.
+  `/api/auth/*` requires a session, a valid bearer token, or login-free access by the configured mode (tested on
+  every registered route in every mode).
 - Response headers: `Content-Security-Policy` (`default-src 'self'`, no inline script, `frame-ancestors 'none'`),
   `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`. The UI loads nothing
   from other hosts.

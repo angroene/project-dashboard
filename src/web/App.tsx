@@ -91,6 +91,11 @@ function Shell({ productName, session, children }: { productName: string; sessio
         </nav>
       </header>
       <main className="shell" id="main" tabIndex={-1}>
+        {session?.authMode === "disabled" && (
+          <p className="notice notice-warn" role="alert" data-testid="auth-disabled-warning">
+            Sign-in is disabled on this server: anyone who can reach it can read and change all dashboard data.
+          </p>
+        )}
         {children}
       </main>
     </>

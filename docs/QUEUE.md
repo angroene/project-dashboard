@@ -159,7 +159,8 @@ npm ci
 npm run build
 export DATA=$(mktemp -d)
 cp -r examples/. "$DATA"/
-PCC_DATA_ROOT="$DATA" PCC_PORT=8821 PCC_WEB_ROOT=dist/web npm start
+PCC_DATA_ROOT="$DATA" PCC_PORT=8821 PCC_WEB_ROOT=dist/web \
+PCC_AUTH_MODE=local-network PCC_TRUSTED_NETWORKS=127.0.0.1/32,::1/128 npm start   # no login for this machine only
 ```
 
 Leave it running and open a second terminal. Set the same variables there (`export DATA=...` with the same path, plus

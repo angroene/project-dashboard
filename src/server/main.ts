@@ -1,10 +1,15 @@
 import { buildApp } from "./app.js";
-import { isLoopback, loadConfig } from "./config.js";
+import { authWarnings, isLoopback, loadConfig } from "./config.js";
 import { acquireWriterLock } from "./datalock.js";
 import { startRecurrence } from "./recurrence.js";
 
 async function main() {
   const cfg = loadConfig();
+  const warnings = authWarnings(cfg);
+  if (cfg.auth.mode === "disabled") {
+    const bar = "!".repeat(78);
+    console.error([bar, ...warnings.map((w) => `!! ${w}`), bar].join("\n"));
+  } else for (const w of warnings) console.error(w);
   // Before anything reads or writes the data: a second server on the same data root would lose updates.
   const lock = await acquireWriterLock(cfg.dataRoot, {
     waitMs: cfg.writerLockWaitSeconds * 1000,

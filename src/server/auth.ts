@@ -1,7 +1,8 @@
 /**
- * Access control. Loopback-only deployments may run without auth; any other bind needs a token
- * (read from a file, never logged) exchanged for an HttpOnly, SameSite=Strict session cookie.
- * State-changing requests additionally need `X-PCC-Request: 1` and a same-origin Origin header.
+ * Access control (ADR 0006, ADR 0019). The dashboard login mode decides who needs to sign in: everyone ("required"),
+ * everyone outside the configured trusted networks ("local-network"), or nobody ("disabled"). Signing in exchanges
+ * the access token (read from a file, never logged) for an HttpOnly, SameSite=Strict session cookie.
+ * State-changing requests additionally need `X-PCC-Request: 1` and a same-origin Origin header, in every mode.
  *
  * Scripts and agents may instead send `Authorization: Bearer <token>`: either the operator token (full access, same as
  * a browser session) or a scoped agent token from `agentTokensFile`, limited to listed projects and scopes.
@@ -10,8 +11,11 @@ import fs from "node:fs";
 import crypto from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { isReservedActorName, RESERVED_ACTOR_RULE } from "../shared/actor.js";
+import net from "node:net";
 import { Id } from "../shared/schemas.js";
 import type { Config } from "./config.js";
+import { NetworkList } from "./netmatch.js";
 
 const COOKIE = "pcc_session";
 const PUBLIC_ROUTES = new Set(["/api/session", "/api/auth/login", "/api/auth/logout"]);
@@ -24,9 +28,7 @@ export type AgentScope = (typeof AGENT_SCOPES)[number];
 const AgentTokensFile = z.object({
   schemaVersion: z.literal(1),
   tokens: z.array(z.object({
-    // The name is written into history entries; "user…" is reserved for the dashboard user (ADR 0015).
-    name: z.string().regex(/^[A-Za-z0-9._:@-]{1,60}$/)
-      .refine((n) => !n.toLowerCase().replace(/[^a-z0-9]/g, "").startsWith("user"), "token names must not start with \"user\" (reserved for the dashboard user)"),
+    name: z.string().regex(/^[A-Za-z0-9._:@-]{1,60}$/),
     sha256: z.string().regex(/^[a-f0-9]{64}$/),
     /** Project ids this token may use; "*" = every project on the server. */
     projects: z.array(z.union([Id, z.literal("*")])).min(1).max(200),
@@ -35,12 +37,16 @@ const AgentTokensFile = z.object({
 }).superRefine((f, ctx) => {
   const names = new Set<string>();
   const hashes = new Set<string>();
-  for (const t of f.tokens) {
+  f.tokens.forEach((t, i) => {
+    // The name is written into history entries; names that read as the dashboard user's are reserved (ADR 0015).
+    if (isReservedActorName(t.name)) {
+      ctx.addIssue({ code: "custom", path: ["tokens", i, "name"], message: `'${t.name}' ${RESERVED_ACTOR_RULE}; rename the token` });
+    }
     if (names.has(t.name)) ctx.addIssue({ code: "custom", message: `duplicate token name '${t.name}'` });
     if (hashes.has(t.sha256)) ctx.addIssue({ code: "custom", message: `token '${t.name}' reuses another token's hash` });
     names.add(t.name);
     hashes.add(t.sha256);
-  }
+  });
 });
 
 export interface AgentGrant {
@@ -81,7 +87,7 @@ const AGENT_ROUTES: Record<string, AgentScope> = {
 
 const agentOfRequest = new WeakMap<FastifyRequest, AgentGrant>();
 
-/** The scoped agent behind this request, or undefined for the operator (session, operator token or no-auth mode). */
+/** The scoped agent behind this request, or undefined for the operator (session, operator token or login-free access). */
 export function agentOf(req: FastifyRequest): AgentGrant | undefined {
   return agentOfRequest.get(req);
 }
@@ -97,9 +103,13 @@ export class Auth {
   private agents: { hash: Buffer; grant: AgentGrant }[] = [];
   private sessions = new Map<string, number>();
   private failures = new Map<string, { count: number; until: number }>();
+  private readonly trusted: NetworkList;
+  private readonly hosts: ReadonlySet<string>;
 
   constructor(private readonly cfg: Config) {
-    if (cfg.auth.mode === "token") {
+    this.trusted = new NetworkList(cfg.auth.mode === "local-network" ? cfg.auth.trustedNetworks : []);
+    this.hosts = new Set(cfg.auth.allowedHosts.map((h) => h.toLowerCase()));
+    if (cfg.auth.tokenFile) {
       const token = fs.readFileSync(cfg.auth.tokenFile!, "utf8").trim();
       if (token.length < 16) throw new Error("auth token in tokenFile must be at least 16 characters");
       this.tokenHash = sha256(token);
@@ -123,12 +133,33 @@ export class Auth {
     }
   }
 
-  get required(): boolean {
-    return this.cfg.auth.mode === "token";
+  get mode(): Config["auth"]["mode"] {
+    return this.cfg.auth.mode;
+  }
+
+  /**
+   * The Host header names this server by IP address, "localhost" or a configured allowed host. A page on another
+   * domain that resolves to this server (DNS rebinding) sends its own name and so never gets login-free access.
+   */
+  private hostAllowed(req: FastifyRequest): boolean {
+    const raw = String(req.headers.host ?? "").toLowerCase();
+    if (raw.startsWith("[") && !raw.includes("]")) return false; // malformed IPv6 literal
+    const name = raw.startsWith("[") ? raw.slice(1, raw.indexOf("]")) : raw.replace(/:\d+$/, "");
+    return net.isIP(name) !== 0 || name === "localhost" || this.hosts.has(name);
+  }
+
+  /**
+   * Whether this request may use the dashboard without signing in. The client address is the socket's, or the one a
+   * configured trusted proxy reports (Fastify trustProxy); a client's own X-Forwarded-For is never believed.
+   */
+  loginFree(req: FastifyRequest): boolean {
+    // "required": the trusted list is empty, so nobody is let in here.
+    if (!this.hostAllowed(req)) return false;
+    return this.cfg.auth.mode === "disabled" || this.trusted.has(req.ip);
   }
 
   isAuthenticated(req: FastifyRequest): boolean {
-    if (!this.required) return true;
+    if (this.loginFree(req)) return true;
     const sid = req.cookies?.[COOKIE];
     if (!sid) return false;
     const exp = this.sessions.get(sid);
@@ -154,7 +185,10 @@ export class Auth {
 
   register(app: FastifyInstance): void {
     app.post("/api/auth/login", async (req, reply) => {
-      if (!this.required) return { ok: true };
+      if (!this.tokenHash) {
+        if (this.loginFree(req)) return { ok: true };
+        return reply.code(403).send({ error: "login-unavailable", message: "no access token is configured on this server; only trusted networks can use it" });
+      }
       const ip = req.ip;
       if (this.throttled(ip)) return reply.code(429).send({ error: "rate-limited", message: "too many attempts; wait and retry" });
       const token = (req.body as { token?: unknown } | undefined)?.token;
@@ -214,7 +248,9 @@ export class Auth {
     if (!isApi) return; // the static UI shell is public; it holds no project data
     if (PUBLIC_ROUTES.has(route)) return;
     const authz = req.headers.authorization;
-    if (this.required && typeof authz === "string" && /^bearer /i.test(authz)) {
+    // A bearer token is always checked, whatever the login mode: an agent token keeps its projects and scopes even
+    // where the dashboard needs no login, and an unknown token is refused rather than ignored.
+    if (typeof authz === "string" && /^bearer /i.test(authz)) {
       if (this.throttled(req.ip)) return void reply.code(429).send({ error: "rate-limited", message: "too many attempts; wait and retry" });
       const who = this.bearer(authz.slice(7).trim());
       if (!who) {

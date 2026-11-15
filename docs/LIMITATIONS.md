@@ -17,9 +17,12 @@
 - **Single shared human access level.** One operator identity per server (`auth.user`); read and unread state is per
   that identity. Sessions are in memory (a restart signs everyone out). No user accounts; per-project limits exist
   only for scoped agent tokens.
-- **Transport security is deployment work.** Remote use needs a token and HTTPS; the server enforces both at startup
-  (built-in TLS or a same-host proxy), unless `allowInsecureRemote` is set. A proxy on another host is not supported
-  as a trusted proxy. Only failed logins are rate limited.
+- **Transport security is deployment work.** Remote use needs HTTPS; the server enforces it at startup (built-in TLS
+  or a proxy), unless `allowInsecureRemote` is set. Only failed logins are rate limited.
+- **Login-free access is by address only.** `local-network` trusts configured IP ranges (and `disabled` trusts
+  everyone); there is no per-user identity, and clients let in without login have operator access, beyond agent token
+  scopes. Behind Docker's port proxy the client address can be the bridge gateway, which makes `local-network`
+  unusable there. Tested with injected addresses and on loopback; real LAN, VPN and proxy setups were not tested.
 - **Docker is tested on Linux hosts only** (amd64 and arm64). macOS and Windows hosts are untested. No image is
   published; build it locally (`deploy/apd-deploy.sh up`).
 - **Uploads are not virus-scanned.** Type is checked by extension allowlist and content signature, size is capped,

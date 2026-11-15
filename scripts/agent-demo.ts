@@ -48,7 +48,7 @@ const webRoot = fs.existsSync(path.join(REPO, "dist", "web", "index.html")) ? pa
 async function start(port = 0) {
   const cfg = loadConfig({
     dataRoot, webRoot, logLevel: "silent", reconcileSeconds: 0,
-    auth: { mode: "token", tokenFile: path.join(secrets, "operator.txt") },
+    auth: { mode: "required", tokenFile: path.join(secrets, "operator.txt") },
     agentTokensFile: path.join(secrets, "agent-tokens.json"),
   } as never);
   const h = await buildApp(cfg, { logger: false });
@@ -165,6 +165,21 @@ try {
   const prog = await apd(["progress", "--json", JSON.stringify({ overallPercent: 62, label: "Release 1.0 readiness", method: "Share of release checklist items done" })]);
   check("agent publishes task progress, issue with evidence, review finding, event and progress",
     [upd, issue, review, event, prog].every((r) => r.code === 0), [upd, issue, review, event, prog].map((r) => r.code));
+
+  // 5b. The user marks the review; the agent republishes its old copy and clears its own field explicitly.
+  const marked = await user("POST", `${P}/records/LNT-REV-DEMO/user-update`, { fields: { reviewed: true } });
+  const setChecks = await apd(["update", "LNT-REV-DEMO", "--field", "checks=true", "--by", "lantern-agent"]);
+  const republish = await apd(["publish", "--section", "reviews", "--id", "LNT-REV-DEMO", "--json", JSON.stringify({
+    recordType: "review", title: "Review: sync conflict handling", status: "changes-requested", summary: "1 finding: merge keeps stale cursor position.",
+  })]);
+  const kept = (await apd(["source", "LNT-REV-DEMO"])).out.record as { fields?: Record<string, unknown> };
+  check("republishing a record keeps the user's and the agent's fields it leaves out",
+    marked.status === 200 && setChecks.code === 0 && republish.code === 0 && kept.fields?.reviewed === true && kept.fields?.checks === true, kept.fields);
+  const clear = await apd(["update", "LNT-REV-DEMO", "--field", "checks=none", "--by", "lantern-agent"]);
+  const after = (await apd(["source", "LNT-REV-DEMO"])).out.record as { fields?: Record<string, unknown> };
+  check("an explicit null (--field checks=none) clears only that field", clear.code === 0 && !("checks" in (after.fields ?? {})) && after.fields?.reviewed === true, after.fields);
+  const reserved = await apd(["update", "LNT-REV-DEMO", "--note", "done", "--by", "user-bot"]);
+  check("a --by name that reads as the user's is refused (reserved-actor)", reserved.code === 1 && reserved.out.error === "reserved-actor", reserved.out);
 
   // 6. Restart and verify what the dashboard shows.
   const port = srv.port;

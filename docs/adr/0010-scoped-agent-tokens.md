@@ -1,6 +1,6 @@
 # ADR 0010 — Scoped bearer tokens for agents
 
-**Status:** Accepted · **Date:** 2026-11-14 · Extends ADR 0006
+**Status:** Accepted · **Date:** 2026-11-14 · Extends ADR 0006 · Amended by ADR 0019 (agent tokens work and are checked in every login mode)
 
 ## Context
 

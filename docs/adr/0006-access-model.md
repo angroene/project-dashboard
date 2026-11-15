@@ -1,6 +1,6 @@
 # ADR 0006 — Access model
 
-**Status:** Accepted for the first release · **Date:** 2026-11-13
+**Status:** Accepted for the first release · **Date:** 2026-11-13 · Login modes amended by [ADR 0019](0019-configurable-dashboard-login.md) (login required by default; `local-network`, `disabled`; trusted proxies explicit)
 
 - Bound to `127.0.0.1` (default): no login.
 - Any other bind address **refuses to start** unless `auth.mode = "token"` with a token file (at least 16

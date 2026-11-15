@@ -53,6 +53,7 @@ function json(body: unknown, status: number, headers: Record<string, string> = {
 
 // ------------------------------------------------------------- rendering --
 export const session: SessionInfo = {
+  authMode: "required",
   authRequired: false,
   authenticated: true,
   user: "operator",

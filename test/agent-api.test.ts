@@ -42,7 +42,7 @@ async function setup(opts: { root?: string; auth?: boolean } = {}) {
         { name: "reader", sha256: tokenSha256(TOKENS.all), projects: ["*"], scopes: ["read"] },
       ],
     });
-    extra = { auth: { mode: "token", tokenFile }, agentTokensFile };
+    extra = { auth: { mode: "required", tokenFile }, agentTokensFile };
   }
   const h = await makeApp(root, extra);
   apps.push(h);
@@ -336,18 +336,27 @@ describe("scoped agent tokens", () => {
     const tokenFile = path.join(root, "op.txt");
     fs.writeFileSync(tokenFile, OPERATOR);
     const f = path.join(root, "agents.json");
-    expect(() => loadConfig({ dataRoot: root, agentTokensFile: f } as never)).toThrow(/needs auth.mode/);
+    // Default mode is "required": an operator token file is needed, agent tokens or not.
+    expect(() => loadConfig({ dataRoot: root, agentTokensFile: f } as never)).toThrow(/needs auth.tokenFile/);
     writeJson(f, { schemaVersion: 1, tokens: [{ name: "x", sha256: "abc", projects: ["alpha"], scopes: ["read"] }] });
-    await expect(makeApp(root, { auth: { mode: "token", tokenFile }, agentTokensFile: f })).rejects.toThrow(/agentTokensFile invalid/);
+    await expect(makeApp(root, { auth: { mode: "required", tokenFile }, agentTokensFile: f })).rejects.toThrow(/agentTokensFile invalid/);
     writeJson(f, { schemaVersion: 1, tokens: [{ name: "x", sha256: tokenSha256(OPERATOR), projects: ["alpha"], scopes: ["read"] }] });
-    await expect(makeApp(root, { auth: { mode: "token", tokenFile }, agentTokensFile: f })).rejects.toThrow(/must not equal the operator token/);
+    await expect(makeApp(root, { auth: { mode: "required", tokenFile }, agentTokensFile: f })).rejects.toThrow(/must not equal the operator token/);
     writeJson(f, { schemaVersion: 1, tokens: [{ name: "x", sha256: tokenSha256("a-b-c-d-e-f-g-h-i"), projects: ["alpha"], scopes: ["admin"] }] });
-    await expect(makeApp(root, { auth: { mode: "token", tokenFile }, agentTokensFile: f })).rejects.toThrow(/agentTokensFile invalid/);
+    await expect(makeApp(root, { auth: { mode: "required", tokenFile }, agentTokensFile: f })).rejects.toThrow(/agentTokensFile invalid/);
     // Token names end up in history entries; the user's name and look-alikes are reserved.
-    for (const name of ["user", "User.2", "u-s-e-r"]) {
-      writeJson(f, { schemaVersion: 1, tokens: [{ name, sha256: tokenSha256("a-b-c-d-e-f-g-h-i"), projects: ["alpha"], scopes: ["read"] }] });
-      await expect(makeApp(root, { auth: { mode: "token", tokenFile }, agentTokensFile: f }), name).rejects.toThrow(/must not start with "user"/);
+    for (const name of ["user", "user-ci", "User.2", "u-s-e-r"]) {
+      writeJson(f, { schemaVersion: 1, tokens: [
+        { name: "ok-agent", sha256: tokenSha256("z-y-x-w-v-u-t-s-r"), projects: ["alpha"], scopes: ["read"] },
+        { name, sha256: tokenSha256("a-b-c-d-e-f-g-h-i"), projects: ["alpha"], scopes: ["read"] }] });
+      // The message names the file, the entry and the token, says why and what to do.
+      await expect(makeApp(root, { auth: { mode: "required", tokenFile }, agentTokensFile: f }), name)
+        .rejects.toThrow(`agentTokensFile invalid: tokens.1.name '${name}' must not start with "user"`);
+      await expect(makeApp(root, { auth: { mode: "required", tokenFile }, agentTokensFile: f }), name).rejects.toThrow(/rename the token/);
     }
+    // Names that merely contain "user" later on are fine.
+    writeJson(f, { schemaVersion: 1, tokens: [{ name: "ci-user", sha256: tokenSha256("a-b-c-d-e-f-g-h-i"), projects: ["alpha"], scopes: ["read"] }] });
+    await (await makeApp(root, { auth: { mode: "required", tokenFile }, agentTokensFile: f })).app.close();
   });
 });
 

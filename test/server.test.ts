@@ -465,7 +465,7 @@ describe("http safety", () => {
     const root = makeDataRoot();
     const tokenFile = path.join(root, "token.txt");
     fs.writeFileSync(tokenFile, "test-token-0123456789abcdef");
-    const h = await makeApp(root, { auth: { mode: "token", tokenFile } });
+    const h = await makeApp(root, { auth: { mode: "required", tokenFile } });
     apps.push(h);
     expect((await h.app.inject("/api/projects")).statusCode).toBe(401);
     const bad = await h.app.inject({ method: "POST", url: "/api/auth/login", payload: JSON.stringify({ token: "wrong" }), headers: POST_HEADERS });
@@ -478,7 +478,8 @@ describe("http safety", () => {
     const sid = cookie.split(";")[0];
     expect((await h.app.inject({ url: "/api/projects", headers: { cookie: sid } })).statusCode).toBe(200);
     const { loadConfig } = await import("../src/server/config.js");
-    expect(() => loadConfig({ dataRoot: root, host: "0.0.0.0" } as never)).toThrow(/Refusing to bind/);
+    expect(() => loadConfig({ dataRoot: root, host: "0.0.0.0" } as never)).toThrow(/needs auth.tokenFile/);
+    expect(() => loadConfig({ dataRoot: root, host: "0.0.0.0", auth: { mode: "disabled" } } as never)).toThrow(/Refusing to bind/);
   });
 });
 

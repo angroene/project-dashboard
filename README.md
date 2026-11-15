@@ -39,8 +39,10 @@ data format depends on any of them.
 - **Unread updates and awaiting-response counts** tracked independently, with live updates over Server-Sent Events.
 - **Agent integration:** a publish API, scoped bearer tokens, a single-file CLI with an offline outbox, and four
   portable skills for coding agents ([docs/AGENT_INTEGRATION.md](docs/AGENT_INTEGRATION.md), [docs/SKILLS.md](docs/SKILLS.md)).
-- **Secure by default:** loopback-only, token authentication and HTTPS enforced for any other bind address, path
-  containment with symlink protection, sanitised Markdown, upload and Excel limits.
+- **Secure by default:** login required unless you configure otherwise (`local-network` for explicit trusted
+  ranges, or a deliberate `disabled`), loopback bind, HTTPS enforced for any other bind address, forwarded headers
+  trusted only from configured proxies, path containment with symlink protection, sanitised Markdown, upload and
+  Excel limits.
 
 ## Screenshots
 
@@ -66,9 +68,12 @@ the end-to-end test. They illustrate the interface; they are not a live deployme
 | `PCC_HOST` | `127.0.0.1` | Bind address. Anything else requires a token and HTTPS |
 | `PCC_PORT` | `8790` | Port |
 | `PCC_WEB_ROOT` | none | Built UI folder, `dist/web` |
-| `PCC_AUTH_TOKEN_FILE` | none | File with the access token; turns login on |
+| `PCC_AUTH_MODE` | `required` | `required`, `local-network` (no login for `PCC_TRUSTED_NETWORKS`) or `disabled` ([login modes](docs/DEPLOYMENT.md#login-modes)) |
+| `PCC_AUTH_TOKEN_FILE` | none | File with the access token; needed in `required` mode |
+| `PCC_TRUSTED_NETWORKS` | none | `local-network` only: CIDR ranges that need no login, e.g. `127.0.0.1/32,::1/128` |
+| `PCC_TRUSTED_PROXIES` | none | Reverse proxy addresses whose `X-Forwarded-For` is believed |
 | `PCC_TLS_CERT`, `PCC_TLS_KEY` | none | PEM files for built-in HTTPS |
-| `PCC_BEHIND_HTTPS_PROXY` | off | `1` when a TLS proxy on the same host fronts the app |
+| `PCC_BEHIND_HTTPS_PROXY` | off | `1` when a TLS proxy fronts the app (Secure cookie) |
 | `PCC_CONFIG` | `./pcc.config.json` | Config file path |
 
 Full table (upload limits, session lifetime, log level, extra project roots): [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#configuration).
@@ -81,7 +86,8 @@ cd agents-project-dashboard
 npm ci
 npm run build
 cp -r examples demo-data          # the server writes into its data root, so use a copy
-PCC_DATA_ROOT=demo-data PCC_WEB_ROOT=dist/web npm start
+PCC_DATA_ROOT=demo-data PCC_WEB_ROOT=dist/web \
+PCC_AUTH_MODE=local-network PCC_TRUSTED_NETWORKS=127.0.0.1/32,::1/128 npm start   # no login for this machine only
 ```
 
 Open **http://127.0.0.1:8790**: two fictional example projects with different layouts. Windows PowerShell syntax and

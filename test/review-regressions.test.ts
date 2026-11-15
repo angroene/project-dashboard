@@ -20,7 +20,7 @@ describe("review #1: encoded paths cannot bypass auth or CSRF", () => {
     const root = makeDataRoot();
     const tokenFile = path.join(root, "token.txt");
     fs.writeFileSync(tokenFile, "test-token-0123456789abcdef");
-    const h = await makeApp(root, { auth: { mode: "token", tokenFile } });
+    const h = await makeApp(root, { auth: { mode: "required", tokenFile } });
     apps.push(h);
     for (const url of ["/%61pi/projects", "/%61pi/diagnostics", "/api/projects/alpha/attachments/ATT-1", "/%61pi/projects/alpha/attachments/ATT-1", "/API/projects"]) {
       const r = await h.app.inject(url);

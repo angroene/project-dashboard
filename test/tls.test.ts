@@ -17,14 +17,14 @@ describe("remote exposure", () => {
     const root = makeDataRoot();
     const tokenFile = path.join(root, "token.txt");
     fs.writeFileSync(tokenFile, "x".repeat(32));
-    expect(() => loadConfig({ dataRoot: root, host: "0.0.0.0", auth: { mode: "token", tokenFile } } as never)).toThrow(/without HTTPS/);
-    expect(() => loadConfig({ dataRoot: root, host: "0.0.0.0", behindHttpsProxy: true, auth: { mode: "token", tokenFile } } as never)).not.toThrow();
-    expect(() => loadConfig({ dataRoot: root, host: "0.0.0.0", allowInsecureRemote: true, auth: { mode: "token", tokenFile } } as never)).not.toThrow();
+    expect(() => loadConfig({ dataRoot: root, host: "0.0.0.0", auth: { mode: "required", tokenFile } } as never)).toThrow(/without HTTPS/);
+    expect(() => loadConfig({ dataRoot: root, host: "0.0.0.0", behindHttpsProxy: true, auth: { mode: "required", tokenFile } } as never)).not.toThrow();
+    expect(() => loadConfig({ dataRoot: root, host: "0.0.0.0", allowInsecureRemote: true, auth: { mode: "required", tokenFile } } as never)).not.toThrow();
   });
 
   it("names a missing TLS file without leaking its directory", () => {
     const root = makeDataRoot();
-    expect(() => loadConfig({ dataRoot: root, tls: { certFile: path.join(root, "nope.pem"), keyFile: path.join(root, "k.pem") } } as never))
+    expect(() => loadConfig({ dataRoot: root, auth: { mode: "disabled" }, tls: { certFile: path.join(root, "nope.pem"), keyFile: path.join(root, "k.pem") } } as never))
       .toThrow(/TLS file not found: nope\.pem/);
   });
 
@@ -35,7 +35,7 @@ describe("remote exposure", () => {
     execFileSync("openssl", ["req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", key, "-out", cert, "-days", "1", "-subj", "/CN=localhost"], { stdio: "ignore" });
     const tokenFile = path.join(dir, "token.txt");
     fs.writeFileSync(tokenFile, "test-token-0123456789abcdef");
-    const cfg = loadConfig({ dataRoot: root, watch: false, reconcileSeconds: 0, logLevel: "silent", tls: { certFile: cert, keyFile: key }, auth: { mode: "token", tokenFile } } as never);
+    const cfg = loadConfig({ dataRoot: root, watch: false, reconcileSeconds: 0, logLevel: "silent", tls: { certFile: cert, keyFile: key }, auth: { mode: "required", tokenFile } } as never);
     const { app } = await buildApp(cfg, { logger: false });
     try {
       await app.listen({ host: "127.0.0.1", port: 0 });

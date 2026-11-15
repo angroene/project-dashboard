@@ -60,7 +60,8 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
   const app = Fastify({
     logger: opts.logger === false ? false : { level: cfg.logLevel, redact: ["req.headers.cookie", "req.headers.authorization"] },
     bodyLimit: 1024 * 1024,
-    trustProxy: cfg.behindHttpsProxy ? "127.0.0.1" : false,
+    // X-Forwarded-For is believed only from explicitly configured proxies (ADR 0019).
+    trustProxy: cfg.trustedProxies.length ? [...cfg.trustedProxies] : false,
     https: cfg.tls ? { cert: fs.readFileSync(cfg.tls.certFile), key: fs.readFileSync(cfg.tls.keyFile) } : null,
   } as never) as unknown as FastifyInstance;
 
@@ -104,7 +105,8 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
 
   // ---------------------------------------------------------------- read --
   app.get("/api/session", async (req): Promise<SessionInfo> => ({
-    authRequired: auth.required,
+    authMode: auth.mode,
+    authRequired: !auth.loginFree(req),
     authenticated: auth.isAuthenticated(req),
     user,
     productName: cfg.productName,

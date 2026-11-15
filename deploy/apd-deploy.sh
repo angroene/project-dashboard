@@ -18,6 +18,11 @@
 #   APD_TLS_NAMES   extra certificate names for a generated certificate, e.g. "DNS:dash.lan,IP:192.0.2.10"
 #   PCC_BIND        host address to publish on (default 127.0.0.1 = this machine only)
 #   PCC_HOST_PORT   host port (default 8790)
+#   PCC_AUTH_MODE   dashboard login: required (default) | local-network | disabled  (docs/DEPLOYMENT.md, "Login modes")
+#   PCC_TRUSTED_NETWORKS  local-network only: comma-separated CIDR ranges that need no login, e.g. 192.168.1.0/24
+#   PCC_TRUSTED_PROXIES   addresses of reverse proxies whose X-Forwarded-For is believed (default: none)
+#   PCC_ALLOWED_HOSTS     host names used to reach the dashboard login-free, besides IP addresses and localhost
+#   APD_CONFIRM_AUTH_DISABLED  set to the instance name to confirm PCC_AUTH_MODE=disabled without a prompt
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -66,6 +71,24 @@ confirm_destructive() {
     read -r given < /dev/tty
   fi
   [ "$given" = "$NAME" ] || die "confirmation did not match '$NAME'; nothing was changed"
+}
+
+# Checks the login settings before anything starts; "disabled" needs a typed confirmation (ADR 0019).
+check_auth() {
+  local mode="${PCC_AUTH_MODE:-required}"
+  case "$mode" in
+    required|token) ;;
+    local-network)
+      [ -n "${PCC_TRUSTED_NETWORKS:-}" ] || die "PCC_AUTH_MODE=local-network needs PCC_TRUSTED_NETWORKS (for example 192.168.1.0/24); ranges are never guessed"
+      say "login-free access for ${PCC_TRUSTED_NETWORKS}; everyone else signs in with the token" ;;
+    disabled)
+      printf '%s
+'         "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"         "!! WARNING: PCC_AUTH_MODE=disabled turns the dashboard login off."         "!! Anyone who can reach $BIND:$PORT can read, change and delete all dashboard data,"         "!! answer questions and upload files. Agent tokens still apply to agents."         "!! Prefer PCC_AUTH_MODE=local-network with PCC_TRUSTED_NETWORKS."         "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
+      confirm_destructive "Run instance '$NAME' without login?" "${APD_CONFIRM_AUTH_DISABLED:-}"
+      # The container listens on all its addresses; the server needs this second, explicit opt-in for that.
+      export PCC_AUTH_DISABLED_ON_NETWORK=1 ;;
+    *) die "PCC_AUTH_MODE must be required, local-network or disabled (got '$mode')" ;;
+  esac
 }
 
 ensure_secrets() {
@@ -135,9 +158,15 @@ cmd_health() {
   say "https: $url answers (auth required: $(printf '%s' "$body" | grep -o '"authRequired":[a-z]*' | cut -d: -f2))"
   code="$(curl -s -o /dev/null --max-time 5 -w '%{http_code}' "http://$host:$PORT/api/session" || true)"
   case "$code" in 000|400) say "plain http: refused (as intended)" ;; *) die "plain HTTP answered with $code; expected a refusal" ;; esac
+  local mode; mode="$(printf '%s' "$body" | grep -o '"authMode":"[a-z-]*"' | cut -d'"' -f4)"
+  say "login mode: ${mode:-unknown}"
   code="$(curl_tls -s -o /dev/null --max-time 10 -w '%{http_code}' "$url/api/projects")"
-  [ "$code" = 401 ] || die "unauthenticated /api/projects returned $code; expected 401"
-  say "unauthenticated api: 401 (as intended)"
+  if [ "$mode" = disabled ]; then
+    say "WARNING: login is disabled; /api/projects answered $code without a token"
+  else
+    [ "$code" = 401 ] || die "unauthenticated /api/projects returned $code; expected 401"
+    say "unauthenticated api: 401 (as intended)"
+  fi
   if [ "$auth" = "--auth" ]; then
     # The token goes through a private temp file, never the command line (visible to other users in ps).
     local hdr; hdr="$(umask 077; mktemp)"
@@ -165,6 +194,7 @@ cmd_up() {
   local demo="${1:-}"
   require_docker
   [ -z "$(container)" ] || die "instance '$NAME' is already running; use 'upgrade' to deploy new code (it backs up first)"
+  check_auth
   ensure_secrets
   if volume_exists; then say "data volume $VOLUME exists: keeping its data"; else say "creating data volume $VOLUME"; fi
   compose build
@@ -263,9 +293,9 @@ main() {
     up) cmd_up "$@" ;;
     health) cmd_health "$@" ;;
     backup) cmd_backup "$@" ;;
-    restore) cmd_restore "$@" ;;
-    upgrade) cmd_upgrade ;;
-    rollback) cmd_rollback ;;
+    restore) check_auth; cmd_restore "$@" ;;
+    upgrade) check_auth; cmd_upgrade ;;
+    rollback) check_auth; cmd_rollback ;;
     status) require_docker; compose ps; volume_exists && say "data volume: $VOLUME" || say "data volume: none" ;;
     logs) require_docker; compose logs --tail "${1:-100}" dashboard ;;
     down) require_docker; compose down; say "stopped; data volume $VOLUME kept" ;;
