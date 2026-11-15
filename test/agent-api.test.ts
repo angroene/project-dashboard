@@ -343,6 +343,11 @@ describe("scoped agent tokens", () => {
     await expect(makeApp(root, { auth: { mode: "token", tokenFile }, agentTokensFile: f })).rejects.toThrow(/must not equal the operator token/);
     writeJson(f, { schemaVersion: 1, tokens: [{ name: "x", sha256: tokenSha256("a-b-c-d-e-f-g-h-i"), projects: ["alpha"], scopes: ["admin"] }] });
     await expect(makeApp(root, { auth: { mode: "token", tokenFile }, agentTokensFile: f })).rejects.toThrow(/agentTokensFile invalid/);
+    // Token names end up in history entries; the user's name and look-alikes are reserved.
+    for (const name of ["user", "User.2", "u-s-e-r"]) {
+      writeJson(f, { schemaVersion: 1, tokens: [{ name, sha256: tokenSha256("a-b-c-d-e-f-g-h-i"), projects: ["alpha"], scopes: ["read"] }] });
+      await expect(makeApp(root, { auth: { mode: "token", tokenFile }, agentTokensFile: f }), name).rejects.toThrow(/must not start with "user"/);
+    }
   });
 });
 

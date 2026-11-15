@@ -6,15 +6,17 @@
  * - A day is due once the template's local wall-clock time reaches `schedule.time` in `schedule.timezone`. On a
  *   daylight-saving change the day is still created exactly once: a skipped time (spring forward) is reached when the
  *   clock jumps past it, a repeated time (fall back) is reached the first time.
- * - Missed days (server down, template paused) are created only within `catchUpDays` before today; older ones are
- *   skipped. A cursor per template (last handled date) keeps deleted occurrences from coming back.
+ * - Missed days after downtime are created only within `catchUpDays` before today; older ones are skipped. A day whose
+ *   time passed between two checks of a running server (for example 23:59, checked at 23:58 and 00:00) is still
+ *   created. Resuming a paused or disabled template starts from today: the paused days are not filled in.
+ *   A cursor per template (last handled date) keeps deleted occurrences from coming back.
  * - Occurrences are never changed or removed by the scheduler, and nothing is answered on the user's behalf.
  */
 import path from "node:path";
 import { SCHEMA_VERSION, type RecurringTemplate } from "../shared/schemas.js";
 import { ApiFailure } from "./answers.js";
 import { atomicWriteJson, createExclusiveAtomic } from "./fsutil.js";
-import { rel, serialize, validateRecord } from "./publish.js";
+import { caseVariantOf, rel, serialize, validateRecord } from "./publish.js";
 import { recurrenceCursorFile, type ProjectState, type Store, type TemplateEntry } from "./store.js";
 
 /** Local calendar date (YYYY-MM-DD) and time (HH:MM) of `at` in `timeZone`. */
@@ -32,13 +34,19 @@ export function addDays(date: string, n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** The dates that should exist now and have not been handled yet (`after` = cursor), oldest first. */
-export function dueDates(t: RecurringTemplate, now: Date, after: string | undefined): string[] {
+/**
+ * The dates that should exist now and have not been handled yet (`after` = cursor), oldest first. `lastCheck` is the
+ * previous check of this running server: if it was yesterday (local), yesterday is due even with `catchUpDays: 0`,
+ * because its time passed while the server was running, between two checks.
+ */
+export function dueDates(t: RecurringTemplate, now: Date, after: string | undefined, lastCheck?: Date): string[] {
   const s = t.schedule;
   const local = localDateTime(now, s.timezone);
   let last = local.time >= s.time ? local.date : addDays(local.date, -1);
   if (s.endDate && s.endDate < last) last = s.endDate;
   let first = addDays(local.date, -s.catchUpDays);
+  const yesterday = addDays(local.date, -1);
+  if (lastCheck && lastCheck < now && localDateTime(lastCheck, s.timezone).date === yesterday && yesterday < first) first = yesterday;
   if (s.startDate > first) first = s.startDate;
   if (after && addDays(after, 1) > first) first = addDays(after, 1);
   const out: string[] = [];
@@ -68,6 +76,9 @@ export function occurrenceRecord(t: RecurringTemplate, date: string, now: Date):
   };
 }
 
+/** When each project's templates were last checked by this server (per store); not persisted: a restart is downtime. */
+const lastChecks = new WeakMap<Store, Map<string, Date>>();
+
 export interface RecurrenceResult {
   created: string[];
   errors: { templateId: string; message: string }[];
@@ -80,16 +91,20 @@ export interface RecurrenceResult {
 export async function runRecurrence(store: Store, projectId: string, now: Date = new Date()): Promise<RecurrenceResult> {
   const result: RecurrenceResult = { created: [], errors: [] };
   const initial = store.get(projectId);
-  if (!initial) return result;
+  if (!initial || !initial.manifest.enabled) return result;
   return store.mutex.run(`publish:${projectId}`, async () => {
     const p = store.get(projectId) ?? initial;
+    const checks = lastChecks.get(store) ?? new Map<string, Date>();
+    lastChecks.set(store, checks);
+    const lastCheck = checks.get(projectId);
+    checks.set(projectId, now);
     const files: string[] = [];
     let cursorChanged = false;
     for (const entry of [...p.templates.values()].sort((a, b) => a.id.localeCompare(b.id))) {
       const t = entry.template;
       if (!t || t.state !== "active") continue;
       entry.runError = undefined;
-      for (const date of dueDates(t, now, p.recurrenceCursor[t.id])) {
+      for (const date of dueDates(t, now, p.recurrenceCursor[t.id], lastCheck)) {
         const res = await createOccurrence(p, entry, t, date, now);
         if (res.error) { result.errors.push({ templateId: t.id, message: res.error }); break; }
         if (res.file) { files.push(res.file); result.created.push(occurrenceId(t.id, date)); }
@@ -119,6 +134,8 @@ async function createOccurrence(
     if (existing.file === file) return {}; // already created (by this or another process)
     return { error: `record id ${id} is already used in section ${existing.sectionId}` };
   }
+  const variant = caseVariantOf(p, id);
+  if (variant) return { error: `record ${variant} differs from ${id} only in letter case; rename the template or that record` };
   let raw: Record<string, unknown>;
   try {
     raw = occurrenceRecord(t, date, now);
@@ -128,6 +145,18 @@ async function createOccurrence(
   }
   const made = await createExclusiveAtomic(file, serialize(raw));
   return made ? { file } : {};
+}
+
+/**
+ * Resuming starts from today: moves the template's cursor to yesterday (if it is behind), so the days it was paused or
+ * disabled are not created afterwards. Caller holds the project's publish lock.
+ */
+export async function skipPausedDays(p: ProjectState, t: RecurringTemplate, now: Date = new Date()): Promise<void> {
+  const yesterday = addDays(localDateTime(now, t.schedule.timezone).date, -1);
+  const cur = p.recurrenceCursor[t.id];
+  if (cur && cur >= yesterday) return;
+  p.recurrenceCursor[t.id] = yesterday;
+  await atomicWriteJson(recurrenceCursorFile(p.dir), p.recurrenceCursor);
 }
 
 /** Run every project's templates now and then every `intervalMs`. Returns a stop function. */

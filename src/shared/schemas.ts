@@ -300,6 +300,8 @@ export const RecordAttachment = z.object({
   /** Which root `path` is relative to: "attachments" (default) or an artifactRoots entry. */
   root: z.string().max(512).default("attachments"),
   mimeType: z.string().max(100).optional(),
+  /** "user" when the dashboard user attached it; such attachments survive an agent's full rewrite of the record. */
+  by: z.string().max(80).optional(),
 });
 export type RecordAttachment = z.infer<typeof RecordAttachment>;
 
@@ -413,11 +415,14 @@ export const RecurringTemplate = z.object({
     timezone: z.string().max(64).refine(isTimeZone, "unknown time zone"),
     startDate: LocalDate,
     endDate: LocalDate.optional(),
-    /** After downtime, also create up to this many missed earlier days (0 = only today). */
+    /** After downtime, also create up to this many missed earlier days (0 = only today; see ADR 0017). */
     catchUpDays: z.number().int().min(0).max(31).default(0),
   }).refine((s) => !s.endDate || s.endDate >= s.startDate, { message: "endDate before startDate", path: ["endDate"] }),
   /** The record each occurrence starts from, without id. "{date}" in title, summary and bodyMarkdown is replaced. */
-  record: z.record(z.string(), z.unknown()).refine((r) => !("id" in r) && !("occurrence" in r), "the template's record must not set id or occurrence (the server sets them)"),
+  record: z.record(z.string(), z.unknown())
+    .refine((r) => !("id" in r) && !("occurrence" in r), "the template's record must not set id or occurrence (the server sets them)")
+    // An attachment id belongs to one record, so every day after the first would fail; link to shared files instead.
+    .refine((r) => !Array.isArray(r.attachments) || r.attachments.length === 0, "the template's record must not have attachments (an attachment belongs to one record); use links"),
 });
 export type RecurringTemplate = z.infer<typeof RecurringTemplate>;
 export type TemplateState = (typeof TEMPLATE_STATES)[number];

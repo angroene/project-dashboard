@@ -19,6 +19,7 @@ import { attachmentRef, inlineSafe, resolveAttachment, type ResolvedAttachment }
 import type { Config } from "./config.js";
 import { atomicWriteFile, sanitizeFileName } from "./fsutil.js";
 import { readRaw, registerPublishRoutes, revisionOf, serialize } from "./publish.js";
+import { skipPausedDays } from "./recurrence.js";
 import { claimKey, parseRecordFile, Store, type ProjectState, type RecordEntry, type TemplateEntry } from "./store.js";
 import { storeUpload, UploadRejected } from "./uploads.js";
 import { buildWorkbook, commitImport, previewImport } from "./xlsx.js";
@@ -95,7 +96,8 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
 
   const project = (id: string): ProjectState => {
     const p = store.get(id);
-    if (!p) throw new ApiFailure(404, "not-found", `project ${id} not found or unavailable`);
+    // A disabled project ("enabled": false) is off: hidden from the list and refused by id, for reads and writes.
+    if (!p || !p.manifest.enabled) throw new ApiFailure(404, "not-found", `project ${id} not found or unavailable`);
     return p;
   };
   const user = cfg.auth.user;
@@ -270,6 +272,7 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
       const parsed = RecurringTemplate.safeParse({ ...raw.json, state: body.state });
       if (!parsed.success) throw new ApiFailure(409, "unavailable", `template file is invalid; fix it first (${entry.error ?? parsed.error.issues[0]?.message})`);
       if (raw.json.state !== body.state) {
+        if (body.state === "active") await skipPausedDays(p, parsed.data);
         await atomicWriteFile(entry.file, serialize({ ...raw.json, state: body.state }));
         await store.applyChanges(p.dir, [path.relative(p.dir, entry.file).split(path.sep).join("/")]);
       }
@@ -340,6 +343,10 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
 
   app.post<{ Params: { projectId: string } }>("/api/projects/:projectId/uploads", async (req, reply): Promise<UploadResponse> => {
     const p = project(req.params.projectId);
+    if (agentOf(req) && !p.manifest.publishing.enabled) {
+      // Agent uploads only serve records the agent publishes; the user's own uploads (answers, comments) need no opt-in.
+      throw new ApiFailure(403, "publishing-disabled", `project ${p.manifest.id} does not accept published records (project.json "publishing.enabled" is false)`);
+    }
     if (!req.isMultipart()) throw new ApiFailure(400, "bad-request", "multipart/form-data expected");
     let questionId: string | undefined;
     const out: UploadResponse["attachments"] = [];

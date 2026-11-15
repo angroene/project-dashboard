@@ -94,6 +94,10 @@
               "mimeType": {
                 "type": "string",
                 "maxLength": 100
+              },
+              "by": {
+                "type": "string",
+                "maxLength": 80
               }
             },
             "required": [
@@ -996,6 +1000,10 @@
               "mimeType": {
                 "type": "string",
                 "maxLength": 100
+              },
+              "by": {
+                "type": "string",
+                "maxLength": 80
               }
             },
             "required": [
@@ -1307,6 +1315,10 @@
               "mimeType": {
                 "type": "string",
                 "maxLength": 100
+              },
+              "by": {
+                "type": "string",
+                "maxLength": 80
               }
             },
             "required": [
@@ -1622,6 +1634,10 @@
               "mimeType": {
                 "type": "string",
                 "maxLength": 100
+              },
+              "by": {
+                "type": "string",
+                "maxLength": 80
               }
             },
             "required": [
@@ -1929,6 +1945,10 @@
               "mimeType": {
                 "type": "string",
                 "maxLength": 100
+              },
+              "by": {
+                "type": "string",
+                "maxLength": 80
               }
             },
             "required": [
@@ -2236,6 +2256,10 @@
               "mimeType": {
                 "type": "string",
                 "maxLength": 100
+              },
+              "by": {
+                "type": "string",
+                "maxLength": 80
               }
             },
             "required": [
@@ -2543,6 +2567,10 @@
               "mimeType": {
                 "type": "string",
                 "maxLength": 100
+              },
+              "by": {
+                "type": "string",
+                "maxLength": 80
               }
             },
             "required": [
@@ -2850,6 +2878,10 @@
               "mimeType": {
                 "type": "string",
                 "maxLength": 100
+              },
+              "by": {
+                "type": "string",
+                "maxLength": 80
               }
             },
             "required": [

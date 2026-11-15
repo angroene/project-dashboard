@@ -24,7 +24,9 @@ export type AgentScope = (typeof AGENT_SCOPES)[number];
 const AgentTokensFile = z.object({
   schemaVersion: z.literal(1),
   tokens: z.array(z.object({
-    name: z.string().regex(/^[A-Za-z0-9._:@-]{1,60}$/),
+    // The name is written into history entries; "user…" is reserved for the dashboard user (ADR 0015).
+    name: z.string().regex(/^[A-Za-z0-9._:@-]{1,60}$/)
+      .refine((n) => !n.toLowerCase().replace(/[^a-z0-9]/g, "").startsWith("user"), "token names must not start with \"user\" (reserved for the dashboard user)"),
     sha256: z.string().regex(/^[a-f0-9]{64}$/),
     /** Project ids this token may use; "*" = every project on the server. */
     projects: z.array(z.union([Id, z.literal("*")])).min(1).max(200),

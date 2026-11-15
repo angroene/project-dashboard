@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { makeApp, makeDataRoot, multipartBody, PNG_1x1, POST_HEADERS, question, section, T0, writeJson } from "./helpers.js";
 import { tokenSha256 } from "../src/server/auth.js";
 import { runRecurrence } from "../src/server/recurrence.js";
@@ -421,7 +421,10 @@ describe("recurring templates", () => {
     expect(p.body.state).toBe("paused");
     expect(JSON.parse(fs.readFileSync(path.join(dailyDir(t.root), "templates", "checkin.json"), "utf8")).state).toBe("paused");
     expect((await runRecurrence(t.store, "alpha", new Date("2026-11-05T12:00:00Z"))).created).toEqual([]);
-    await t.call("POST", `${A}/templates/checkin/state`, { state: "active" });
+    // The server resumes on its own clock; set it to the simulated day.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-06T11:00:00Z"));
+    try { await t.call("POST", `${A}/templates/checkin/state`, { state: "active" }); } finally { vi.useRealTimers(); }
     // Resumed without catch-up: only today.
     expect((await runRecurrence(t.store, "alpha", new Date("2026-11-06T12:00:00Z"))).created).toEqual(["checkin-2026-11-06"]);
     await t.call("POST", `${A}/templates/checkin/state`, { state: "disabled" });
@@ -430,6 +433,29 @@ describe("recurring templates", () => {
     expect(list.body.templates).toMatchObject([{ id: "checkin", state: "disabled", lastDate: "2026-11-06" }]);
     expect((await t.call("POST", `${A}/templates/nope/state`, { state: "paused" })).status).toBe(404);
     expect((await t.call("POST", `${A}/templates/checkin/state`, { state: "deleted" })).status).toBe(400);
+  });
+
+  it("resuming starts from today: paused days are not filled in, even within catchUpDays", async () => {
+    const t = await withTemplate(template({}, { catchUpDays: 3 }));
+    expect((await runRecurrence(t.store, "alpha", new Date("2026-11-01T12:00:00Z"))).created).toEqual(["checkin-2026-11-01"]);
+    await t.call("POST", `${A}/templates/checkin/state`, { state: "paused" });
+    expect((await runRecurrence(t.store, "alpha", new Date("2026-11-04T12:00:00Z"))).created).toEqual([]);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-05T12:00:00Z"));
+    try { await t.call("POST", `${A}/templates/checkin/state`, { state: "active" }); } finally { vi.useRealTimers(); }
+    expect((await runRecurrence(t.store, "alpha", new Date("2026-11-05T12:00:01Z"))).created).toEqual(["checkin-2026-11-05"]);
+    // Downtime (not a pause) is still caught up within catchUpDays.
+    expect((await runRecurrence(t.store, "alpha", new Date("2026-11-08T12:00:00Z"))).created).toEqual(["checkin-2026-11-06", "checkin-2026-11-07", "checkin-2026-11-08"]);
+  });
+
+  it("a day whose time passes between two checks of a running server is created, also with catchUpDays 0", async () => {
+    const t = await withTemplate(template({}, { time: "23:59", timezone: "UTC" }));
+    expect((await runRecurrence(t.store, "alpha", new Date("2026-11-02T23:58:59.950Z"))).created).toEqual([]);
+    // The next check lands after midnight: 11-02 became due in between and must not be skipped.
+    expect((await runRecurrence(t.store, "alpha", new Date("2026-11-03T00:00:00.100Z"))).created).toEqual(["checkin-2026-11-02"]);
+    // A restart is downtime: a fresh server does not catch up yesterday with catchUpDays 0.
+    const again = await setup({ root: t.root });
+    expect((await runRecurrence(again.store, "alpha", new Date("2026-11-04T00:00:30Z"))).created).toEqual([]);
   });
 
   it("agents may list templates but not change their state", async () => {
@@ -488,5 +514,207 @@ describe("example projects", () => {
     expect(tpl.body.templates).toMatchObject([{ id: "field-log", state: "paused" }]);
     // Paused: the scheduler creates nothing for the example until someone resumes it.
     expect((await runRecurrence(t.store, "tidepool-notebook", new Date("2026-11-20T20:00:00Z"))).created).toEqual([]);
+  });
+});
+
+// ------------------------------------------------- record integrity (review) --
+describe("record integrity", () => {
+  const review = (extra: Record<string, unknown> = {}) => ({ recordType: "review", title: "Review R1", status: "needs-review", updatedAt: T0, ...extra });
+  const upload = async (t: Awaited<ReturnType<typeof setup>>, token?: string, url = `${A}/uploads`) => {
+    const up = multipartBody([{ name: "file", filename: "shot.png", content: PNG_1x1, type: "image/png" }]);
+    const headers: Record<string, string> = { ...up.headers, ...(token ? { authorization: `Bearer ${token}` } : {}) };
+    return t.app.inject({ method: "POST", url, headers, payload: up.payload });
+  };
+
+  it("an agent's full republish keeps the user's comments, attachments, field changes and untouched field values", async () => {
+    const t = await setup();
+    await t.call("PATCH", `${A}/records/R1`, { fields: { note: "from agent", built: true } });
+    const u = await upload(t);
+    const uploadId = u.json().attachments[0].attachmentId as string;
+    expect((await t.call("POST", `${A}/records/R1/user-update`, { fields: { reviewed: true, note: "user note" }, comment: "Please fix the footer", attach: [{ uploadId, title: "Shot" }] })).status).toBe(200);
+    // The agent republishes from its own copy, which has none of that.
+    const put = await t.call("PUT", `${A}/records/R1`, { sectionId: "reviews", record: review({ summary: "v2", history: [{ at: T0, text: "Published v2", by: "builder" }] }) });
+    expect(put.status, JSON.stringify(put.body)).toBe(200);
+    const d = (await t.call<RecordDetail>("GET", `${A}/records/R1`)).body;
+    expect(d.summary).toBe("v2");
+    expect(d.fields).toEqual({ reviewed: true, note: "user note", built: true });
+    expect(d.attachments.map((a) => a.id)).toEqual([uploadId]);
+    const texts = d.history.map((h) => h.text);
+    expect(texts).toContain("Please fix the footer");
+    expect(texts).toContain("Reviewed: — → yes");
+    expect(texts).toContain("Published v2");
+    // A field the write names is replaced; null clears it.
+    await t.call("PUT", `${A}/records/R1`, { sectionId: "reviews", record: review({ fields: { note: null, built: false } }) });
+    expect((await t.call<RecordDetail>("GET", `${A}/records/R1`)).body.fields).toEqual({ reviewed: true, built: false });
+  });
+
+  it("agents cannot write history entries or attachments under the user's name", async () => {
+    const t = await setup();
+    const fake = await t.call<{ error: string }>("PUT", `${A}/records/R1`, { sectionId: "reviews", record: review({ history: [{ at: T0, text: "Decision: approved by user", by: "user" }] }) });
+    expect(fake.status).toBe(403);
+    expect(fake.body.error).toBe("reserved-actor");
+    const patch = await t.call<{ error: string }>("PATCH", `${A}/records/R1`, { history: { text: "Reviewed: no → yes", by: "User" } });
+    expect(patch.status).toBe(403);
+    const att = await t.call<{ error: string }>("PUT", `${A}/records/R1`, { sectionId: "reviews", record: review({ attachments: [{ id: "X1", path: "documents/adr-1.md", by: "user" }] }) });
+    expect(att.status).toBe(403);
+    // Sending back what the user really wrote (read from /source) is fine.
+    await t.call("POST", `${A}/records/R1/user-update`, { comment: "real comment" });
+    const src = (await t.call<{ record: Record<string, unknown> }>("GET", `${A}/records/R1/source`)).body.record;
+    expect((await t.call("PUT", `${A}/records/R1`, { sectionId: "reviews", record: { ...src, summary: "echo" } })).status).toBe(200);
+  });
+
+  it("refuses a record or event id that differs from an existing one only in letter case", async () => {
+    const t = await setup();
+    const r = await t.call<{ error: string }>("PUT", `${A}/records/r1`, { sectionId: "reviews", record: review({ title: "other" }) });
+    expect(r.status).toBe(409);
+    expect(r.body.error).toBe("id-conflict");
+    expect(fs.readFileSync(path.join(reviewsDir(t.root), "records", "R1.json"), "utf8")).toContain("Review R1");
+    expect((await t.call("PUT", `${A}/activity/EV-Case`, { action: "test", summary: "one" })).status).toBe(201);
+    const ev = await t.call<{ error: string; message: string }>("PUT", `${A}/activity/ev-case`, { action: "test", summary: "two" });
+    expect(ev.status).toBe(409);
+    // On a case-insensitive file system the file clash alone would also give 409; the case rule must answer first.
+    expect(ev.body.message).toContain("only in letter case");
+  });
+
+  it("refuses unknown keys and undeclared attachment roots in a published record", async () => {
+    const t = await setup();
+    const k = await t.call<{ error: string; message: string }>("PUT", `${A}/records/R9`, { sectionId: "reviews", record: review({ titel: "typo" }) });
+    expect(k.status).toBe(422);
+    expect(k.body.message).toContain("titel");
+    const d = await t.call("PUT", `${A}/records/Q9`, { sectionId: "qs", record: question("Q9", { answerSchema: { type: "file-upload", maxFiles: 1, default: "x" } }) });
+    expect(d.status).toBe(422);
+    const root = await t.call("PUT", `${A}/records/R9`, { sectionId: "reviews", record: review({ attachments: [{ id: "A9", path: "x.md", root: "." }] }) });
+    expect(root.status).toBe(422);
+  });
+
+  it("a stored value whose field definition was removed never blocks later updates", async () => {
+    const root = dataRoot();
+    const recFile = path.join(reviewsDir(root), "records", "R1.json");
+    writeJson(recFile, { ...JSON.parse(fs.readFileSync(recFile, "utf8")), fields: { gone: "old value" } });
+    const t = await setup({ root });
+    expect((await t.call("PATCH", `${A}/records/R1`, { status: "approved" })).status).toBe(200);
+    expect((await t.call("POST", `${A}/records/R1/user-update`, { comment: "still works" })).status).toBe(200);
+    // The value is kept in the file (the definition may come back), not shown.
+    expect(JSON.parse(fs.readFileSync(recFile, "utf8")).fields).toEqual({ gone: "old value" });
+  });
+
+  it("parallel user and agent updates of one record are all kept, and survive a restart", async () => {
+    const t = await setup();
+    for (let i = 0; i < 15; i++) {
+      const res = await Promise.all([
+        t.call("PATCH", `${A}/records/R1`, { history: { text: `agent ${i}`, by: "builder" }, fields: { built: i % 2 === 0 } }),
+        t.call("POST", `${A}/records/R1/user-update`, { comment: `user ${i}`, fields: { note: `n${i}` } }),
+      ]);
+      expect(res.map((r) => r.status)).toEqual([200, 200]);
+    }
+    const again = await setup({ root: t.root });
+    const d = (await again.call<RecordDetail>("GET", `${A}/records/R1`)).body;
+    const texts = d.history.map((h) => h.text);
+    for (let i = 0; i < 15; i++) {
+      expect(texts).toContain(`agent ${i}`);
+      expect(texts).toContain(`user ${i}`);
+    }
+    expect(d.fields).toEqual({ built: true, note: "n14" });
+  });
+
+  it("a template record with attachments is rejected (each attachment belongs to one record)", async () => {
+    const t = await withTemplate(template({ record: { ...template().record, attachments: [{ id: "GUIDE", path: "documents/adr-1.md" }] } }));
+    const list = await t.call<{ templates: TemplateSummary[] }>("GET", `${A}/templates`);
+    expect(list.body.templates[0]?.error ?? "").toMatch(/attachments/);
+    expect((await runRecurrence(t.store, "alpha", new Date("2026-11-02T12:00:00Z"))).created).toEqual([]);
+  });
+
+  it("agent uploads need publishing; a disabled project is refused by id", async () => {
+    const root = dataRoot();
+    const pj = path.join(root, "projects", "alpha", "project.json");
+    const manifest = JSON.parse(fs.readFileSync(pj, "utf8"));
+    writeJson(pj, { ...manifest, publishing: { enabled: false } });
+    const t = await setup({ root, auth: true });
+    expect((await upload(t, PUB)).statusCode).toBe(403);
+    // The dashboard user's own uploads (answers, comments) need no publishing opt-in.
+    expect((await upload(t, OPERATOR)).statusCode).toBe(201);
+
+    writeJson(pj, { ...manifest, enabled: false });
+    const off = await setup({ root, auth: true });
+    expect((await off.call("GET", A, undefined, OPERATOR)).status).toBe(404);
+    expect((await off.call("GET", `${A}/records/R1`, undefined, OPERATOR)).status).toBe(404);
+    expect((await off.call("POST", `${A}/records/R1/user-update`, { comment: "x" }, OPERATOR)).status).toBe(404);
+  });
+});
+
+describe("record integrity, round 2", () => {
+  const review = (extra: Record<string, unknown> = {}) => ({ recordType: "review", title: "Review R1", status: "needs-review", updatedAt: T0, ...extra });
+  type Src = { record: { history?: { at: string; text: string; by?: string }[]; attachments?: { id: string; by?: string }[] } };
+
+  it("a republish can neither re-attribute nor drop the user's history entries and attachments", async () => {
+    const t = await setup();
+    const up = multipartBody([{ name: "file", filename: "shot.png", content: PNG_1x1, type: "image/png" }]);
+    const uploadId = (await t.app.inject({ method: "POST", url: `${A}/uploads`, headers: up.headers, payload: up.payload })).json().attachments[0].attachmentId as string;
+    await t.call("POST", `${A}/records/R1/user-update`, { comment: "Please fix the footer", attach: [{ uploadId, title: "Shot" }] });
+    const src = (await t.call<Src>("GET", `${A}/records/R1/source`)).body.record;
+    // Step 1: echo everything, but claim the user's entries and attachment for the agent.
+    const reattributed = {
+      ...src,
+      history: src.history!.map((h) => ({ ...h, by: "builder" })),
+      attachments: src.attachments!.map(({ by: _by, ...a }) => a),
+    };
+    expect((await t.call("PUT", `${A}/records/R1`, { sectionId: "reviews", record: reattributed })).status).toBe(200);
+    // Step 2: drop them.
+    expect((await t.call("PUT", `${A}/records/R1`, { sectionId: "reviews", record: { ...src, history: [], attachments: [] } })).status).toBe(200);
+    const after = (await t.call<Src>("GET", `${A}/records/R1/source`)).body.record;
+    expect(after.history!.filter((h) => h.by === "user").map((h) => h.text)).toEqual(["Attached Shot", "Please fix the footer"]);
+    expect(after.attachments!.map((a) => [a.id, a.by])).toEqual([[uploadId, "user"]]);
+  });
+
+  it("refuses look-alikes of the user's name from agents", async () => {
+    const t = await setup();
+    for (const by of ["User (dashboard)", "usеr", "user​", " USER", "user-bot"]) {
+      const r = await t.call<{ error: string }>("PATCH", `${A}/records/R1`, { history: { text: "x", by } });
+      expect(r.status, JSON.stringify(by)).toBe(403);
+      expect(r.body.error).toBe("reserved-actor");
+    }
+    expect((await t.call("PATCH", `${A}/records/R1`, { history: { text: "x", by: "build-agent 2" } })).status).toBe(200);
+    expect((await t.call("PUT", `${A}/records/R1`, { sectionId: "reviews", record: review({ history: [{ at: T0, text: "y", by: "Us er" }] }) })).status).toBe(403);
+  });
+
+  it("the history cap drops agent entries before the user's", async () => {
+    const t = await setup();
+    await t.call("POST", `${A}/records/R1/user-update`, { comment: "keep me" });
+    const flood = Array.from({ length: 500 }, (_, i) => ({ at: new Date(Date.parse("2030-01-01T00:00:00Z") + i * 1000).toISOString(), text: `agent ${i}`, by: "builder" }));
+    expect((await t.call("PUT", `${A}/records/R1`, { sectionId: "reviews", record: review({ history: flood }) })).status).toBe(200);
+    const h = (await t.call<Src>("GET", `${A}/records/R1/source`)).body.record.history!;
+    expect(h).toHaveLength(500);
+    expect(h.some((x) => x.text === "keep me" && x.by === "user")).toBe(true);
+    for (let i = 0; i < 3; i++) await t.call("PATCH", `${A}/records/R1`, { history: { text: `more ${i}`, by: "builder" } });
+    const h2 = (await t.call<Src>("GET", `${A}/records/R1/source`)).body.record.history!;
+    expect(h2).toHaveLength(500);
+    expect(h2.some((x) => x.text === "keep me")).toBe(true);
+  });
+
+  it("read-then-republish works for a record with an old unknown key or a value of a removed field", async () => {
+    const root = dataRoot();
+    const recFile = path.join(reviewsDir(root), "records", "R1.json");
+    writeJson(recFile, { ...JSON.parse(fs.readFileSync(recFile, "utf8")), myNote: "hand-written", fields: { gone: "old" }, attachments: [{ id: "OLD-1", path: "x.md", root: "elsewhere" }] });
+    const t = await setup({ root });
+    const src = (await t.call<{ record: Record<string, unknown> }>("GET", `${A}/records/R1/source`)).body.record;
+    const r = await t.call("PUT", `${A}/records/R1`, { sectionId: "reviews", record: { ...src, summary: "republished" } });
+    expect(r.status, JSON.stringify(r.body)).toBe(200);
+    // A new unknown key or a new value for an undefined field is still refused.
+    expect((await t.call("PUT", `${A}/records/R1`, { sectionId: "reviews", record: { ...src, otherKey: 1 } })).status).toBe(422);
+    expect((await t.call("PUT", `${A}/records/R1`, { sectionId: "reviews", record: { ...src, fields: { gone: "new" } } })).status).toBe(422);
+    expect((await t.call("PUT", `${A}/records/R1`, { sectionId: "reviews", record: { ...src, attachments: [{ id: "NEW-1", path: "x.md", root: "elsewhere" }] } })).status).toBe(422);
+  });
+
+  it("an occurrence id that differs from an existing record only in letter case is reported, not skipped", async () => {
+    const root = dataRoot();
+    writeJson(path.join(dailyDir(root), "records", "CHECKIN-2026-11-02.json"), { schemaVersion: 1, id: "CHECKIN-2026-11-02", recordType: "task", title: "x", status: "planned", updatedAt: T0 });
+    const t = await withTemplate(template(), root);
+    const r = await runRecurrence(t.store, "alpha", new Date("2026-11-02T12:00:00Z"));
+    expect(r.created).toEqual([]);
+    expect(r.errors[0]?.message ?? "").toMatch(/only in letter case/);
+    // The day is not marked as handled: it is tried again once the clash is resolved.
+    const list = await t.call<{ templates: TemplateSummary[] }>("GET", `${A}/templates`);
+    expect(list.body.templates[0].lastDate).toBeUndefined();
+    expect(list.body.templates[0].error ?? "").toMatch(/only in letter case/);
   });
 });

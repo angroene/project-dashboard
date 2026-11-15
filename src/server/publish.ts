@@ -61,12 +61,53 @@ function publishSection(p: ProjectState, sectionId: string): SectionState {
   return s;
 }
 
-/** Validates a full record, the project's status workflow and the card's tracked fields; returns the parsed record. */
-export function validateRecord(p: ProjectState, raw: Record<string, unknown>, section: SectionState): AnyRecord {
+/** Keys present in `raw` that the schema dropped while parsing (it strips unknown keys), as dotted paths. */
+export function unknownKeys(raw: unknown, parsed: unknown, at = ""): string[] {
+  if (Array.isArray(raw) && Array.isArray(parsed)) return raw.flatMap((v, i) => unknownKeys(v, parsed[i], `${at}${i}.`));
+  if (!raw || typeof raw !== "object" || !parsed || typeof parsed !== "object" || Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const [k, v] of Object.entries(raw)) {
+    if (!(k in parsed)) { if (v !== undefined) out.push(`${at}${k}`); continue; }
+    out.push(...unknownKeys(v, (parsed as Record<string, unknown>)[k], `${at}${k}.`));
+  }
+  return out;
+}
+
+/**
+ * Validates a full record, the project's status workflow and the card's tracked fields; returns the parsed record.
+ * `strict` (a record sent by a client) also refuses unknown keys (unless `stored` has the same key and value) and
+ * attachment roots the project does not declare;
+ * a record already on disk is only held to the schema, so an old or hand-edited file never blocks later updates.
+ * `ignoreStoredFields` validates only the tracked-field values that still have a valid definition.
+ */
+export function validateRecord(
+  p: ProjectState, raw: Record<string, unknown>, section: SectionState,
+  opts: { strict?: boolean; ignoreStoredFields?: boolean; stored?: Record<string, unknown> } = {},
+): AnyRecord {
   const parsed = AnyRecord.safeParse(raw);
   if (!parsed.success) throw invalid("record", parsed.error);
   const rec = parsed.data;
-  const fe = fieldErrors(section.manifest.fields, rec.fields);
+  if (opts.strict) {
+    // A key the stored file already has with the same value (an older or hand-edited file, echoed back) is accepted.
+    const at = (o: unknown, path: string) => path.split(".").reduce<unknown>((v, k) => (v && typeof v === "object" ? (v as Record<string, unknown>)[k] : undefined), o);
+    const extra = unknownKeys(raw, rec).filter((k) => !opts.stored || !sameJson(at(raw, k), at(opts.stored, k)));
+    if (extra.length) {
+      throw new ApiFailure(422, "validation", `unknown keys: ${extra.slice(0, 5).join(", ")}`, extra.slice(0, 20).map((k) => ({ fieldId: k, message: "not part of the record format" })));
+    }
+    const storedAtts = Array.isArray(opts.stored?.attachments) ? (opts.stored.attachments as unknown[]) : [];
+    (raw.attachments as unknown[] | undefined)?.forEach((sent, i) => {
+      const a = rec.attachments[i];
+      // An attachment echoed unchanged from the stored file (older or hand-edited) is not re-checked.
+      if (!a || storedAtts.some((x) => sameJson(x, sent))) return;
+      if (a.root !== "attachments" && !p.manifest.artifactRoots.includes(a.root)) {
+        throw new ApiFailure(422, "validation", `attachments.${i}.root: '${a.root}' is not declared in project.json artifactRoots`, [{ fieldId: `attachments.${i}.root`, message: "undeclared root" }]);
+      }
+    });
+  }
+  const checked = opts.ignoreStoredFields
+    ? Object.fromEntries(Object.entries(rec.fields).filter(([id, v]) => !fieldErrors(section.manifest.fields, { [id]: v }).length))
+    : rec.fields;
+  const fe = fieldErrors(section.manifest.fields, checked);
   if (fe.length) {
     throw new ApiFailure(422, "validation", `fields: ${fe.slice(0, 3).map((e) => `${e.fieldId}: ${e.message}`).join("; ")}`, fe.map((e) => ({ fieldId: `fields.${e.fieldId}`, message: e.message })));
   }
@@ -118,10 +159,104 @@ export async function readRaw(file: string): Promise<{ text: string; json: Recor
 
 export const rel = (p: ProjectState, file: string) => path.relative(p.dir, file).split(path.sep).join("/");
 
+/** The actor name of the dashboard user in history entries and attachments; agents cannot write under it. */
+export const USER_ACTOR = "user";
+const isUserActor = (by: unknown) => by === USER_ACTOR;
+
+/**
+ * A name a client puts in `by` must be printable ASCII and must not start with "user" (letters and digits only,
+ * case-insensitive): that rules out the user's name and look-alikes such as "User (dashboard)", "user" with a
+ * zero-width space, or a Cyrillic "е". Server-generated names (token names) are not checked here.
+ */
+export function checkClientActor(by: unknown, what: string): void {
+  if (typeof by !== "string") return; // absent, or reported by the schema
+  const letters = by.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!/^[\x20-\x7e]*$/.test(by) || letters.startsWith(USER_ACTOR)) {
+    throw new ApiFailure(403, "reserved-actor", `${what}: 'by' must be printable ASCII and must not start with "${USER_ACTOR}" (reserved for the dashboard user)`);
+  }
+}
+
+/** Record ids map to file names; on case-insensitive file systems two ids differing only in case are one file. */
+export function caseVariantOf(p: ProjectState, recordId: string): string | undefined {
+  const lower = recordId.toLowerCase();
+  for (const id of p.records.keys()) if (id !== recordId && id.toLowerCase() === lower) return id;
+  return undefined;
+}
+
+function refuseCaseVariant(p: ProjectState, recordId: string): void {
+  const other = caseVariantOf(p, recordId);
+  if (other) throw new ApiFailure(409, "id-conflict", `record ${other} differs from ${recordId} only in letter case; ids map to file names, which are case-insensitive on some systems`);
+}
+
+type Json = Record<string, unknown>;
+const asArray = (v: unknown): Json[] => (Array.isArray(v) ? (v as Json[]) : []);
+const entryKey = (h: unknown) => (h && typeof h === "object" ? `${String((h as Json).at)}\u0000${String((h as Json).text)}` : "");
+const fullKey = (h: unknown) => (h && typeof h === "object" ? `${entryKey(h)}\u0000${String((h as Json).by)}` : "");
+const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+export const HISTORY_MAX = 500;
+
+/** Keeps at most HISTORY_MAX entries, dropping the oldest entries not written by the user first. */
+export function trimHistory(hist: Json[]): Json[] {
+  if (hist.length <= HISTORY_MAX) return hist;
+  let excess = hist.length - HISTORY_MAX;
+  const out = hist.filter((h) => {
+    if (excess > 0 && !isUserActor(h?.by)) { excess--; return false; }
+    return true;
+  });
+  return out.length > HISTORY_MAX ? out.slice(-HISTORY_MAX) : out;
+}
+
+function byTime(list: Json[]): Json[] {
+  // Stable by time; entries without a usable time keep their relative place.
+  return list
+    .map((h, i) => ({ h, i, t: Date.parse(String(h?.at)) }))
+    .sort((a, b) => (Number.isNaN(a.t) || Number.isNaN(b.t) ? a.i - b.i : a.t - b.t || a.i - b.i))
+    .map((x) => x.h);
+}
+
+/**
+ * A full write (PUT) replaces what the client owns, never what the dashboard user added. The user's history entries
+ * (comments, field changes) and attachments are written back exactly as stored, whatever the client sent for them;
+ * tracked fields the write leaves out keep their stored value (`null` clears one). New entries or attachments with a
+ * reserved or look-alike `by` are refused; unchanged echoes of stored entries are accepted.
+ */
+function keepUserParts(raw: Json, stored: Json | undefined): void {
+  const storedHist = asArray(stored?.history);
+  const storedAtts = asArray(stored?.attachments);
+  if (raw.history !== undefined && !Array.isArray(raw.history)) return; // the schema reports it
+  if (raw.attachments !== undefined && !Array.isArray(raw.attachments)) return;
+  const hist = asArray(raw.history);
+  const atts = asArray(raw.attachments);
+
+  const storedEntries = new Set(storedHist.map(fullKey));
+  for (const h of hist) if (!storedEntries.has(fullKey(h))) checkClientActor(h?.by, "history entry");
+  for (const a of atts) if (!storedAtts.some((x) => sameJson(x, a))) checkClientActor(a?.by, "attachment");
+  if (!stored) return;
+
+  const userHist = storedHist.filter((h) => isUserActor(h?.by));
+  if (userHist.length) {
+    const userKeys = new Set(userHist.map(entryKey));
+    raw.history = trimHistory(byTime([...hist.filter((h) => !userKeys.has(entryKey(h))), ...userHist]));
+  }
+  const userAtts = storedAtts.filter((a) => isUserActor(a?.by));
+  if (userAtts.length) {
+    const userIds = new Set(userAtts.map((a) => String(a.id)));
+    raw.attachments = [...atts.filter((a) => !userIds.has(String(a?.id))), ...userAtts];
+  }
+
+  const storedFields = stored.fields && typeof stored.fields === "object" && !Array.isArray(stored.fields) ? (stored.fields as Json) : {};
+  if (raw.fields !== undefined && (typeof raw.fields !== "object" || raw.fields === null || Array.isArray(raw.fields))) return;
+  const merged: Json = { ...storedFields, ...((raw.fields as Json | undefined) ?? {}) };
+  for (const [k, v] of Object.entries(merged)) if (v === null) delete merged[k];
+  if (Object.keys(merged).length || raw.fields !== undefined) raw.fields = merged;
+}
+
 export function registerPublishRoutes(app: FastifyInstance, store: Store, cfg: Config): void {
   const project = (id: string): ProjectState => {
     const p = store.get(id);
-    if (!p) throw new ApiFailure(404, "not-found", `project ${id} not found or unavailable`);
+    // A disabled project ("enabled": false) is off: hidden from the list and refused by id, for reads and writes.
+    if (!p || !p.manifest.enabled) throw new ApiFailure(404, "not-found", `project ${id} not found or unavailable`);
     return p;
   };
   /** All publish writes of one project are serialised: id uniqueness across sections is checked and written atomically. */
@@ -191,9 +326,21 @@ export function registerPublishRoutes(app: FastifyInstance, store: Store, cfg: C
       if (raw.id !== recordId) throw new ApiFailure(400, "bad-request", "record.id differs from the id in the URL");
       raw.updatedAt ??= new Date().toISOString();
       expandUploads(p, raw);
-      const rec = validateRecord(p, raw, section);
-
       const existing = p.records.get(recordId);
+      if (!existing) refuseCaseVariant(p, recordId);
+      const stored = existing ? await readRaw(existing.file) : null;
+      // The client's own field values must be valid; stored values it leaves alone are kept as they are.
+      const sentFields = raw.fields && typeof raw.fields === "object" && !Array.isArray(raw.fields) ? (raw.fields as Record<string, unknown>) : {};
+      const storedFields = (stored?.json.fields && typeof stored.json.fields === "object" ? stored.json.fields : {}) as Record<string, unknown>;
+      // Values echoed unchanged from the stored file (also of a field whose definition was removed) are not re-checked.
+      const own = Object.entries(sentFields).filter(([k, v]) => v !== null && !(k in storedFields && storedFields[k] === v));
+      const sentErrors = fieldErrors(section.manifest.fields, Object.fromEntries(own) as Record<string, TrackedFieldValue>);
+      if (sentErrors.length) {
+        throw new ApiFailure(422, "validation", `fields: ${sentErrors.slice(0, 3).map((e) => `${e.fieldId}: ${e.message}`).join("; ")}`, sentErrors.map((e) => ({ fieldId: `fields.${e.fieldId}`, message: e.message })));
+      }
+      keepUserParts(raw, stored?.json);
+      const rec = validateRecord(p, raw, section, { strict: true, ignoreStoredFields: true, stored: stored?.json });
+
       // Fields only the dashboard user may change keep their stored value; an agent's full write cannot alter them.
       const kept = existing ? existing.fields : {};
       for (const def of section.manifest.fields) {
@@ -302,6 +449,8 @@ export function registerPublishRoutes(app: FastifyInstance, store: Store, cfg: C
       const file = path.join(dir, `${eventId}.json`);
       const current = await readRaw(file);
       if (!current && p.activity.some((e) => e.id === eventId)) throw new ApiFailure(409, "id-conflict", `activity event ${eventId} already exists`);
+      const variant = p.activity.find((e) => e.id !== eventId && e.id.toLowerCase() === eventId.toLowerCase());
+      if (variant) throw new ApiFailure(409, "id-conflict", `activity event ${variant.id} differs from ${eventId} only in letter case; ids map to file names, which are case-insensitive on some systems`);
       if (current) {
         // Events are immutable: a replay of the same event is accepted, a different event under the same id is not.
         const same = (a: Record<string, unknown>, b: Record<string, unknown>) => serialize(clientSentAt ? a : { ...a, at: undefined }) === serialize(clientSentAt ? b : { ...b, at: undefined });
@@ -408,7 +557,7 @@ export async function updateRecord(
     if (fieldChanged) { next.fields = values; changed = true; }
   }
   if (u.attach?.length) {
-    const atts = Array.isArray(next.attachments) ? [...(next.attachments as { id?: string }[])] : [];
+    const atts = Array.isArray(next.attachments) ? [...(next.attachments as { id?: string; by?: string }[])] : [];
     for (const a of u.attach) {
       const up = uploadMeta(p, a.uploadId);
       if (up?.answerId || up?.questionId) throw new ApiFailure(409, "id-conflict", `upload ${a.uploadId} belongs to a question's answer`);
@@ -417,13 +566,14 @@ export async function updateRecord(
     expandUploads(p, added);
     for (const a of added.attachments as { id: string; title?: string }[]) {
       if (atts.some((x) => x.id === a.id)) continue;
-      atts.push(a);
+      atts.push(actor.kind === "user" ? { ...a, by: USER_ACTOR } : a);
       notes.push({ at: now, text: `Attached ${a.title ?? a.id}`, by: actor.name });
       changed = true;
     }
     next.attachments = atts;
   }
   if (u.comment) notes.push({ at: now, text: u.comment, by: actor.name });
+  if (u.history && actor.kind === "agent") checkClientActor(u.history.by, "history entry");
   if (u.history) notes.push({ at: u.history.at ?? now, text: u.history.text, ...(u.history.by ? { by: u.history.by } : {}) });
   if (notes.length) {
     const hist = Array.isArray(next.history) ? [...(next.history as Record<string, unknown>[])] : [];
@@ -431,11 +581,11 @@ export async function updateRecord(
       // Same `at` and text = the same entry (a retried call); never append it twice.
       if (!hist.some((h) => h && h.at === n.at && h.text === n.text)) { hist.push(n); changed = true; }
     }
-    next.history = hist.slice(-500);
+    next.history = trimHistory(hist);
   }
   if (!changed) return { recordId: existing.id, sectionId: existing.sectionId, revision: revisionOf(current.text), unchanged: true };
   next.updatedAt = now;
-  validateRecord(p, next, section);
+  validateRecord(p, next, section, { ignoreStoredFields: true });
   const text = serialize(next);
   await atomicWriteFile(existing.file, text);
   await store.applyChanges(p.dir, [rel(p, existing.file)]);

@@ -1,6 +1,6 @@
 # ADR 0014 — Recurring records from templates
 
-**Status:** Accepted · **Date:** 2026-11-14 · Extends ADR 0002
+**Status:** Accepted · **Date:** 2026-11-14 · Extends ADR 0002 · Amended by ADR 0016 (one server per data root) and ADR 0017 (missed days, resume, attachments)
 
 ## Context
 
