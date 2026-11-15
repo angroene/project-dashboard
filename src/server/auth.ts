@@ -119,6 +119,8 @@ export class Auth {
       try {
         raw = JSON.parse(fs.readFileSync(cfg.agentTokensFile, "utf8"));
       } catch (e) {
+        // A JSON parse error quotes part of the file, which may hold a pasted token: never repeat it.
+        if (e instanceof SyntaxError) throw new Error("agentTokensFile invalid: not valid JSON");
         throw new Error(`agentTokensFile unreadable: ${(e as NodeJS.ErrnoException).code ?? (e as Error).message}`);
       }
       const parsed = AgentTokensFile.safeParse(raw);

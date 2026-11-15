@@ -358,6 +358,41 @@ describe("scoped agent tokens", () => {
     writeJson(f, { schemaVersion: 1, tokens: [{ name: "ci-user", sha256: tokenSha256("a-b-c-d-e-f-g-h-i"), projects: ["alpha"], scopes: ["read"] }] });
     await (await makeApp(root, { auth: { mode: "required", tokenFile }, agentTokensFile: f })).app.close();
   });
+
+  it("starts with the empty list the deploy script creates; a missing or malformed file stops start-up without echoing it", async () => {
+    const root = dataRoot();
+    const tokenFile = path.join(root, "op.txt");
+    fs.writeFileSync(tokenFile, OPERATOR);
+    const f = path.join(root, "agent_tokens.json");
+    // Byte for byte what deploy/apd-deploy.sh writes.
+    fs.writeFileSync(f, '{ "schemaVersion": 1, "tokens": [] }\n');
+    const t = await makeApp(root, { auth: { mode: "required", tokenFile }, agentTokensFile: f });
+    const anyToken = await t.app.inject({ method: "GET", url: "/api/projects", headers: { authorization: "Bearer some-agent-token-0123456789" } });
+    expect(anyToken.statusCode).toBe(401);
+    await t.app.close();
+    fs.rmSync(f);
+    await expect(makeApp(root, { auth: { mode: "required", tokenFile }, agentTokensFile: f })).rejects.toThrow("agentTokensFile unreadable: ENOENT");
+    // An operator pasting a raw token instead of an entry: the error must not repeat the file's content.
+    const raw = "raw-agent-token-SECRET-4f9a2c";
+    for (const content of [raw, `{ "schemaVersion": 1, "tokens": [ "${raw}" ] }`, `{ "schemaVersion": 1, "tokens": [ ${raw} ] }`]) {
+      fs.writeFileSync(f, content);
+      const err = await makeApp(root, { auth: { mode: "required", tokenFile }, agentTokensFile: f }).then(() => null, (e: Error) => e);
+      expect(err?.message, content).toMatch(/^agentTokensFile invalid/);
+      expect(err?.message, content).not.toContain(raw);
+    }
+  });
+
+  it("reads the token file location from PCC_AGENT_TOKENS_FILE (as the Compose file sets it)", () => {
+    const root = dataRoot();
+    const old = process.env.PCC_AGENT_TOKENS_FILE;
+    process.env.PCC_AGENT_TOKENS_FILE = "/run/secrets/pcc_agent_tokens";
+    try {
+      const cfg = loadConfig({ dataRoot: root, auth: { mode: "local-network", trustedNetworks: ["127.0.0.1/32"] } } as never);
+      expect(cfg.agentTokensFile).toBe("/run/secrets/pcc_agent_tokens");
+    } finally {
+      if (old === undefined) delete process.env.PCC_AGENT_TOKENS_FILE; else process.env.PCC_AGENT_TOKENS_FILE = old;
+    }
+  });
 });
 
 describe("concurrency and persistence", () => {
