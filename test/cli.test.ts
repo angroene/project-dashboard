@@ -1,6 +1,7 @@
 /** The agent CLI (agent-kit/cli/apd.mjs) run as a real process against a listening server. */
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import { execFile } from "node:child_process";
 import net from "node:net";
 import { afterEach, describe, expect, it } from "vitest";
@@ -194,6 +195,24 @@ describe("apd CLI", () => {
   });
 });
 
+describe("apd CLI location", () => {
+  it("runs from a folder whose path has a space or a non-ASCII character", async () => {
+    const base = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), "apd-cli-"));
+    for (const dir of ["my tools", "outils-é"]) {
+      const copy = path.join(base, dir, "apd.mjs");
+      fs.mkdirSync(path.dirname(copy), { recursive: true });
+      fs.copyFileSync(CLI, copy);
+      const r = await new Promise<{ code: number; stdout: string }>((resolve) => {
+        execFile(process.execPath, [copy, "no-such-command"], { timeout: 20000 }, (e, stdout) =>
+          resolve({ code: e ? Number((e as { code?: number }).code ?? 1) : 0, stdout }));
+      });
+      // An unknown command is a usage error (exit 2); a CLI that silently did nothing would exit 0.
+      expect(r.code, dir).toBe(2);
+    }
+    fs.rmSync(base, { recursive: true, force: true });
+  });
+});
+
 describe("apd CLI: tracked fields, external references, listing, templates", () => {
   async function withFields() {
     const s = await server({ auth: true });
@@ -224,6 +243,8 @@ describe("apd CLI: tracked fields, external references, listing, templates", () 
     expect(items.map((i) => i.id)).toEqual(["R1"]);
     expect(items[0].fields).toEqual({ built: true, note: "green on main" });
     expect(items[0].external[0].id).toBe("build-41");
+    const defs = list.out.fieldDefs as { id: string; editableBy: string[] }[];
+    expect(defs.find((d) => d.id === "built")?.editableBy).toEqual(["agent"]);
     const clear = await s.apd(["update", "R1", "--field", "note=none"]);
     expect(clear.code).toBe(0);
     const none = await s.apd(["list", "--section", "reviews", "--field", "built="]);

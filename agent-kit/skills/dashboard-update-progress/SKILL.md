@@ -18,6 +18,29 @@ dressed up as measurements. `$APD_CLI` is the path to `apd.mjs` (PowerShell: `$e
 - Statuses must be in the project's workflow: see `recordTypes.task` in `node "$APD_CLI" capabilities`.
 - Use `--percent` only when it reflects something countable (checklist items, tests). Otherwise leave it out.
 
+## Find and update tracked records
+
+Cards can define tracked fields (for example "Reviewed", "Decision", "Checks passed") and records can reference work in
+another system. Find records with a server-side filter instead of reading files:
+
+```sh
+node "$APD_CLI" list --section reviews --field checks=false --limit 20
+node "$APD_CLI" update LNT-REV-001 --field checks=true --if-revision <revision> --by <agent-name>
+node "$APD_CLI" update LNT-REV-001 --external refs.json   # [{"system":"code review","id":"PR-17","status":"merged",...}]
+```
+
+- `list` shows each field's `editableBy` (in `fieldDefs`). Fields only the owner may change are refused
+  (`403 field-not-editable`); never try to set the owner's "Reviewed" or "Decision" for them.
+- `--field id=none` clears a value. `--if-revision` (the `revision` from `node "$APD_CLI" source <ID>`) refuses the write if someone changed
+  the record meanwhile (`409 revision-mismatch`): re-read, then decide.
+- An external reference's `status` is what that system reported, kept apart from the dashboard's own fields. Set it
+  only from the source system, never from a dashboard field.
+- Prefer `update` for changes. Republishing a whole record (`publish`) keeps the owner's comments, attachments and
+  every field you leave out; it can never write history or attachments as `user`. `--by` names must be printable
+  ASCII and must not start with "user".
+- Recurring records are created by the server (`node "$APD_CLI" templates` lists them); do not publish daily copies
+  yourself.
+
 ## Activity events
 
 One line per notable event (build, test run, merge, release). Ids must be unique and stable, for example

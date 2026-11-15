@@ -18,7 +18,8 @@ Agents Project Dashboard. The owner answers in the dashboard (or in Excel); you 
    ask in chat instead (one short message) and say the dashboard was offline.
 2. Pick the section from `publishing.sections` whose title fits questions. Never guess a folder path.
 3. Pick a stable id derived from the work, for example `<PREFIX>-Q-<task>-<n>`. Publishing the same id again updates
-   the question; never reuse an id for a different question.
+   the question; never reuse an id for a different question. An id that differs from an existing one only in letter
+   case is refused (`409 id-conflict`).
 
 ## Write the question
 
@@ -32,6 +33,9 @@ It must be answerable without reading your chat:
     `allowExplanation` when useful. Put your recommendation first and say so in its `description`.
   - `free-text` (`maxLength`), `approval` (approve or reject, `requireRationaleOnReject`),
     `file-upload` (`allowedMimeTypes`, `maxFiles`), or `composite` with several `fields`.
+- `default` (optional) in `single-choice`, `multiple-choice`, `free-text` or `approval`: pre-selected in the form and
+  labelled as a suggestion. It must be a valid answer. It is never an answer by itself: nothing reaches the queue until
+  the owner submits, so never act on a default.
 - `dueAt` (ISO time with offset) only for a real deadline. `notifyUser: true` flags it as an update.
 
 ```sh

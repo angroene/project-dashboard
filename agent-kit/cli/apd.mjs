@@ -19,6 +19,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { fileURLToPath } from "node:url";
 
 const USAGE = `usage: apd <command> [arguments] [--flags]
 discover   projects | capabilities | templates
@@ -255,7 +256,8 @@ export async function run(argv, env = process.env) {
         q.set(`field.${m[1]}`, m[2]);
       }
       const r = (await request(s, "GET", `${proj()}/sections/${enc(need(flags.section, "--section"))}/records?${q}`)).data;
-      return { total: r.total, items: r.items, nextCursor: r.nextCursor };
+      // fieldDefs tells the agent which tracked fields it may change (editableBy) before it tries.
+      return { total: r.total, items: r.items, nextCursor: r.nextCursor, fieldDefs: r.fieldDefs };
     }
 
     case "ask":
@@ -389,5 +391,7 @@ async function main() {
   }
 }
 
-const invokedDirectly = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
+// Compare real file paths: a URL pathname is percent-encoded (spaces, non-ASCII) and a symlinked CLI has another path.
+const realPath = (f) => { try { return fs.realpathSync(f); } catch { return path.resolve(f); } };
+const invokedDirectly = !!process.argv[1] && realPath(process.argv[1]) === realPath(fileURLToPath(import.meta.url));
 if (invokedDirectly) await main();
