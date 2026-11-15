@@ -18,7 +18,7 @@ import yauzl from "yauzl";
 import { chromium, type Browser, type BrowserContext, type Page, type Request } from "playwright-core";
 import { buildApp } from "../src/server/app.js";
 import { loadConfig } from "../src/server/config.js";
-import { runRecurrence } from "../src/server/recurrence.js";
+import { addDays, runRecurrence } from "../src/server/recurrence.js";
 import type { DiagnosticsResponse, ProjectsResponse, RecordDetail, RecordPage } from "../src/shared/api.js";
 
 const REPO = path.resolve(import.meta.dirname, "..");
@@ -752,10 +752,14 @@ await walk(13, "Defaults, tracked fields, comments, external refs, recurring tem
   await obs.getByRole("button", { name: "Resume" }).click();
   const tplFile = path.join(projDir(TP), "sections", "observations", "templates", "field-log.json");
   await until("template active", async () => readJson<{ state: string }>(tplFile).state === "active");
-  const made = await runRecurrence(store, TP, new Date("2026-11-20T18:00:00Z"));
-  expect(made.created.join() === "field-log-2026-11-19,field-log-2026-11-20", `occurrences: ${made.created.join()}`);
-  expect((await runRecurrence(store, TP, new Date("2026-11-20T18:05:00Z"))).created.length === 0, "second run must create nothing");
-  await obs.locator('[data-record-id="field-log-2026-11-20"]').waitFor({ timeout: 15_000 });
+  // Resuming starts from today (the server's clock); simulate a check a few days later at 08:00 Honolulu time (after
+  // the 07:00 schedule): catchUpDays 1 gives the day before and that day.
+  const day = addDays(new Date().toISOString().slice(0, 10), 5);
+  const at = new Date(`${day}T18:00:00Z`);
+  const made = await runRecurrence(store, TP, at);
+  expect(made.created.join() === `field-log-${addDays(day, -1)},field-log-${day}`, `occurrences: ${made.created.join()}`);
+  expect((await runRecurrence(store, TP, new Date(at.getTime() + 5 * 60_000))).created.length === 0, "second run must create nothing");
+  await obs.locator(`[data-record-id="field-log-${day}"]`).waitFor({ timeout: 15_000 });
   await obs.getByRole("button", { name: "Pause" }).click();
   await until("template paused", async () => readJson<{ state: string }>(tplFile).state === "paused");
   await shot(page, "desktop-recurring");

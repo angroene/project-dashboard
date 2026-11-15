@@ -79,7 +79,7 @@ export const RecordRow = memo(function RecordRow({ summary: r, selectable, selec
         {r.external && r.external.length > 0 && (
           <span>
             {" "}
-            · {r.external.map((x) => `${x.system} ${x.id}${x.status ? ` (${x.status})` : ""}`).join(", ")}
+            · {r.external.map((x) => `${x.system} ${x.id}${x.status ? ` (${x.system} reports ${x.status})` : ""}`).join(", ")}
           </span>
         )}
         {r.question?.dueAt && (

@@ -27,7 +27,7 @@ export function FieldFilter({ def, counts, value, onChange }: { def: TrackedFiel
   );
 }
 
-/** The card's recurring templates, with pause/resume. */
+/** The card's recurring templates, with pause, resume, disable and enable. */
 export function Templates({ items }: { items: TemplateSummary[] }) {
   const { pid } = useProject();
   const qc = useQueryClient();
@@ -37,7 +37,7 @@ export function Templates({ items }: { items: TemplateSummary[] }) {
     setBusy(t.id);
     try {
       await apiPost(`${projectApi(pid)}/templates/${enc(t.id)}/state`, { state });
-      toast(`${t.title}: ${state === "active" ? "resumed" : state}`);
+      toast(`${t.title}: ${state === "active" ? (t.state === "disabled" ? "enabled" : "resumed") : state}`);
     } catch (e) {
       toast(`Could not change ${t.title}: ${errorMessage(e)}`, "error");
     } finally {
@@ -63,6 +63,11 @@ export function Templates({ items }: { items: TemplateSummary[] }) {
             )}
             {t.state === "paused" && (
               <button type="button" className="btn btn-sm" disabled={busy === t.id} onClick={() => void setState(t, "active")}>Resume</button>
+            )}{" "}
+            {t.state !== "disabled" ? (
+              <button type="button" className="btn btn-sm" disabled={busy === t.id} onClick={() => void setState(t, "disabled")}>Disable</button>
+            ) : (
+              <button type="button" className="btn btn-sm" disabled={busy === t.id} onClick={() => void setState(t, "active")}>Enable</button>
             )}
           </li>
         ))}

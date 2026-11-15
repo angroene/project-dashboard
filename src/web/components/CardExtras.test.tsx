@@ -20,13 +20,13 @@ describe("FieldFilter", () => {
 });
 
 describe("Templates", () => {
-  const t = (over: Partial<TemplateSummary>): TemplateSummary => ({
+  const url = `/api/projects/${PID}/templates/checkin/state`;
+  const t = (over: Partial<TemplateSummary> = {}): TemplateSummary => ({
     id: "checkin", sectionId: "daily", title: "Daily check-in", state: "active",
     schedule: { frequency: "daily", time: "09:00", timezone: "Europe/Amsterdam", startDate: "2026-11-01", catchUpDays: 0 }, ...over,
   });
 
   it("pauses an active template and resumes a paused one", async () => {
-    const url = `/api/projects/${PID}/templates/checkin/state`;
     const api = mockFetch({ [`POST ${url}`]: t({ state: "paused" }) });
     renderWithProviders(<Templates items={[t({ lastDate: "2026-11-13" })]} />, { project: { pid: PID } });
     await userEvent.click(screen.getByText("Recurring templates (1)"));
@@ -36,11 +36,23 @@ describe("Templates", () => {
     expect(api.calls.find((c) => c.method === "POST")!.body).toEqual({ state: "paused" });
   });
 
-  it("shows a template's error and offers no pause for disabled templates", async () => {
-    mockFetch({});
+  it("shows a template's error; a disabled template offers only Enable, which makes it active", async () => {
+    const api = mockFetch({ [`POST ${url}`]: t({ state: "active" }) });
     renderWithProviders(<Templates items={[t({ state: "disabled", error: "unknown time zone" })]} />, { project: { pid: PID } });
     await userEvent.click(screen.getByText("Recurring templates (1)"));
     expect(screen.getByText(/unknown time zone/)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Pause|Resume/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Pause|Resume|Disable/ })).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Enable" }));
+    await waitFor(() => expect(api.count("POST", url)).toBe(1));
+    expect(api.calls.find((c) => c.method === "POST")!.body).toEqual({ state: "active" });
+  });
+
+  it("can disable an active template", async () => {
+    const api = mockFetch({ [`POST ${url}`]: t({ state: "disabled" }) });
+    renderWithProviders(<Templates items={[t()]} />, { project: { pid: PID } });
+    await userEvent.click(screen.getByText("Recurring templates (1)"));
+    await userEvent.click(screen.getByRole("button", { name: "Disable" }));
+    await waitFor(() => expect(api.count("POST", url)).toBe(1));
+    expect(api.calls.find((c) => c.method === "POST")!.body).toEqual({ state: "disabled" });
   });
 });
