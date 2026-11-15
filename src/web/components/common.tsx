@@ -116,12 +116,20 @@ export function ErrorNote({ error, onRetry, prefix }: { error: unknown; onRetry?
   );
 }
 
+/** Raster images the server serves inline; shown as previews. SVG is excluded: it is served sandboxed, not as a picture. */
+const PREVIEW_TYPES = new Set(["image/png", "image/jpeg", "image/gif", "image/webp"]);
+
 export function AttachmentList({ items }: { items: AttachmentRef[] }) {
   return (
     <ul role="list" className="file-list">
       {items.map((a) =>
         a.available ? (
           <li key={a.id}>
+            {PREVIEW_TYPES.has(a.mimeType) && (
+              <a className="attachment-preview" href={a.url} target="_blank" rel="noopener noreferrer" title="Open full size">
+                <img src={a.url} alt={a.title || a.fileName} loading="lazy" />
+              </a>
+            )}
             <a href={a.url} download={a.fileName}>
               ↓ {a.title || a.fileName}
             </a>{" "}

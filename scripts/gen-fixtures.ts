@@ -391,7 +391,10 @@ function harborlightDemo() {
     status: REVIEW_STATUSES[i % 5],
     priority: PRIOS[i % 4],
     updatedAt: at(11 * 1440 + i * 13),
-    bodyMarkdown: "```cpp\n// synthetic snippet\nint x = 0;\n```\n\nSuggested fix: synthetic.",
+    // The first finding has a long unbroken log line: on a phone it must scroll inside its box, not widen the page.
+    bodyMarkdown: i === 0
+      ? "```text\n" + `${SYNTH}: LogStreaming: Warning: ${"Synthetic/Very/Long/Package/Path/".repeat(8)}Asset.uasset failed to load` + "\n```\n\nSuggested fix: synthetic."
+      : "```cpp\n// synthetic snippet\nint x = 0;\n```\n\nSuggested fix: synthetic.",
     metadata: { file: `Source/Synthetic/File${i % 9}.cpp`, line: 10 + i * 7, category: rnd.pick(["bug", "design", "test-gap"]) },
     notifyUser: i === 2 || i === 40,
   }));

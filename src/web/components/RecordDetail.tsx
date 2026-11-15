@@ -51,6 +51,14 @@ function DetailBody({ d }: { d: RecordDetail }) {
         </div>
       )}
 
+      {/* Attachments (with image previews) come before the answer form: they are context for answering. */}
+      {d.attachments.length > 0 && (
+        <div className="detail-block">
+          <h4>Attachments</h4>
+          <AttachmentList items={d.attachments} />
+        </div>
+      )}
+
       {d.question && (
         <div className="question-area">
           {!qm ? (
@@ -120,13 +128,6 @@ function DetailBody({ d }: { d: RecordDetail }) {
               </li>
             ))}
           </ul>
-        </div>
-      )}
-
-      {d.attachments.length > 0 && (
-        <div className="detail-block">
-          <h4>Attachments</h4>
-          <AttachmentList items={d.attachments} />
         </div>
       )}
 

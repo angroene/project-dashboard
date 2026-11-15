@@ -583,6 +583,34 @@ await walk(10, "Mobile 360 px, keyboard-only tabs, ARIA labels; change propagati
   await mp.locator('[data-record-id="HBL-MECH-001"] .record-toggle').click();
   await mp.locator('[data-record-id="HBL-MECH-001"] .markdown').waitFor();
   expect((await overflowX(mp)) <= 0, "expanded record overflows at 360 px");
+  // A long code line scrolls inside its box; the record itself stays within the screen. (Page overflow alone misses
+  // this: the record list clips, so the page does not get wider while the record's text runs off the edge.)
+  await mp.goto(`${BASE}/#/p/${MW}?record=HBL-CR-0001`);
+  const cr = mp.locator('[data-record-id="HBL-CR-0001"]').first();
+  await cr.waitFor();
+  if ((await cr.locator('.record-toggle[aria-expanded="true"]').count()) === 0) await cr.locator(".record-toggle").click();
+  await cr.locator(".markdown pre").waitFor();
+  const wide = await cr.evaluate((card) => {
+    const pre = card.querySelector(".markdown pre")!;
+    return { cardRight: card.getBoundingClientRect().right, viewport: window.innerWidth, preScrolls: pre.scrollWidth > pre.clientWidth };
+  });
+  expect(wide.cardRight <= wide.viewport, `record with a long code line is ${Math.round(wide.cardRight - wide.viewport)} px wider than the screen`);
+  expect(wide.preScrolls, "long code line should scroll inside its box");
+  // Image attachments show as previews, before the answer form.
+  await mp.goto(`${BASE}/#/p/${MW}?record=HBL-MQ-001`);
+  const mq = mp.locator('[data-record-id="HBL-MQ-001"]').first();
+  await mq.waitFor();
+  if ((await mq.locator('.record-toggle[aria-expanded="true"]').count()) === 0) await mq.locator(".record-toggle").click();
+  const preview = mq.locator(".attachment-preview img").first();
+  await preview.scrollIntoViewIfNeeded();
+  await until("image preview loaded", () => preview.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0), 5000);
+  const order = await mq.evaluate((card) => {
+    const att = card.querySelector(".attachment-preview");
+    const form = card.querySelector(".question-area");
+    return !!att && !!form && !!(att.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  expect(order, "attachments should come before the answer form");
+  expect((await overflowX(mp)) <= 0, "question with an image preview overflows at 360 px");
   const small = await mp.evaluate(() =>
     Array.from(document.querySelectorAll<HTMLElement>("button.btn, .record-toggle, .tab, .card-toggle"))
       .filter((b) => b.offsetParent && b.getBoundingClientRect().height < 40)

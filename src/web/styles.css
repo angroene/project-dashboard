@@ -883,6 +883,8 @@ textarea.input {
   font-size: 14px;
   line-height: 1.6;
   overflow-wrap: anywhere;
+  /* A grid item: without this, a wide code block or table widens the whole record past the screen. */
+  min-width: 0;
 }
 .markdown > :first-child {
   margin-top: 0;
@@ -951,6 +953,18 @@ textarea.input {
 }
 .file-list .unavailable {
   color: #7d8aa0;
+}
+.attachment-preview {
+  display: block;
+  margin-bottom: 4px;
+}
+.attachment-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 360px;
+  height: auto;
+  border: 1px solid #30425c;
+  border-radius: 8px;
 }
 .file-item {
   display: flex;

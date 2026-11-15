@@ -135,6 +135,28 @@ describe("RecordDetailView", () => {
       expect(within(items[2]).queryByRole("link")).toBeNull();
     });
 
+    it("previews raster images (opening full size), but not SVG, other files or missing images", async () => {
+      show(
+        detail({
+          id: "T-1",
+          title: "Task",
+          attachments: [
+            att({ id: "p1", title: "Fault 1", fileName: "fault1.jpg", mimeType: "image/jpeg" }),
+            att({ id: "p2", fileName: "diagram.svg", mimeType: "image/svg+xml" }),
+            att({ id: "p3", fileName: "notes.txt" }),
+            att({ id: "p4", title: "Lost", fileName: "lost.png", mimeType: "image/png", available: false }),
+          ],
+        }),
+      );
+      const img = await screen.findByRole("img", { name: "Fault 1" });
+      expect(img).toHaveAttribute("src", `/api/projects/${PID}/attachments/p1`);
+      expect(img.closest("a")).toHaveAttribute("href", `/api/projects/${PID}/attachments/p1`);
+      expect(img.closest("a")).toHaveAttribute("target", "_blank");
+      expect(screen.getAllByRole("img")).toHaveLength(1);
+      // The download link stays next to the preview.
+      expect(screen.getByRole("link", { name: "↓ Fault 1" })).toHaveAttribute("download", "fault1.jpg");
+    });
+
     it("omits the section when there are no attachments", async () => {
       show(detail({ id: "T-1", title: "Task" }));
       await loaded();

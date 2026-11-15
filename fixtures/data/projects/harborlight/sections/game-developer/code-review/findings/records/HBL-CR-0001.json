@@ -7,7 +7,7 @@
   "status": "needs-review",
   "priority": "critical",
   "updatedAt": "2026-11-12T00:00:00Z",
-  "bodyMarkdown": "```cpp\n// synthetic snippet\nint x = 0;\n```\n\nSuggested fix: synthetic.",
+  "bodyMarkdown": "```text\nSYNTHETIC FIXTURE: LogStreaming: Warning: Synthetic/Very/Long/Package/Path/Synthetic/Very/Long/Package/Path/Synthetic/Very/Long/Package/Path/Synthetic/Very/Long/Package/Path/Synthetic/Very/Long/Package/Path/Synthetic/Very/Long/Package/Path/Synthetic/Very/Long/Package/Path/Synthetic/Very/Long/Package/Path/Asset.uasset failed to load\n```\n\nSuggested fix: synthetic.",
   "metadata": {
     "file": "Source/Synthetic/File0.cpp",
     "line": 10,
