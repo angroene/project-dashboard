@@ -100,6 +100,8 @@ Browser sessions (cookie after `POST /api/auth/login`) keep working. Every non-G
 ### Scoped agent tokens
 
 The operator lists agent tokens in a JSON file and points `agentTokensFile` (or `PCC_AGENT_TOKENS_FILE`) at it.
+With Docker Compose the file is `secrets/agent_tokens.json` (see [DEPLOYMENT.md](DEPLOYMENT.md#docker-and-docker-compose)).
+The server reads it at start; restart it after a change.
 The file holds **hashes only**:
 
 ```json

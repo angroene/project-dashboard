@@ -95,13 +95,15 @@ creating your own project: [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md).
 
 ## Docker
 
-`Dockerfile` and `docker-compose.yml` are provided with a named data volume, a configurable port, secrets for the token
-and TLS certificate, a non-root user, and the port published on loopback only. `deploy/apd-deploy.sh` does the rest on
-Linux and macOS hosts:
+`Dockerfile` and `docker-compose.yml` are provided with a named data volume, a configurable port, secrets for the
+token, the TLS certificate and the scoped agent token list, a non-root user, and the port published on loopback only.
+`deploy/apd-deploy.sh` does the rest on Linux and macOS hosts:
 
 ```sh
-deploy/apd-deploy.sh up --demo        # or `up` for an empty dashboard; creates the token and a self-signed certificate
+deploy/apd-deploy.sh up --demo        # or `up` for an empty dashboard; creates the token, an empty agent token list
+                                      # (secrets/agent_tokens.json) and a self-signed certificate
 deploy/apd-deploy.sh health --auth
+deploy/apd-deploy.sh restart          # after adding or removing agent tokens in secrets/agent_tokens.json
 deploy/apd-deploy.sh backup           # also: upgrade, rollback, restore, reset (the last two ask for confirmation)
 ```
 

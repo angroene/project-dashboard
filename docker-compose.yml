@@ -5,6 +5,7 @@
 #   - the port is published on the host's loopback address only (change PCC_BIND to expose it deliberately)
 #   - login is required (PCC_AUTH_MODE=required); a token file and a TLS certificate and key are required, supplied
 #     as Compose secrets
+#   - scoped agent tokens come from secrets/agent_tokens.json (hashes only); the deploy script creates it empty
 #   - project data lives in the named volume "pcc-data", mounted at /data inside the container
 services:
   dashboard:
@@ -24,10 +25,13 @@ services:
       PCC_TRUSTED_PROXIES: ${PCC_TRUSTED_PROXIES:-}
       PCC_ALLOWED_HOSTS: ${PCC_ALLOWED_HOSTS:-}
       PCC_AUTH_DISABLED_ON_NETWORK: ${PCC_AUTH_DISABLED_ON_NETWORK:-}
+      # Scoped agent tokens (docs/AGENT_INTEGRATION.md, "Scoped agent tokens"): hashes only; an empty list is valid.
+      PCC_AGENT_TOKENS_FILE: /run/secrets/pcc_agent_tokens
     secrets:
       - pcc_token
       - pcc_tls_cert
       - pcc_tls_key
+      - pcc_agent_tokens
     volumes:
       - pcc-data:/data
     read_only: true
@@ -55,6 +59,8 @@ secrets:
     file: ${APD_SECRETS_DIR:-./secrets}/tls_cert.pem
   pcc_tls_key:
     file: ${APD_SECRETS_DIR:-./secrets}/tls_key.pem
+  pcc_agent_tokens:
+    file: ${APD_SECRETS_DIR:-./secrets}/agent_tokens.json
 
 volumes:
   pcc-data:

@@ -276,6 +276,7 @@ mkdir secrets
 node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))" > secrets/pcc_token.txt
 openssl req -x509 -newkey rsa:2048 -nodes -keyout secrets/tls_key.pem -out secrets/tls_cert.pem -days 365 \
   -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
+echo '{ "schemaVersion": 1, "tokens": [] }' > secrets/agent_tokens.json   # scoped agent tokens, hashes only
 # The files must be readable by the container user (uid 1000 in the node image):
 chmod 600 secrets/*; sudo chown 1000:1000 secrets/*       # Linux; adjust for your setup
 
@@ -289,6 +290,13 @@ Settings:
 |---|---|---|
 | `PCC_HOST_PORT` | `8790` | Host port. |
 | `PCC_BIND` | `127.0.0.1` | Host address to publish on. `0.0.0.0` exposes the dashboard to the network; read [Exposure](#exposure-checklist) first. |
+
+Agent tokens: `secrets/agent_tokens.json` is the agent token list (see
+[Scoped agent tokens](AGENT_INTEGRATION.md#scoped-agent-tokens)); it is mounted as a Compose secret and must exist,
+an empty list is valid. The server reads it at start: after adding or removing an entry, restart the container
+(`deploy/apd-deploy.sh restart`, or `docker compose up -d --force-recreate`). Create entries on any machine with Node
+and this repository (`npm run agent-token`, the token itself goes only into the file you name), or by hand: the entry
+holds the hex SHA-256 of the token, never the token.
 
 Put projects into the volume. Each project is a folder under `/data/projects/`:
 
@@ -318,7 +326,7 @@ named volume takes its ownership from the image (`node` user); the examples are 
 
 | Command | What it does |
 |---|---|
-| `up` | Clean deployment with no projects. Creates the token and a self-signed certificate in `secrets/` if missing (never overwrites them), builds the image, starts, waits until healthy. Refuses if the instance is already running. |
+| `up` | Clean deployment with no projects. Creates the token, an empty agent token list and a self-signed certificate in `secrets/` if missing (never overwrites them), builds the image, starts, waits until healthy. Refuses if the instance is already running. |
 | `up --demo` | The same, then copies each fictional example project that is not there yet. Existing project folders are never touched. |
 | `health` | Container health, HTTPS answer, plain HTTP refused, API returns 401 without a token. `health --auth` also signs in with the token and counts projects (the token is never printed or put on a command line). |
 | `backup [--stop] [--dir DIR]` | `.tar.gz` of the whole data volume plus a `.sha256` file, into `backups/`. `--stop` pauses the service for a perfectly consistent copy. |
@@ -326,6 +334,7 @@ named volume takes its ownership from the image (`node` user); the examples are 
 | `rollback` | Returns to the image from before the last upgrade. Data is untouched. |
 | `restore FILE [--confirm NAME]` | **Replaces all data.** Checks the archive first (checksum, readable, only relative paths, has `projects/`), asks you to type the instance name, takes a safety backup, then restores and fixes ownership. |
 | `reset [--confirm NAME]` | **Deletes all data.** Asks you to type the instance name, takes a safety backup, removes the volume. Secrets are kept. |
+| `restart` | Recreates the container with the current settings and secrets, for example after editing `secrets/agent_tokens.json`. Data is untouched. |
 | `status`, `logs`, `down` | Show state, show logs, stop (the volume is kept). |
 
 ```sh

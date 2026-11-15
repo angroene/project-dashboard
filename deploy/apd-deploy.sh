@@ -8,12 +8,14 @@
 #   deploy/apd-deploy.sh restore FILE [--confirm NAME]
 #   deploy/apd-deploy.sh upgrade         back up, rebuild from this checkout, restart, verify (data kept)
 #   deploy/apd-deploy.sh rollback        return to the image that was running before the last upgrade (data kept)
+#   deploy/apd-deploy.sh restart         recreate the container with the current settings and secrets (data kept);
+#                                        needed after editing secrets/agent_tokens.json
 #   deploy/apd-deploy.sh status | logs | down
 #   deploy/apd-deploy.sh reset [--confirm NAME]   DESTRUCTIVE: deletes all dashboard data (after a safety backup)
 #
 # Settings (environment or a .env file next to docker-compose.yml):
 #   APD_NAME        instance name = Compose project name (default: apd). Data volume: <name>_pcc-data
-#   APD_SECRETS_DIR token and TLS files (default: ./secrets); created on first `up` when missing, never overwritten
+#   APD_SECRETS_DIR token, TLS and agent token files (default: ./secrets); created when missing, never overwritten
 #   APD_BACKUP_DIR  where backups go (default: ./backups)
 #   APD_TLS_NAMES   extra certificate names for a generated certificate, e.g. "DNS:dash.lan,IP:192.0.2.10"
 #   PCC_BIND        host address to publish on (default 127.0.0.1 = this machine only)
@@ -94,6 +96,11 @@ check_auth() {
 ensure_secrets() {
   mkdir -p "$SECRETS"
   local token="$SECRETS/pcc_token.txt" cert="$SECRETS/tls_cert.pem" key="$SECRETS/tls_key.pem"
+  local agents="$SECRETS/agent_tokens.json"
+  if [ ! -f "$agents" ]; then
+    (umask 077; printf '{ "schemaVersion": 1, "tokens": [] }\n' > "$agents")
+    say "created an empty agent token list in $agents (add entries, then: $0 restart)"
+  fi
   if [ ! -f "$token" ]; then
     command -v openssl >/dev/null || die "openssl is needed to create the token and certificate"
     (umask 077; openssl rand -base64 33 | tr -d '\n=' | tr '+/' '-_' > "$token")
@@ -111,16 +118,17 @@ ensure_secrets() {
   fi
   # The certificate is public; the token and key are private.
   if [ -O "$token" ]; then chmod 600 "$token" "$key"; chmod 644 "$cert"; fi
+  if [ -O "$agents" ]; then chmod 600 "$agents"; fi
   # The container runs as uid/gid 1000 and reads the files through Compose secrets, which keep host ownership. If the
   # operator is not uid 1000, the token and key get group 1000 and mode 640 (needs membership of that group, root or
   # sudo -n).
   if [ "$(uname -s)" = Linux ] && [ "$(stat -c %u "$token")" != 1000 ]; then
-    if [ "$(stat -c %g "$token")" != 1000 ] || [ "$(stat -c %g "$key")" != 1000 ]; then
-      chgrp 1000 "$token" "$key" 2>/dev/null || sudo -n chgrp 1000 "$token" "$key" 2>/dev/null \
-        || die "the container user (uid/gid 1000) cannot read $token and $key. Run once:
-  sudo chgrp 1000 $token $key && chmod 640 $token $key"
+    if [ "$(stat -c %g "$token")" != 1000 ] || [ "$(stat -c %g "$key")" != 1000 ] || [ "$(stat -c %g "$agents")" != 1000 ]; then
+      chgrp 1000 "$token" "$key" "$agents" 2>/dev/null || sudo -n chgrp 1000 "$token" "$key" "$agents" 2>/dev/null \
+        || die "the container user (uid/gid 1000) cannot read $token, $key and $agents. Run once:
+  sudo chgrp 1000 $token $key $agents && chmod 640 $token $key $agents"
     fi
-    chmod 640 "$token" "$key"
+    chmod 640 "$token" "$key" "$agents"
   fi
 }
 
@@ -244,6 +252,7 @@ cmd_restore() {
   file="$(cd "$(dirname "$file")" && pwd)/$(basename "$file")"
   confirm_destructive "Restore replaces ALL current data of instance '$NAME' with $file (a safety backup is taken first)." "$confirm"
   if volume_exists; then cmd_backup; say "safety backup of the replaced data: $BACKUP_FILE"; fi
+  ensure_secrets
   compose stop dashboard 2>/dev/null || true
   docker volume create "$VOLUME" >/dev/null
   docker run --rm --user 0:0 --network none -v "$VOLUME:/data" -v "$file:/restore.tar.gz:ro" --entrypoint sh "$(tool_image)" -c \
@@ -258,6 +267,7 @@ cmd_upgrade() {
   [ -n "$(container)" ] || die "instance '$NAME' is not running; use 'up' for a first deployment"
   volume_exists && cmd_backup
   docker image tag "$(tool_image)" "$IMAGE-previous"   # the image running now, whatever its name
+  ensure_secrets
   compose build
   compose up -d
   wait_healthy
@@ -268,9 +278,20 @@ cmd_rollback() {
   require_docker
   docker image inspect "$IMAGE-previous" >/dev/null 2>&1 || die "no previous image ($IMAGE-previous) to roll back to"
   docker image tag "$IMAGE-previous" "$IMAGE"
+  ensure_secrets
   compose up -d --no-build --force-recreate
   wait_healthy
   say "rolled back $NAME to the previous image; data volume $VOLUME unchanged"
+}
+
+# Agent tokens and the access token are read when the server starts: restart after editing agent_tokens.json.
+cmd_restart() {
+  require_docker
+  [ -n "$(container)" ] || die "instance '$NAME' is not running; use 'up'"
+  ensure_secrets
+  compose up -d --no-build --force-recreate
+  wait_healthy
+  say "restarted $NAME; data volume $VOLUME unchanged"
 }
 
 cmd_reset() {
@@ -296,11 +317,12 @@ main() {
     restore) check_auth; cmd_restore "$@" ;;
     upgrade) check_auth; cmd_upgrade ;;
     rollback) check_auth; cmd_rollback ;;
+    restart) check_auth; cmd_restart ;;
     status) require_docker; compose ps; volume_exists && say "data volume: $VOLUME" || say "data volume: none" ;;
     logs) require_docker; compose logs --tail "${1:-100}" dashboard ;;
     down) require_docker; compose down; say "stopped; data volume $VOLUME kept" ;;
     reset) cmd_reset "$@" ;;
-    *) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; [ -z "$cmd" ] || exit 2 ;;
+    *) sed -n '/^set -euo/q;2,$p' "$0" | sed 's/^# \{0,1\}//'; [ -z "$cmd" ] || exit 2 ;;
   esac
 }
 main "$@"

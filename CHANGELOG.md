@@ -15,10 +15,15 @@
   address ranges) and `disabled` (explicit, with warnings). Forwarded client addresses are believed only from
   configured proxies (`trustedProxies`). Settings: `PCC_AUTH_MODE`, `PCC_TRUSTED_NETWORKS`, `PCC_TRUSTED_PROXIES`,
   `PCC_ALLOWED_HOSTS`, `PCC_AUTH_DISABLED_ON_NETWORK`.
+- Docker Compose passes scoped agent tokens: `secrets/agent_tokens.json` is mounted as a secret (ADR 0020). The
+  deploy script creates it empty when missing (also on `upgrade`, `rollback` and `restore`) and has a `restart`
+  command to reload it.
+- A malformed agent token list no longer quotes part of the file in the start-up error (it could contain a pasted
+  token); the error is `agentTokensFile invalid: not valid JSON`.
 
 ### Upgrade notes
 
-Three changes can break existing setups. All are deliberate security or integrity changes, and there is no switch to
+Four changes can break existing setups. All are deliberate security or integrity changes, and there is no switch to
 restore the old behaviour.
 
 1. **Login is required by default** (ADR 0019). A server without a token file no longer starts in the old
@@ -46,6 +51,10 @@ restore the old behaviour.
    **Migration:** to clear a field, send it with `null`: `"fields": {"checks": null}` in `apd publish`, or
    `apd update --field checks=none` (sends `null`). `PATCH` already worked this way. A user-only field cannot be
    cleared by an agent (`403 field-not-editable`). (ADR 0015)
+4. **Docker Compose needs `secrets/agent_tokens.json`** (ADR 0020). Without it `docker compose up` stops because a
+   secret file is missing. **Migration:** `deploy/apd-deploy.sh` creates an empty list on `up`, `upgrade`,
+   `rollback`, `restore` and `restart`. Without the script, create it once:
+   `echo '{ "schemaVersion": 1, "tokens": [] }' > secrets/agent_tokens.json` (readable by uid 1000, like the token).
 
 Other changes:
 

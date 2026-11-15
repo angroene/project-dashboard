@@ -42,6 +42,38 @@ refuses "up refuses while running (no silent upgrade)" "$D" up
 out="$("$D" health --auth 2>&1 || true)"
 if grep -qF -- "$(cat "$APD_SECRETS_DIR/pcc_token.txt")" <<<"$out"; then bad "token never printed"; else ok "token never printed"; fi
 
+echo "== scoped agent tokens"
+AT="$APD_SECRETS_DIR/agent_tokens.json"
+amode="$(stat -c %a "$AT" 2>/dev/null || stat -f %Lp "$AT")"
+case "$amode" in 600|640) ok "agent token list created and private ($amode)" ;; *) bad "agent token list created and private ($amode)" ;; esac
+grep -q '"tokens": \[\]' "$AT" && ok "agent token list starts empty" || bad "agent token list starts empty"
+agent_code() { curl -sk -o /dev/null -w '%{http_code}' -H @"$WORK/agent.hdr" "https://127.0.0.1:$PCC_HOST_PORT$1"; }
+atok="$(openssl rand -hex 24)"; (umask 077; printf 'Authorization: Bearer %s\n' "$atok" > "$WORK/agent.hdr")
+[ "$(agent_code /api/projects)" = 401 ] && ok "a token not in the list is refused (401)" || bad "a token not in the list is refused (401)"
+ahash="$(printf '%s' "$atok" | openssl dgst -sha256 -r | cut -d' ' -f1)"
+printf '{ "schemaVersion": 1, "tokens": [ { "name": "deploy-test-agent", "sha256": "%s", "projects": ["lantern-web-app"], "scopes": ["read"] } ] }\n' "$ahash" > "$AT"
+check "restart picks up the edited agent token list" "$D" restart
+check "agent token list kept by restart" grep -q deploy-test-agent "$AT"
+"$D" down >/dev/null; "$D" up --demo >/dev/null
+n=""; for _ in $(seq 30); do n="$(agent_code /api/projects/lantern-web-app/capabilities)"; [ "$n" = 200 ] && break; sleep 1; done
+[ "$n" = 200 ] && ok "agent token reads its own project" || bad "agent token reads its own project ($n)"
+[ "$(agent_code /api/projects/tidepool-notebook/capabilities)" = 404 ] && ok "agent token cannot see another project (404)" || bad "agent token cannot see another project"
+printf '{ "schemaVersion": 1, "tokens": [] }\n' > "$AT"; "$D" restart >/dev/null
+[ "$(agent_code /api/projects/lantern-web-app/capabilities)" = 401 ] && ok "a removed agent token is refused after restart" || bad "a removed agent token is refused after restart"
+# A raw token pasted into the list instead of an entry: the server refuses to start and never logs the file's content.
+printf '%s\n' "$atok" > "$AT"
+refuses "restart with a malformed agent token list fails" "$D" restart
+out="$(docker logs "$(docker compose -p "$APD_NAME" -f "$REPO/docker-compose.yml" ps -a -q dashboard)" 2>&1 || true)"
+grep -q "agentTokensFile invalid" <<<"$out" && ok "malformed list: the log names the problem" || bad "malformed list: the log names the problem"
+if grep -qF -- "$atok" <<<"$out"; then bad "malformed list: its content is not logged"; else ok "malformed list: its content is not logged"; fi
+printf '{ "schemaVersion": 1, "tokens": [] }\n' > "$AT"
+check "restart after fixing the list" "$D" restart
+# Without the deploy script, a missing list stops Compose before anything starts.
+"$D" down >/dev/null; mv "$AT" "$AT.away"
+refuses "plain compose without agent_tokens.json is refused" env APD_IMAGE="$IMG" docker compose -p "$APD_NAME" -f "$REPO/docker-compose.yml" up -d --no-build
+mv "$AT.away" "$AT"
+"$D" down >/dev/null; inside 'rm -rf /data/projects/lantern-web-app /data/projects/tidepool-notebook'; "$D" up >/dev/null
+
 echo "== demo deployment keeps data"
 "$D" down >/dev/null
 check "demo up" "$D" up --demo
@@ -82,7 +114,10 @@ check "backup with --stop" "$D" backup --stop
 check "service healthy after --stop backup" "$D" health
 
 echo "== upgrade and rollback keep data"
+# An instance set up before the agent token list existed has no agent_tokens.json; upgrade must create it.
+rm "$APD_SECRETS_DIR/agent_tokens.json"
 check "upgrade" "$D" upgrade
+check "upgrade creates a missing agent token list" test -s "$APD_SECRETS_DIR/agent_tokens.json"
 check "data kept after upgrade" inside 'grep -q kept /data/projects/lantern-web-app/marker.txt'
 check "previous image kept for rollback" docker image inspect "$IMG-previous"
 check "rollback" "$D" rollback
@@ -116,6 +151,7 @@ check "reset with confirmation" "$D" reset --confirm "$APD_NAME"
 [ "$(ls "$APD_BACKUP_DIR"/*.tar.gz | wc -l)" -gt "$before" ] && ok "reset took a safety backup first" || bad "reset took a safety backup first"
 check "volume removed" sh -c "! docker volume inspect '$VOL'"
 check "secrets kept" test -s "$APD_SECRETS_DIR/pcc_token.txt"
+check "agent token list kept" test -s "$APD_SECRETS_DIR/agent_tokens.json"
 check "up after reset" "$D" up
 [ "$(projects)" = 0 ] && ok "empty after reset" || bad "empty after reset"
 
