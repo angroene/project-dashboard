@@ -38,7 +38,9 @@ check "health passes (TLS, plain HTTP refused, 401 without token)" "$D" health
 [ "$(projects)" = 0 ] && ok "clean deployment has no projects" || bad "clean deployment has no projects"
 refuses "up refuses while running (no silent upgrade)" "$D" up
 # -F and -- : the token is data, never a pattern or an option (a token starting with "-" must not reach grep's parser).
-if "$D" health --auth 2>&1 | grep -qF -- "$(cat "$APD_SECRETS_DIR/pcc_token.txt")"; then bad "token never printed"; else ok "token never printed"; fi
+# Output is captured whole before searching: with pipefail, grep -q exiting early can fail the producer (SIGPIPE).
+out="$("$D" health --auth 2>&1 || true)"
+if grep -qF -- "$(cat "$APD_SECRETS_DIR/pcc_token.txt")" <<<"$out"; then bad "token never printed"; else ok "token never printed"; fi
 
 echo "== demo deployment keeps data"
 "$D" down >/dev/null
@@ -65,7 +67,8 @@ check "local-network: signing in with the token works" "$D" health --auth
 check "disabled with confirmation starts" env PCC_AUTH_MODE=disabled APD_CONFIRM_AUTH_DISABLED="$APD_NAME" "$D" up
 [ "$(code)" = 200 ] && ok "disabled: the API answers without a token" || bad "disabled: the API answers without a token"
 [ "$(code -H 'Host: attacker.example')" = 401 ] && ok "disabled: an unknown Host name is refused (DNS rebinding)" || bad "disabled: an unknown Host name is refused"
-if "$D" logs 200 2>&1 | grep -q "AUTHENTICATION IS DISABLED"; then ok "disabled: the server log warns"; else bad "disabled: the server log warns"; fi
+out="$("$D" logs 200 2>&1 || true)"
+if grep -q "AUTHENTICATION IS DISABLED" <<<"$out"; then ok "disabled: the server log warns"; else bad "disabled: the server log warns"; fi
 "$D" down >/dev/null
 check "back to the default (login required)" "$D" up
 check "default: 401 without token again" "$D" health
