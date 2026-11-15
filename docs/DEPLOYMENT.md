@@ -40,6 +40,7 @@ overridden by environment variables. Secrets are never stored in the config: the
 | | `xlsx.maxBytes`, `xlsx.maxRows` | 5 MB, 5000 | Excel import limits. |
 | | `watch`, `reconcileSeconds` | `true`, `60` | File watching and the stat-based safety net (`0` disables the latter). |
 | | `recurrenceSeconds` | `60` | How often recurring templates are checked for due occurrences (`0` disables the scheduler). |
+| | `writerLockWaitSeconds` | `35` | How long a starting server waits for another server on the same data root to stop before refusing to start (ADR 0016). Keep it above 30: a lock left by a crashed server goes stale after 30 s, and a shorter wait refuses instead of taking it over. |
 | | `logLevel` | `info` | `fatal error warn info debug silent`. |
 
 Example `pcc.config.json`:
@@ -255,7 +256,9 @@ and removes it afterwards. CI runs it on amd64 and arm64.
 
 ### Upgrading
 
-Data is plain files outside the image, so an upgrade replaces only the code:
+Data is plain files outside the image, so an upgrade replaces only the code. Only one server may use a data root at a
+time: a starting server waits up to 35 s for the previous one to stop (writer lock `.apd-writer.lock` in the data
+root) and otherwise refuses to start, naming the process that holds it.
 
 ```sh
 git pull
@@ -264,7 +267,7 @@ deploy/apd-deploy.sh upgrade      # backs up first; `rollback` returns to the pr
 
 Without the script: back up (see Backups), then `docker compose up --build -d`.
 
-Read the release notes for schema changes; any breaking change to the data format is announced with a migration note.
+Read the release notes ([CHANGELOG.md](../CHANGELOG.md)) for schema changes; any breaking change to the data format is announced with a migration note.
 Roll back by checking out the previous version and rebuilding. Restarting signs users out (sessions are in memory).
 
 ## Self-hosted server

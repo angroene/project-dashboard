@@ -80,7 +80,8 @@ Nothing in the API maps statuses for a particular project.
 "publishing": { "enabled": true, "sections": ["questions", "tasks", "issues", "reviews"] }
 ```
 
-- Off by default. Without it every write call returns `403 publishing-disabled`.
+- Off by default. Without it every write call returns `403 publishing-disabled`, including uploads with an agent
+  token. The dashboard user's own uploads (answers, comments) do not need it.
 - `sections` limits record writes to those card ids (omit it to allow every card). A card outside the list gives
   `403 section-not-allowed`; a tab gives `422 not-a-card`.
 - Activity events go to the project's `activityDir`, progress to its `progressFile`. Clients never send paths.
@@ -109,6 +110,9 @@ The file holds **hashes only**:
   ]
 }
 ```
+
+The `name` appears in the record history for the token's changes. Names starting with "user" (letters and digits,
+any case) are refused: that name belongs to the dashboard user (ADR 0015).
 
 Create a token (the token goes only into the file you name, created with mode 600; stdout gets the entry above):
 
@@ -148,7 +152,7 @@ outbox. For a self-signed certificate start Node with `NODE_EXTRA_CA_CERTS=/path
 | Command | Does |
 |---|---|
 | `projects`, `capabilities`, `templates` | discovery |
-| `list --section S [--status a,b] [--field id=v,w]... [--q text] [--limit n] [--cursor c]` | one page of record summaries, filtered on the server |
+| `list --section S [--status a,b] [--field id=v,w]... [--q text] [--limit n] [--cursor c]` | one page of record summaries, filtered on the server, plus the card's `fieldDefs` |
 | `ask --section S --id ID (--file f.json \| --json '{...}')` | publish a question (fills `recordType`, `status: open`, `requiresResponse`, `questionRevision: 1`) |
 | `publish --section S --id ID (--file \| --json)` | publish any record |
 | `update ID [--status] [--label] [--summary] [--percent n\|none] [--priority] [--notify] [--note text] [--by name] [--field id=value]... [--external refs.json] [--if-revision r]` | `PATCH`. `--field` values: `true`/`false` (checkbox), `none` (clear), anything else as text or option id. `--external` reads a JSON array and replaces the list. |

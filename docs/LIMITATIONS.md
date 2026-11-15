@@ -34,13 +34,17 @@
 - **What the dashboard writes.** It never edits manifests, question contents or a record's `status`. It writes answer
   files, read state, the user's tracked-field values, comments and attachments on records of cards that allow them
   (ADR 0012), occurrence records of recurring templates, and a template's `state` when it is paused or resumed.
+- **One server per data folder.** Record updates are serialised inside one server process. A second server on the
+  same data root refuses to start (writer lock `.apd-writer.lock`, refreshed every 10 s; a lock older than 30 s is
+  taken over; ADR 0016). Extra project roots (`extraProjectRoots`) are not locked: never point two servers at the same one.
 - **Recurring templates are daily only.** No weekly, monthly or cron schedules. Missed days beyond `catchUpDays` are
   skipped, not created. The schedule is checked every `recurrenceSeconds` (60), so a day can appear up to a minute
   after its time.
 - **External references are not refreshed.** The dashboard never contacts other systems; a reported status is as old as
   its `statusAt`.
 - **Tracked fields** are limited to checkbox, choice, text and date, 20 per card. Changes are attributed to the token
-  name or to "user" (one operator identity). `apd update --field id=true` always sends a boolean; to store the text
+  name or to "user" (one operator identity). Names agents put in `by` must be printable ASCII and must not start with
+  "user". `apd update --field id=true` always sends a boolean; to store the text
   "true" in a text field use the API.
 - **Browsers.** The automated end-to-end walk uses one Chromium-based browser. Phones, screen readers and other
   browsers were not systematically tested.

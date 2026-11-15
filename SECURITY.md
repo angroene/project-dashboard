@@ -6,9 +6,9 @@ Only the latest release (or the current main branch) receives security fixes.
 
 ## Reporting a vulnerability
 
-Please report suspected vulnerabilities **privately**, not in a public issue or pull request. Use the repository
-host's private vulnerability reporting ("Report a vulnerability" under the Security tab) if it is enabled, or contact
-the maintainers by the private contact method listed on the repository page.
+Please report suspected vulnerabilities **privately**, not in a public issue or pull request. Use GitHub's private
+vulnerability reporting: open the repository's **Security** tab and choose **Report a vulnerability**. Only the
+maintainers see the report.
 
 Include what you can: the affected version or commit, what you did, what you expected, what happened, and the impact.
 A minimal reproduction using synthetic data is ideal.

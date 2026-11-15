@@ -76,7 +76,7 @@ version. Every file carries `"schemaVersion": 1`. Two complete, working projects
 | `id` | yes | | Letters, digits, `.` `_` `-`; 1 to 128 characters; must start with a letter or digit. Unique across the server. |
 | `displayName` | yes | | 1 to 120 characters. Shown in the project selector. |
 | `description` | no | `""` | Up to 500 characters. |
-| `enabled` | no | `true` | |
+| `enabled` | no | `true` | `false` turns the project off: it is not listed, every request for it returns 404, and its recurring templates do not run. |
 | `order` | no | `100` | Lower comes first in the project list. |
 | `rootSection` | no | `sections` | Folder holding the section tree. |
 | `progressFile` | no | `progress.json` | |
@@ -429,17 +429,18 @@ agent running:
 | Key | Notes |
 |---|---|
 | `id` | Record-id characters, at most 117, unique per project. Occurrences get the id `<id>-<YYYY-MM-DD>`. |
-| `state` | `active` (default), `paused` or `disabled`; only `active` creates records. Pause and resume from the card's "Recurring templates" list or `POST …/templates/:id/state`. |
+| `state` | `active` (default), `paused` or `disabled`; only `active` creates records. Pause, resume, disable and enable from the card's "Recurring templates" list or `POST …/templates/:id/state`. Resuming (or enabling) starts from today: the days it was paused are not created afterwards. Editing `state` in the file by hand does not skip them. |
 | `schedule.frequency` | `daily` (the only frequency in this release). |
-| `schedule.time`, `timezone` | Local time `HH:MM` (default `00:00`) in an IANA time zone. A day's record is created once the local clock reaches that time. |
+| `schedule.time`, `timezone` | Local time `HH:MM` (default `00:00`) in an IANA time zone. A day's record is created at the first check after the local clock reaches that time, also when that check falls after midnight (a late time such as `23:59`). |
 | `startDate`, `endDate` | Local dates, inclusive; `endDate` optional. |
-| `catchUpDays` | 0 to 31 (default 0): after downtime or a pause, also create this many missed earlier days. Older missed days are skipped. |
-| `record` | The record each day starts from, without `id` (the server sets `id`, `occurrence`, `createdAt`, `updatedAt`). `{date}` in `title`, `summary` and `bodyMarkdown` becomes the local date. Without a `title`, it is "\<template title\> \<date\>". |
+| `catchUpDays` | 0 to 31 (default 0): after the server was down, also create this many missed earlier days. Older missed days are skipped. A restart counts as downtime. |
+| `record` | The record each day starts from, without `id` and without `attachments` (an attachment belongs to one record; use `links` for shared files). The server sets `id`, `occurrence`, `createdAt`, `updatedAt`. `{date}` in `title`, `summary` and `bodyMarkdown` becomes the local date. Without a `title`, it is "\<template title\> \<date\>". |
 
 Behaviour that can be relied on:
 
 - **Exactly once per day.** The record file is created atomically and only if it does not exist, so restarts, repeated
-  checks and several servers on the same data never create a second copy. On a daylight-saving change the day is still
+  checks and two scheduler runs at the same moment never create a second copy (only one server may use a data
+  folder; see LIMITATIONS.md). On a daylight-saving change the day is still
   created once: a skipped local time is reached when the clock jumps past it, a repeated one the first time.
 - **History is kept.** The scheduler never edits or deletes an occurrence. It remembers the last date it handled
   (`user-state/.recurrence.json`), so an occurrence someone deleted is not recreated.

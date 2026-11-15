@@ -192,7 +192,7 @@ Known limitations are in [docs/LIMITATIONS.md](docs/LIMITATIONS.md). In particul
 [Getting started](docs/GETTING_STARTED.md) · [Project format](docs/PROJECT_FORMAT.md) · [Queue](docs/QUEUE.md) ·
 [Agent integration](docs/AGENT_INTEGRATION.md) · [Skills](docs/SKILLS.md) · [Agent kit](agent-kit/README.md) ·
 [Excel](docs/EXCEL.md) · [API](docs/API.md) · [Deployment](docs/DEPLOYMENT.md) · [Security model](docs/SECURITY_MODEL.md) ·
-[Performance](docs/PERFORMANCE.md) · [Limitations](docs/LIMITATIONS.md) · [Decisions (ADRs)](docs/adr/) ·
+[Performance](docs/PERFORMANCE.md) · [Limitations](docs/LIMITATIONS.md) · [Changelog](CHANGELOG.md) · [Decisions (ADRs)](docs/adr/) ·
 [Third-party licenses](docs/THIRD_PARTY_LICENSES.md) · [Examples](examples/README.md) · [JSON Schemas](docs/schemas/)
 
 ## Contributing and license
