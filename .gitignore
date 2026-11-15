@@ -9,3 +9,7 @@ secrets/
 *.key
 *.token.txt
 backups/
+# Local data copies (docs/GETTING_STARTED.md) and the CLI's offline outbox
+demo-data/
+.apd-outbox/
+.apd-writer.lock

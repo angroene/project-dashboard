@@ -185,7 +185,7 @@ cmd_backup() {
   running="$(container)"
   if [ -n "$stop" ] && [ -n "$running" ]; then compose stop dashboard; fi
   docker run --rm --user 0:0 --network none -v "$VOLUME:/data:ro" -v "$dir:/backup" --entrypoint sh "$(tool_image)" -c \
-    "tar -czf /backup/$file -C /data . && chown $(id -u):$(id -g) /backup/$file"
+    "tar -czf /backup/$file -C /data --exclude=./.apd-writer.lock . && chown $(id -u):$(id -g) /backup/$file"
   if [ -n "$stop" ] && [ -n "$running" ]; then compose start dashboard; wait_healthy; fi
   (cd "$dir" && { command -v sha256sum >/dev/null && sha256sum "$file" || shasum -a 256 "$file"; } > "$file.sha256")
   say "backup: $dir/$file"
@@ -250,7 +250,10 @@ cmd_reset() {
   confirm_destructive "Reset DELETES ALL DATA of instance '$NAME' (volume $VOLUME). A safety backup is taken first." "$confirm"
   volume_exists && { cmd_backup; say "safety backup: $BACKUP_FILE"; }
   compose down
-  docker volume rm "$VOLUME" >/dev/null 2>&1 || true
+  if volume_exists; then
+    docker volume rm "$VOLUME" >/dev/null || die "could not delete volume $VOLUME (is another container using it?); data NOT deleted"
+  fi
+  volume_exists && die "volume $VOLUME still exists; data NOT deleted"
   say "instance '$NAME' reset: data deleted, secrets kept. Start again with: $0 up"
 }
 

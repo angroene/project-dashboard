@@ -62,6 +62,8 @@ const ConfigSchema = z.object({
   reconcileSeconds: z.number().int().min(0).default(60),
   /** How often recurring templates are checked for due occurrences, in seconds; 0 disables the scheduler. */
   recurrenceSeconds: z.number().int().min(0).default(60),
+  /** How long a starting server waits for another server on the same data root to stop (ADR 0016). */
+  writerLockWaitSeconds: z.number().int().min(0).max(600).default(35),
   logLevel: z.enum(["fatal", "error", "warn", "info", "debug", "silent"]).default("info"),
 });
 export type Config = z.infer<typeof ConfigSchema> & { allowedUploadTypes: Record<string, string[]> };
