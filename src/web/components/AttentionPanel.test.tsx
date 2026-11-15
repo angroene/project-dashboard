@@ -73,4 +73,26 @@ describe("AttentionPanel", () => {
     await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
     expect(api.count("GET", ATTENTION)).toBe(2);
   });
+
+  it("folds the whole panel, and each group on its own; open by default", async () => {
+    mockFetch({ [`GET ${ATTENTION}`]: { questions: [question], unreadRecords: [update] } });
+    renderWithProviders(<AttentionPanel />, { project: { pid: PID, nodes } });
+    const panel = screen.getByRole("button", { name: "Needs your attention" });
+    expect(panel).toHaveAttribute("aria-expanded", "true");
+    const unread = await screen.findByRole("button", { name: "Unread updates (1)" });
+    expect(screen.getByRole("link", { name: /Sensors calibrated/ })).toBeVisible();
+
+    await userEvent.click(unread);
+    expect(unread).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("link", { name: /Sensors calibrated/ })).toBeNull();
+    expect(screen.getByRole("link", { name: /Pick a vendor/ })).toBeVisible();
+
+    await userEvent.click(panel);
+    expect(panel).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("link", { name: /Pick a vendor/ })).toBeNull();
+    await userEvent.click(panel);
+    expect(screen.getByRole("link", { name: /Pick a vendor/ })).toBeVisible();
+    // Each group keeps its own state while the panel is folded.
+    expect(screen.getByRole("button", { name: "Unread updates (1)" })).toHaveAttribute("aria-expanded", "false");
+  });
 });

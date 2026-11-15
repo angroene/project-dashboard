@@ -20,6 +20,10 @@
   command to reload it.
 - A malformed agent token list no longer quotes part of the file in the start-up error (it could contain a pasted
   token); the error is `agentTokensFile invalid: not valid JSON`.
+- Record details on phones: a long code line or table scrolls inside its box instead of widening the record past
+  the screen. Image attachments (PNG, JPEG, GIF, WebP) show as previews that open full size, and attachments come
+  before the answer form.
+- "Needs your attention" can be folded, and so can each of its groups (questions, unread updates).
 
 ### Upgrade notes
 
