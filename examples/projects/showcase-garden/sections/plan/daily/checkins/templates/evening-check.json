@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "evening-check",
+  "title": "Available for the evening check?",
+  "state": "active",
+  "schedule": {
+    "frequency": "daily",
+    "time": "06:00",
+    "timezone": "Europe/Lisbon",
+    "startDate": "2026-11-10"
+  },
+  "record": {
+    "recordType": "generic",
+    "title": "Available for the evening check? {date}",
+    "summary": "Yes by default; tap No if you cannot make it.",
+    "status": "open",
+    "fields": {
+      "available": true
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-Q-021",
+  "recordType": "question",
+  "status": "open",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "title": "Plan for the work day on bed 7",
+  "summary": "Composite: approval, single choice, multiple choice, free text and an optional file.",
+  "updatedAt": "2026-11-13T09:05:00Z",
+  "attachments": [
+    {
+      "id": "SG-Q-021-layout",
+      "title": "Current bed layout",
+      "path": "plans/bed-layout.md",
+      "mimeType": "text/markdown"
+    }
+  ],
+  "answerSchema": {
+    "type": "composite",
+    "fields": [
+      {
+        "id": "go",
+        "label": "Hold the work day",
+        "type": "approval",
+        "default": "approve"
+      },
+      {
+        "id": "slot",
+        "label": "Time slot",
+        "type": "single-choice",
+        "options": [
+          {
+            "id": "am",
+            "label": "Morning"
+          },
+          {
+            "id": "pm",
+            "label": "Afternoon"
+          }
+        ],
+        "default": "am"
+      },
+      {
+        "id": "tools",
+        "label": "Tools to bring",
+        "type": "multiple-choice",
+        "options": [
+          {
+            "id": "spade",
+            "label": "Spade"
+          },
+          {
+            "id": "rake",
+            "label": "Rake"
+          },
+          {
+            "id": "barrow",
+            "label": "Wheelbarrow"
+          }
+        ],
+        "minSelected": 0,
+        "required": false
+      },
+      {
+        "id": "notes",
+        "label": "Notes",
+        "type": "free-text",
+        "required": false,
+        "minLength": 0,
+        "maxLength": 1000,
+        "help": "Anything the volunteers should know"
+      },
+      {
+        "id": "sketch",
+        "label": "Sketch",
+        "type": "file-upload",
+        "required": false,
+        "minFiles": 0,
+        "maxFiles": 2
+      }
+    ]
+  }
+}

@@ -24,7 +24,7 @@ data format depends on any of them.
 - **Questions you can answer in the UI:** single choice, multiple choice, free text, approvals, file uploads, and
   composites. Answers are validated on the server and enter a file queue. Questions can suggest a default answer
   that the form pre-selects; it is never submitted on the user's behalf.
-- **Actionable cards:** per-card tracked fields (checkbox, choice, text, date) such as "Reviewed" or "Decision", each
+- **Actionable cards:** per-card tracked fields (checkbox, Yes / No, choice, text, date) such as "Reviewed" or "Decision", each
   editable by the user, by agents or both, with filters, comments, attached files and a change history.
 - **External references** to work items in other systems (change requests, tickets, builds) with branch or revision
   and the status that system reported, shown apart from the dashboard's own status.
@@ -85,13 +85,20 @@ git clone <repository-url> agents-project-dashboard
 cd agents-project-dashboard
 npm ci
 npm run build
-cp -r examples demo-data          # the server writes into its data root, so use a copy
+cp -r examples demo-data          # demo start; for a clean start: mkdir -p my-data/projects
 PCC_DATA_ROOT=demo-data PCC_WEB_ROOT=dist/web \
 PCC_AUTH_MODE=local-network PCC_TRUSTED_NETWORKS=127.0.0.1/32,::1/128 npm start   # no login for this machine only
 ```
 
-Open **http://127.0.0.1:8790**: two fictional example projects with different layouts. Windows PowerShell syntax and
-creating your own project: [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md).
+Open **http://127.0.0.1:8790**: three fictional example projects with different layouts.
+
+- **Demo start:** point `PCC_DATA_ROOT` at a copy of `examples/` (the server writes into its data root, so never at
+  `examples/` itself). **Clean start:** point it at an empty folder with a `projects/` folder inside; the dashboard is
+  empty until you add a project.
+- The server never adds example projects by itself. With Docker, `deploy/apd-deploy.sh up` starts empty and
+  `up --demo` copies in only the example projects that are missing; existing project folders are never touched.
+
+Windows PowerShell syntax and creating your own project: [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md).
 
 ## Docker
 
@@ -126,8 +133,28 @@ everything about it is in [docs/PROJECT_FORMAT.md](docs/PROJECT_FORMAT.md): disp
 published progress, notifications, status workflows, record types and schemas, question types (options, free text,
 approvals, uploads, default answers), tracked fields, external references, recurring templates, attachments, stable
 ids, and every validation message. Machine-readable JSON Schemas are in [docs/schemas/](docs/schemas/) (`npm run
-schemas` regenerates them; the server's own validation also checks rules a JSON Schema cannot express). Two complete projects are in
+schemas` regenerates them; the server's own validation also checks rules a JSON Schema cannot express). Three complete projects are in
 [examples/](examples/README.md).
+
+To let an agent connect a project for you, give it the copy-and-paste prompt in
+[docs/ONBOARDING_PROMPT.md](docs/ONBOARDING_PROMPT.md).
+
+## Supported item types and features
+
+Every type has a complete example in [docs/ITEM_TYPES.md](docs/ITEM_TYPES.md) and a working instance in the
+[`showcase-garden`](examples/projects/showcase-garden) example project.
+
+| Type | Purpose | Catalogue | Showcase |
+|---|---|---|---|
+| Display types `main-tab`, `page-tab`, `expandable-card` | navigation and record lists | [A](docs/ITEM_TYPES.md#a-layout-projects-and-sections) | [`sections/`](examples/projects/showcase-garden/sections) |
+| Section views `progress`, `attention`, `activity`, `records` | built-in panels on tabs | [A](docs/ITEM_TYPES.md#section-views) | [`overview`](examples/projects/showcase-garden/sections/overview/section.json) |
+| Records: question, task, issue, review, progress, activity, document, generic | what projects publish | [B](docs/ITEM_TYPES.md#b-record-types) | [`plan/work`](examples/projects/showcase-garden/sections/plan/work), [`library`](examples/projects/showcase-garden/sections/library) |
+| Answers: single and multiple choice, free text, approval, file upload, composite | questions the user answers | [C](docs/ITEM_TYPES.md#c-question-and-answer-types) | [`plan/ask`](examples/projects/showcase-garden/sections/plan/ask) |
+| Tracked fields: checkbox, yes-no, choice, text, date | per-record values set by the user or agents | [D](docs/ITEM_TYPES.md#d-tracked-field-types) | [`reviews`](examples/projects/showcase-garden/sections/plan/work/reviews/section.json) |
+| Recurring templates, daily Yes / No | one record per day, without an agent | [E](docs/ITEM_TYPES.md#e-recurring-items) | [`plan/daily`](examples/projects/showcase-garden/sections/plan/daily) |
+| Workflows, actions to do, unread updates, attention groups | statuses and what needs the user | [F](docs/ITEM_TYPES.md#f-statuses-workflows-and-attention-groups) | [`project.json`](examples/projects/showcase-garden/project.json) |
+| Card actions: copy, download, ZIP, Excel export and import, respond, comment, mark read | what the user can do | [G](docs/ITEM_TYPES.md#g-actions) | every `section.json` |
+| Attachments, artifact roots, progress, activity | files, published progress, event feed | [H](docs/ITEM_TYPES.md#h-attachments-artifact-roots-progress-and-activity) | [`progress.json`](examples/projects/showcase-garden/progress.json), [`activity/`](examples/projects/showcase-garden/activity/events) |
 
 ## Questions, answers and the queue
 
@@ -143,6 +170,12 @@ only the scopes it needs). The `agent-kit/` folder has the `apd` CLI (one file, 
 (ask a question, process answers, update progress, report issues), optional Claude Code and `AGENTS.md` snippets, and
 example inputs. `npm run demo:agent` runs the whole loop on the example project. Guide:
 [docs/AGENT_INTEGRATION.md](docs/AGENT_INTEGRATION.md); skills and installation: [docs/SKILLS.md](docs/SKILLS.md).
+
+## Optional: Dashboard-first agent communication
+
+For an agent that already uses the dashboard, [agent-kit/DASHBOARD_FIRST.md](agent-kit/DASHBOARD_FIRST.md) is a short
+section to append to `CLAUDE.md` or `AGENTS.md`: one completion update per work item, questions and findings as
+records, short chat, and outages always reported.
 
 ## Excel, uploads and downloads
 
@@ -197,8 +230,8 @@ Known limitations are in [docs/LIMITATIONS.md](docs/LIMITATIONS.md). In particul
 
 ## Documentation map
 
-[Getting started](docs/GETTING_STARTED.md) · [Project format](docs/PROJECT_FORMAT.md) · [Queue](docs/QUEUE.md) ·
-[Agent integration](docs/AGENT_INTEGRATION.md) · [Skills](docs/SKILLS.md) · [Agent kit](agent-kit/README.md) ·
+[Getting started](docs/GETTING_STARTED.md) · [Project format](docs/PROJECT_FORMAT.md) · [Item types](docs/ITEM_TYPES.md) · [Queue](docs/QUEUE.md) ·
+[Agent integration](docs/AGENT_INTEGRATION.md) · [Onboarding prompt](docs/ONBOARDING_PROMPT.md) · [Skills](docs/SKILLS.md) · [Agent kit](agent-kit/README.md) ·
 [Excel](docs/EXCEL.md) · [API](docs/API.md) · [Deployment](docs/DEPLOYMENT.md) · [Security model](docs/SECURITY_MODEL.md) ·
 [Performance](docs/PERFORMANCE.md) · [Limitations](docs/LIMITATIONS.md) · [Changelog](CHANGELOG.md) · [Decisions (ADRs)](docs/adr/) ·
 [Third-party licenses](docs/THIRD_PARTY_LICENSES.md) · [Examples](examples/README.md) · [JSON Schemas](docs/schemas/)

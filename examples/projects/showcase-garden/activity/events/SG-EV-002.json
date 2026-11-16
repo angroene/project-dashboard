@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-EV-002",
+  "at": "2026-11-13T07:30:00Z",
+  "area": "Beds",
+  "action": "build",
+  "source": "garden-bot",
+  "summary": "Beds 1 to 6 rebuilt",
+  "status": "success",
+  "recordId": "SG-T-001"
+}

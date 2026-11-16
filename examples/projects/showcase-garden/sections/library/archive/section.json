@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "archive",
+  "displayType": "expandable-card",
+  "title": "Archive (hidden)",
+  "order": 90,
+  "icon": "box",
+  "visible": false
+}

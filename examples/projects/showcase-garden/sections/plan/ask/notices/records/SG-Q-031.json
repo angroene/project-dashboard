@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-Q-031",
+  "recordType": "question",
+  "status": "answered",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "title": "Reply: compost bin moved to the north corner",
+  "summary": "An agent's reply on an answered question (Responses group).",
+  "notifyUser": true,
+  "updatedAt": "2026-11-14T10:05:00Z",
+  "linkedRecords": [
+    "SG-Q-003"
+  ],
+  "bodyMarkdown": "Done as you answered. The old spot is free for a bench.",
+  "answerSchema": {
+    "type": "free-text"
+  }
+}

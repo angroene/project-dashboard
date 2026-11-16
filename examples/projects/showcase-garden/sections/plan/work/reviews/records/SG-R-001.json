@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-R-001",
+  "recordType": "review",
+  "title": "Review the bed layout plan",
+  "summary": "Needs review; the agent's checks passed.",
+  "status": "needs-review",
+  "updatedAt": "2026-11-13T11:00:00Z",
+  "attachments": [
+    {
+      "id": "SG-R-001-plan",
+      "title": "Bed layout",
+      "path": "plans/bed-layout.md",
+      "mimeType": "text/markdown"
+    }
+  ],
+  "fields": {
+    "checks": true
+  },
+  "external": [
+    {
+      "system": "document review",
+      "id": "DR-3",
+      "title": "Bed layout v2",
+      "url": "https://docs.example.org/review/3",
+      "ref": "layout@v2",
+      "status": "open",
+      "statusAt": "2026-11-13T10:55:00Z"
+    }
+  ]
+}

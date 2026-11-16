@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-Q-011",
+  "recordType": "question",
+  "status": "open",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "title": "Describe the path layout you prefer",
+  "summary": "Multiline free text, at least 20 characters.",
+  "updatedAt": "2026-11-13T08:05:00Z",
+  "answerSchema": {
+    "type": "free-text",
+    "multiline": true,
+    "minLength": 20,
+    "maxLength": 4000,
+    "placeholder": "Width, surface, where it should run"
+  }
+}

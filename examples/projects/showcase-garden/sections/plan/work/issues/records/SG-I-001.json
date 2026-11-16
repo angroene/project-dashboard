@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-I-001",
+  "recordType": "issue",
+  "title": "Valve 2 does not open on the timer",
+  "summary": "Failing irrigation test with log.",
+  "status": "open",
+  "priority": "high",
+  "severity": "major",
+  "area": "Irrigation",
+  "notifyUser": true,
+  "updatedAt": "2026-11-14T06:50:00Z",
+  "bodyMarkdown": "Reproducible on every timer run since 2026-11-13. Manual opening works.",
+  "attachments": [
+    {
+      "id": "SG-I-001-log",
+      "title": "Timer test log",
+      "path": "logs/irrigation-test.txt",
+      "mimeType": "text/plain"
+    }
+  ],
+  "metadata": {
+    "reproducible": true,
+    "runs": 3
+  }
+}

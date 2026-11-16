@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "files-composites",
+  "displayType": "expandable-card",
+  "title": "Files and composites",
+  "order": 30,
+  "icon": "image",
+  "actions": [
+    "copy",
+    "open-detail",
+    "respond",
+    "upload",
+    "download",
+    "bulk-download"
+  ]
+}

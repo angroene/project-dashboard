@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "watering-log",
+  "title": "Watering log",
+  "state": "active",
+  "schedule": {
+    "frequency": "daily",
+    "time": "19:00",
+    "timezone": "Europe/Lisbon",
+    "startDate": "2026-11-10",
+    "endDate": "2027-03-31",
+    "catchUpDays": 0
+  },
+  "record": {
+    "recordType": "question",
+    "title": "Watering log {date}",
+    "summary": "Did the beds get watered on {date}?",
+    "status": "open",
+    "requiresResponse": true,
+    "questionRevision": 1,
+    "answerSchema": {
+      "type": "composite",
+      "fields": [
+        {
+          "id": "watered",
+          "label": "Beds watered",
+          "type": "approval",
+          "default": "approve"
+        },
+        {
+          "id": "notes",
+          "label": "Notes",
+          "type": "free-text",
+          "required": false,
+          "minLength": 0,
+          "maxLength": 500
+        }
+      ]
+    }
+  }
+}

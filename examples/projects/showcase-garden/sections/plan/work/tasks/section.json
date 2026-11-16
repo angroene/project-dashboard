@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "tasks",
+  "displayType": "expandable-card",
+  "title": "Tasks",
+  "order": 10,
+  "icon": "flag",
+  "defaultOpen": true,
+  "actions": [
+    "copy",
+    "open-detail",
+    "comment",
+    "mark-read"
+  ],
+  "filters": {
+    "statuses": [
+      "planned",
+      "in-progress",
+      "waiting-on-weather",
+      "blocked",
+      "done"
+    ],
+    "sort": "order"
+  },
+  "pageSize": 10
+}

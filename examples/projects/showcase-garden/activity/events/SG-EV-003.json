@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-EV-003",
+  "at": "2026-11-13T18:10:00Z",
+  "area": "Irrigation",
+  "action": "test",
+  "source": "garden-bot",
+  "summary": "Drip line pressure low on bed 3",
+  "status": "warning",
+  "recordId": "SG-I-001"
+}

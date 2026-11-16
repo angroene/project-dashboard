@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-Q-030",
+  "recordType": "question",
+  "status": "open",
+  "requiresResponse": false,
+  "questionRevision": 1,
+  "title": "Water will be off on Thursday morning",
+  "summary": "Informational: no answer needed (requiresResponse false).",
+  "notifyUser": true,
+  "updatedAt": "2026-11-14T10:00:00Z",
+  "bodyMarkdown": "The town crew is replacing the main valve. Nothing to do; mark it read."
+}

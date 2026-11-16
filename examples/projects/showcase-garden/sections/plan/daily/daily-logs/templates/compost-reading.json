@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "compost-reading",
+  "title": "Compost temperature",
+  "state": "paused",
+  "schedule": {
+    "frequency": "daily",
+    "time": "08:00",
+    "timezone": "Europe/Lisbon",
+    "startDate": "2026-11-01",
+    "catchUpDays": 1
+  },
+  "record": {
+    "recordType": "question",
+    "title": "Compost temperature {date}",
+    "status": "open",
+    "requiresResponse": true,
+    "questionRevision": 1,
+    "answerSchema": {
+      "type": "single-choice",
+      "options": [
+        {
+          "id": "cold",
+          "label": "Below 40 °C"
+        },
+        {
+          "id": "warm",
+          "label": "40 to 60 °C"
+        },
+        {
+          "id": "hot",
+          "label": "Above 60 °C"
+        }
+      ],
+      "default": "warm"
+    }
+  }
+}

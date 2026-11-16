@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-Q-005",
+  "recordType": "question",
+  "status": "closed",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "title": "Rent a rotavator?",
+  "summary": "Closed without an answer: no longer needed.",
+  "updatedAt": "2026-11-08T10:00:00Z",
+  "answerSchema": {
+    "type": "approval"
+  }
+}

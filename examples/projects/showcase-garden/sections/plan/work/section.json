@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "work",
+  "displayType": "page-tab",
+  "title": "Work",
+  "description": "Tasks, issues and reviews.",
+  "order": 20,
+  "icon": "wrench",
+  "views": [
+    "progress"
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "id": "showcase-garden",
+  "displayName": "Sprout Commons (showcase of every item type)",
+  "description": "EXAMPLE: a fictional community-garden planner that contains one working instance of every section, record, question, field and template type.",
+  "order": 30,
+  "rootSection": "sections",
+  "progressFile": "progress.json",
+  "allowedAttachmentRoot": "attachments",
+  "artifactRoots": [
+    "docs/handbook"
+  ],
+  "activityDir": "activity/events",
+  "theme": {
+    "accent": "amber"
+  },
+  "progressStaleAfterDays": 60,
+  "workflows": {
+    "task": {
+      "unknownStatus": "warn",
+      "statuses": [
+        {
+          "id": "planned",
+          "label": "Planned",
+          "category": "open"
+        },
+        {
+          "id": "in-progress",
+          "label": "In progress",
+          "category": "active"
+        },
+        {
+          "id": "waiting-on-weather",
+          "label": "Waiting on weather",
+          "category": "waiting",
+          "tone": "info"
+        },
+        {
+          "id": "blocked",
+          "label": "Blocked",
+          "category": "blocked",
+          "tone": "warn"
+        },
+        {
+          "id": "done",
+          "label": "Done",
+          "category": "done",
+          "tone": "ok"
+        },
+        {
+          "id": "skipped",
+          "label": "Skipped",
+          "category": "closed"
+        }
+      ]
+    }
+  },
+  "publishing": {
+    "enabled": true,
+    "sections": [
+      "choices",
+      "text-approvals",
+      "files-composites",
+      "notices",
+      "tasks",
+      "issues",
+      "reviews",
+      "checkins",
+      "daily-logs",
+      "documents",
+      "notes",
+      "progress-notes",
+      "activity-notes",
+      "archive"
+    ]
+  }
+}

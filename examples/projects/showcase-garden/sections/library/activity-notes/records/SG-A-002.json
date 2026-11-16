@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-A-002",
+  "recordType": "activity",
+  "title": "Frost warning for the weekend",
+  "status": "warning",
+  "notifyUser": true,
+  "updatedAt": "2026-11-14T11:00:00Z"
+}

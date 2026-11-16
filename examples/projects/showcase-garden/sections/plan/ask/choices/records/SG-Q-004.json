@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-Q-004",
+  "recordType": "question",
+  "status": "processed",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "title": "Tool shed paint colour",
+  "summary": "Processed: the answer was applied.",
+  "updatedAt": "2026-11-09T12:00:00Z",
+  "history": [
+    {
+      "at": "2026-11-09T12:00:00Z",
+      "text": "Applied: green",
+      "by": "garden-bot"
+    }
+  ],
+  "answerSchema": {
+    "type": "single-choice",
+    "options": [
+      {
+        "id": "green",
+        "label": "Green"
+      },
+      {
+        "id": "blue",
+        "label": "Blue"
+      }
+    ]
+  }
+}

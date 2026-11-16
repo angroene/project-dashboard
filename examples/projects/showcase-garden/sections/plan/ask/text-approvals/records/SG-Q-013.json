@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-Q-013",
+  "recordType": "question",
+  "status": "open",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "title": "Confirm the shed is unlocked for Saturday's delivery",
+  "summary": "An action question: listed under Actions until answered.",
+  "requiresAction": true,
+  "priority": "critical",
+  "updatedAt": "2026-11-14T07:00:00Z",
+  "dueAt": "2026-11-21T08:00:00Z",
+  "answerSchema": {
+    "type": "approval",
+    "allowRationale": false,
+    "default": "reject"
+  }
+}

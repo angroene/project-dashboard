@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "documents",
+  "displayType": "expandable-card",
+  "title": "Documents",
+  "order": 10,
+  "icon": "file",
+  "actions": [
+    "copy",
+    "open-detail",
+    "download",
+    "bulk-download"
+  ],
+  "filters": {
+    "sort": "title"
+  }
+}

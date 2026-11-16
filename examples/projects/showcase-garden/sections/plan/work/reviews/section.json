@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "reviews",
+  "displayType": "expandable-card",
+  "title": "Reviews",
+  "order": 30,
+  "icon": "review",
+  "actions": [
+    "copy",
+    "open-detail",
+    "download",
+    "comment",
+    "mark-read"
+  ],
+  "fields": [
+    {
+      "id": "reviewed",
+      "label": "Reviewed",
+      "type": "checkbox",
+      "editableBy": [
+        "user"
+      ],
+      "filter": true,
+      "help": "Tick when you have read the plan."
+    },
+    {
+      "id": "decision",
+      "label": "Decision",
+      "type": "choice",
+      "editableBy": [
+        "user"
+      ],
+      "filter": true,
+      "options": [
+        {
+          "id": "approve",
+          "label": "Approve"
+        },
+        {
+          "id": "changes",
+          "label": "Request changes"
+        }
+      ]
+    },
+    {
+      "id": "checks",
+      "label": "Checks passed",
+      "type": "checkbox",
+      "editableBy": [
+        "agent"
+      ],
+      "help": "Set by the planning agent."
+    },
+    {
+      "id": "note",
+      "label": "Note",
+      "type": "text",
+      "editableBy": [
+        "user",
+        "agent"
+      ],
+      "help": "Either side may write a short note."
+    },
+    {
+      "id": "followUp",
+      "label": "Follow-up by",
+      "type": "date"
+    }
+  ]
+}

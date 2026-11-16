@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "daily",
+  "displayType": "page-tab",
+  "title": "Daily",
+  "description": "Recurring records from templates.",
+  "order": 30,
+  "icon": "clock"
+}

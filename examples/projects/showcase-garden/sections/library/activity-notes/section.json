@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "activity-notes",
+  "displayType": "expandable-card",
+  "title": "Activity records",
+  "order": 40,
+  "icon": "bolt",
+  "actions": [
+    "copy",
+    "open-detail",
+    "mark-read"
+  ]
+}

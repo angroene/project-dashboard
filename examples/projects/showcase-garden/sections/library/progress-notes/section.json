@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "progress-notes",
+  "displayType": "expandable-card",
+  "title": "Progress records",
+  "order": 30,
+  "icon": "chart",
+  "actions": [
+    "copy",
+    "open-detail"
+  ]
+}

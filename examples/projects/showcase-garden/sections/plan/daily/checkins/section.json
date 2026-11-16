@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "checkins",
+  "displayType": "expandable-card",
+  "title": "Evening check-in",
+  "description": "A daily Yes / No value: tap Yes or No, no Submit.",
+  "order": 10,
+  "icon": "clock",
+  "defaultOpen": true,
+  "actions": [
+    "copy",
+    "open-detail"
+  ],
+  "filters": {
+    "sort": "updated-desc"
+  },
+  "fields": [
+    {
+      "id": "available",
+      "label": "Available for the evening check?",
+      "type": "yes-no",
+      "editableBy": [
+        "user"
+      ],
+      "filter": true,
+      "help": "Resets to the default every morning."
+    }
+  ]
+}

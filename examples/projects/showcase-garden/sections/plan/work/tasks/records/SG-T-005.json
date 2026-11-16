@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-T-005",
+  "recordType": "task",
+  "title": "Install the rain barrel",
+  "summary": "Blocked until the seed budget is approved.",
+  "status": "blocked",
+  "priority": "low",
+  "order": 5,
+  "linkedRecords": [
+    "SG-Q-012"
+  ],
+  "updatedAt": "2026-11-13T12:00:00Z"
+}

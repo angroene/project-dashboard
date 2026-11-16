@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-Q-002",
+  "recordType": "question",
+  "status": "open",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "title": "Which days can volunteers water?",
+  "summary": "Multiple choice: pick 2 to 4 days.",
+  "priority": "medium",
+  "updatedAt": "2026-11-12T09:10:00Z",
+  "answerSchema": {
+    "type": "multiple-choice",
+    "options": [
+      {
+        "id": "mon",
+        "label": "Monday"
+      },
+      {
+        "id": "tue",
+        "label": "Tuesday"
+      },
+      {
+        "id": "wed",
+        "label": "Wednesday"
+      },
+      {
+        "id": "thu",
+        "label": "Thursday"
+      },
+      {
+        "id": "fri",
+        "label": "Friday"
+      },
+      {
+        "id": "sat",
+        "label": "Saturday"
+      },
+      {
+        "id": "sun",
+        "label": "Sunday"
+      }
+    ],
+    "minSelected": 2,
+    "maxSelected": 4,
+    "allowExplanation": true,
+    "default": [
+      "tue",
+      "sat"
+    ]
+  }
+}

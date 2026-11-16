@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-T-003",
+  "recordType": "task",
+  "title": "Return the borrowed ladder",
+  "summary": "Completed action: status done, kept in Show all.",
+  "status": "done",
+  "order": 3,
+  "requiresAction": true,
+  "updatedAt": "2026-11-12T17:00:00Z",
+  "percent": 100,
+  "history": [
+    {
+      "at": "2026-11-12T17:00:00Z",
+      "text": "Ladder returned",
+      "by": "garden-bot"
+    }
+  ]
+}

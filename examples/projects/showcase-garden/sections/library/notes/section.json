@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "notes",
+  "displayType": "expandable-card",
+  "title": "Notes",
+  "order": 20,
+  "icon": "star",
+  "actions": [
+    "copy",
+    "open-detail",
+    "comment"
+  ],
+  "filters": {
+    "sort": "updated-asc"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "issues",
+  "displayType": "expandable-card",
+  "title": "Issues",
+  "order": 20,
+  "icon": "bug",
+  "actions": [
+    "copy",
+    "open-detail",
+    "download",
+    "bulk-download",
+    "comment",
+    "mark-read"
+  ],
+  "filters": {
+    "statuses": [
+      "open",
+      "fixed"
+    ],
+    "defaultStatus": "open",
+    "sort": "priority"
+  }
+}

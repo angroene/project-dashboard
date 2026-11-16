@@ -30,8 +30,9 @@ $env:PCC_DATA_ROOT = "demo-data"; $env:PCC_WEB_ROOT = "dist/web"
 $env:PCC_AUTH_MODE = "local-network"; $env:PCC_TRUSTED_NETWORKS = "127.0.0.1/32,::1/128"; npm start
 ```
 
-Open **http://127.0.0.1:8790**. You should see two projects, "Lantern (example web app)" and "Tidepool Survey (example
-research notebook)", with no diagnostics. Both are fictional and use different layouts, see
+Open **http://127.0.0.1:8790**. You should see three projects, "Lantern (example web app)", "Tidepool Survey (example
+research notebook)" and "Sprout Commons (showcase of every item type)", with no diagnostics. All are fictional and use
+different layouts, see
 [examples/README.md](../examples/README.md).
 
 The server listens on `127.0.0.1` only and needs no login in this mode. Stop it with Ctrl+C.
@@ -39,7 +40,7 @@ The server listens on `127.0.0.1` only and needs no login in this mode. Stop it 
 Check it from a second terminal:
 
 ```sh
-curl -s http://127.0.0.1:8790/api/projects        # two project cards
+curl -s http://127.0.0.1:8790/api/projects        # three project cards
 curl -s http://127.0.0.1:8790/api/diagnostics     # "diagnostics":[]
 ```
 

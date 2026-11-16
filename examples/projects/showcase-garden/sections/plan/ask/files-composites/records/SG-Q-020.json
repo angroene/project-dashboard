@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-Q-020",
+  "recordType": "question",
+  "status": "open",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "title": "Upload a photo of the seedling tray",
+  "summary": "File upload: 1 to 3 PNG or JPEG images.",
+  "updatedAt": "2026-11-13T09:00:00Z",
+  "answerSchema": {
+    "type": "file-upload",
+    "required": true,
+    "minFiles": 1,
+    "maxFiles": 3,
+    "allowedMimeTypes": [
+      "image/png",
+      "image/jpeg"
+    ],
+    "allowComment": true
+  }
+}

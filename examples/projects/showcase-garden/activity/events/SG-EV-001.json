@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-EV-001",
+  "at": "2026-11-12T08:00:00Z",
+  "area": "Planning",
+  "action": "publish",
+  "source": "garden-bot",
+  "summary": "Season plan published",
+  "status": "info"
+}

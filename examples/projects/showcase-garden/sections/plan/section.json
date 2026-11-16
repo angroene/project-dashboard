@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "plan",
+  "displayType": "main-tab",
+  "title": "Plan",
+  "description": "Main tab with page tabs.",
+  "order": 20,
+  "icon": "map"
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-Q-010",
+  "recordType": "question",
+  "status": "open",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "title": "Name for the new herb spiral?",
+  "summary": "Single-line free text with a placeholder and a default.",
+  "updatedAt": "2026-11-13T08:00:00Z",
+  "answerSchema": {
+    "type": "free-text",
+    "multiline": false,
+    "minLength": 2,
+    "maxLength": 60,
+    "placeholder": "e.g. Thyme Tower",
+    "default": "Herb spiral"
+  }
+}

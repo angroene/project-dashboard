@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "daily-logs",
+  "displayType": "expandable-card",
+  "title": "Daily logs",
+  "description": "A recurring question (active) and a paused template.",
+  "order": 20,
+  "icon": "list",
+  "actions": [
+    "copy",
+    "open-detail",
+    "respond",
+    "mark-read"
+  ]
+}

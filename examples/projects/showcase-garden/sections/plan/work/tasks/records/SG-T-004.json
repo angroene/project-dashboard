@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-T-004",
+  "recordType": "task",
+  "title": "Plant garlic",
+  "summary": "Custom workflow status: waiting on weather. Unread update.",
+  "status": "waiting-on-weather",
+  "order": 4,
+  "notifyUser": true,
+  "updatedAt": "2026-11-14T09:30:00Z",
+  "statusLabel": "Waiting for dry soil"
+}

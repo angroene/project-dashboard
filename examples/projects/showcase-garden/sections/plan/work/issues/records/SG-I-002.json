@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-I-002",
+  "recordType": "issue",
+  "title": "Gate latch sticks",
+  "summary": "Fixed; the change is tracked elsewhere.",
+  "status": "fixed",
+  "priority": "low",
+  "severity": "minor",
+  "area": "Site",
+  "updatedAt": "2026-11-10T15:00:00Z",
+  "attachments": [
+    {
+      "id": "SG-I-002-photo",
+      "title": "Latch photo",
+      "path": "photos/seedling-tray.png",
+      "mimeType": "image/png"
+    }
+  ],
+  "external": [
+    {
+      "system": "work order",
+      "id": "WO-7",
+      "ref": "maintenance/2026-11",
+      "status": "closed",
+      "statusAt": "2026-11-10T14:00:00Z"
+    }
+  ]
+}

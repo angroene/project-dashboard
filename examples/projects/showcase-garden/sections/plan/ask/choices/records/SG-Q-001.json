@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-Q-001",
+  "recordType": "question",
+  "status": "open",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "title": "Which cover crop for bed 4 over winter?",
+  "summary": "Single choice with Other, explanation and a default.",
+  "priority": "high",
+  "taskId": "SG-T-001",
+  "dueAt": "2026-11-30T18:00:00Z",
+  "createdAt": "2026-11-12T09:00:00Z",
+  "updatedAt": "2026-11-12T09:00:00Z",
+  "bodyMarkdown": "Bed 4 stays empty until March. The default is **crimson clover**; it is only pre-selected, never submitted for you.",
+  "linkedRecords": [
+    "SG-T-001"
+  ],
+  "answerSchema": {
+    "type": "single-choice",
+    "options": [
+      {
+        "id": "clover",
+        "label": "Crimson clover",
+        "description": "Fixes nitrogen, flowers in spring"
+      },
+      {
+        "id": "rye",
+        "label": "Winter rye",
+        "description": "Hardy, lots of biomass"
+      },
+      {
+        "id": "vetch",
+        "label": "Hairy vetch"
+      }
+    ],
+    "allowOther": true,
+    "allowExplanation": true,
+    "required": true,
+    "default": "clover"
+  }
+}

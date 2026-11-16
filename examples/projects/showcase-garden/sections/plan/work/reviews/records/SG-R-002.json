@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-R-002",
+  "recordType": "review",
+  "title": "Review the watering rota",
+  "summary": "Approved; every tracked field set.",
+  "status": "approved",
+  "updatedAt": "2026-11-11T18:00:00Z",
+  "fields": {
+    "reviewed": true,
+    "decision": "approve",
+    "checks": true,
+    "note": "Rota fits the volunteer days.",
+    "followUp": "2026-12-01"
+  }
+}

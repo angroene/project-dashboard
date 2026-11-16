@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "library",
+  "displayType": "main-tab",
+  "title": "Library",
+  "description": "Main tab holding cards directly; the records view lists all of them.",
+  "order": 30,
+  "icon": "book",
+  "views": [
+    "records",
+    "activity"
+  ]
+}

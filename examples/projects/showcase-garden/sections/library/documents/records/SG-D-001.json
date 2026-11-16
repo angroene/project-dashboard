@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-D-001",
+  "recordType": "document",
+  "title": "Volunteer handbook",
+  "summary": "Published; the file lives in a read-only artifact root.",
+  "status": "published",
+  "updatedAt": "2026-11-05T10:00:00Z",
+  "attachments": [
+    {
+      "id": "SG-D-001-handbook",
+      "title": "Handbook",
+      "path": "volunteer-handbook.md",
+      "root": "docs/handbook",
+      "mimeType": "text/markdown"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-Q-003",
+  "recordType": "question",
+  "status": "answered",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "title": "Compost bin location",
+  "summary": "Answered: the producer moved it to 'answered' after reading the answer.",
+  "priority": "low",
+  "updatedAt": "2026-11-11T16:00:00Z",
+  "history": [
+    {
+      "at": "2026-11-10T09:00:00Z",
+      "text": "Asked",
+      "by": "garden-bot"
+    },
+    {
+      "at": "2026-11-11T16:00:00Z",
+      "text": "Answer received: north corner",
+      "by": "garden-bot"
+    }
+  ],
+  "answerSchema": {
+    "type": "single-choice",
+    "options": [
+      {
+        "id": "north",
+        "label": "North corner"
+      },
+      {
+        "id": "gate",
+        "label": "By the gate"
+      }
+    ]
+  }
+}

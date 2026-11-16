@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "choices",
+  "displayType": "expandable-card",
+  "title": "Choices",
+  "description": "Single and multiple choice; answered, processed and closed questions.",
+  "order": 10,
+  "icon": "list",
+  "defaultOpen": true,
+  "actions": [
+    "copy",
+    "open-detail",
+    "respond",
+    "export-xlsx",
+    "import-xlsx",
+    "mark-read"
+  ],
+  "filters": {
+    "statuses": [
+      "needs-response",
+      "open",
+      "answered",
+      "processed",
+      "closed"
+    ],
+    "defaultStatus": "needs-response",
+    "sort": "priority"
+  },
+  "pageSize": 10
+}

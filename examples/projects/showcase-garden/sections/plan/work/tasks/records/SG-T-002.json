@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-T-002",
+  "recordType": "task",
+  "title": "Bring the spare hose key to the shed",
+  "summary": "Open action: a user to-do, listed under Actions.",
+  "status": "planned",
+  "priority": "medium",
+  "order": 2,
+  "requiresAction": true,
+  "updatedAt": "2026-11-14T08:00:00Z"
+}

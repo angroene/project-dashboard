@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-G-001",
+  "recordType": "generic",
+  "title": "Plot holders",
+  "summary": "Generic record with metadata.",
+  "status": "active",
+  "updatedAt": "2026-11-09T10:00:00Z",
+  "metadata": {
+    "plots": 24,
+    "waitingList": 5,
+    "openDay": "first Saturday"
+  }
+}

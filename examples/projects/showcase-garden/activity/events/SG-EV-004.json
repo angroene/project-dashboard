@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-EV-004",
+  "at": "2026-11-14T06:45:00Z",
+  "area": "Irrigation",
+  "action": "test",
+  "source": "garden-bot",
+  "summary": "Timer test failed: valve 2 did not open",
+  "status": "failure",
+  "recordId": "SG-I-001"
+}

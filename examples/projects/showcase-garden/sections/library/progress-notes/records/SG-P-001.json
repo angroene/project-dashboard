@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-P-001",
+  "recordType": "progress",
+  "title": "Bed rebuild progress",
+  "summary": "A progress record with percent.",
+  "status": "published",
+  "percent": 66,
+  "updatedAt": "2026-11-13T07:30:00Z",
+  "linkedRecords": [
+    "SG-T-001"
+  ]
+}

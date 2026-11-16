@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "evening-check-2026-11-14",
+  "recordType": "generic",
+  "title": "Available for the evening check? 2026-11-14",
+  "status": "open",
+  "occurrence": {
+    "templateId": "evening-check",
+    "date": "2026-11-14"
+  },
+  "createdAt": "2026-11-14T06:00:00Z",
+  "updatedAt": "2026-11-14T06:00:00Z",
+  "fields": {
+    "available": false
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "overallPercent": 45,
+  "label": "Spring season readiness",
+  "method": "Example figure published by the garden coordinator: weighted share of the season checklist done.",
+  "updatedAt": "2026-11-14T09:00:00Z",
+  "breakdown": [
+    {
+      "id": "beds",
+      "title": "Raised beds",
+      "percent": 70,
+      "detail": "Six of nine beds rebuilt.",
+      "weight": 3,
+      "updatedAt": "2026-11-14T09:00:00Z"
+    },
+    {
+      "id": "irrigation",
+      "title": "Irrigation",
+      "percent": 40,
+      "detail": "Drip line test failed once.",
+      "weight": 2
+    },
+    {
+      "id": "seeds",
+      "title": "Seed order",
+      "percent": 20,
+      "detail": "Waiting for the budget approval.",
+      "weight": 1
+    },
+    {
+      "id": "signage",
+      "title": "Signage",
+      "percent": null,
+      "detail": "Not reported yet."
+    }
+  ]
+}

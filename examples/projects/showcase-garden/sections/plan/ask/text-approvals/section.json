@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "text-approvals",
+  "displayType": "expandable-card",
+  "title": "Text and approvals",
+  "order": 20,
+  "icon": "check",
+  "actions": [
+    "copy",
+    "open-detail",
+    "respond",
+    "export-xlsx",
+    "import-xlsx",
+    "mark-read"
+  ],
+  "filters": {
+    "sort": "updated-desc"
+  }
+}

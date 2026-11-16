@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-T-001",
+  "recordType": "task",
+  "title": "Rebuild the raised beds",
+  "summary": "Six of nine done.",
+  "status": "in-progress",
+  "priority": "high",
+  "order": 1,
+  "percent": 66,
+  "assignee": "volunteer-team",
+  "createdAt": "2026-11-01T09:00:00Z",
+  "updatedAt": "2026-11-13T07:30:00Z",
+  "bodyMarkdown": "Use untreated larch. Beds 7 to 9 wait for the delivery.",
+  "attachments": [
+    {
+      "id": "SG-T-001-layout",
+      "title": "Bed layout",
+      "path": "plans/bed-layout.md",
+      "mimeType": "text/markdown"
+    }
+  ],
+  "links": [
+    {
+      "title": "Timber supplier (fictional)",
+      "url": "https://example.invalid/timber"
+    }
+  ],
+  "linkedRecords": [
+    "SG-Q-001",
+    "SG-Q-021"
+  ],
+  "metadata": {
+    "beds": 9,
+    "rebuilt": 6,
+    "timber": "larch",
+    "indoor": false
+  },
+  "history": [
+    {
+      "at": "2026-11-01T09:00:00Z",
+      "text": "Created",
+      "by": "garden-bot"
+    },
+    {
+      "at": "2026-11-13T07:30:00Z",
+      "text": "Beds 1 to 6 done",
+      "by": "garden-bot"
+    }
+  ],
+  "external": [
+    {
+      "system": "ticket tracker",
+      "id": "GARDEN-42",
+      "title": "Bed rebuild",
+      "url": "https://tracker.example.org/GARDEN-42",
+      "status": "in progress",
+      "statusAt": "2026-11-13T07:00:00Z"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "notices",
+  "displayType": "expandable-card",
+  "title": "Notices and replies",
+  "description": "Informational questions and agent replies (Responses group).",
+  "order": 40,
+  "icon": "inbox",
+  "actions": [
+    "copy",
+    "open-detail",
+    "mark-read"
+  ]
+}

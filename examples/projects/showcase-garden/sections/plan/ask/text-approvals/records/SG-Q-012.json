@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "SG-Q-012",
+  "recordType": "question",
+  "status": "open",
+  "requiresResponse": true,
+  "questionRevision": 1,
+  "title": "Approve the spring seed budget?",
+  "summary": "Approval with a default; a reason is required when rejecting.",
+  "priority": "high",
+  "updatedAt": "2026-11-13T08:10:00Z",
+  "dueAt": "2026-11-25T12:00:00Z",
+  "answerSchema": {
+    "type": "approval",
+    "required": true,
+    "allowRationale": true,
+    "requireRationaleOnReject": true,
+    "default": "approve"
+  }
+}

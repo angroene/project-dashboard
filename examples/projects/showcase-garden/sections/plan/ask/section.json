@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "ask",
+  "displayType": "page-tab",
+  "title": "Questions",
+  "description": "One card per family of answer types.",
+  "order": 10,
+  "icon": "question",
+  "views": [
+    "attention"
+  ]
+}

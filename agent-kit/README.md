@@ -9,6 +9,7 @@ Tools for connecting coding agents and scripts to an Agents Project Dashboard.
 | [`claude-code/`](claude-code/) | Optional `CLAUDE.md` section and a session-start hook example |
 | [`codex/`](codex/) | Optional `AGENTS.md` section (run in Codex CLI 0.159; see [SKILLS.md](../docs/SKILLS.md#codex-and-other-runtimes)) |
 | [`examples/`](examples/) | JSON inputs for `apd ask/publish/progress --file` |
+| [`DASHBOARD_FIRST.md`](DASHBOARD_FIRST.md) | Optional section for `CLAUDE.md` / `AGENTS.md`: report on the dashboard, keep chat short |
 
 Quick check against a local server started from the examples (`docs/GETTING_STARTED.md`):
 
