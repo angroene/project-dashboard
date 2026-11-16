@@ -72,14 +72,15 @@ check "restart after fixing the list" "$D" restart
 "$D" down >/dev/null; mv "$AT" "$AT.away"
 refuses "plain compose without agent_tokens.json is refused" env APD_IMAGE="$IMG" docker compose -p "$APD_NAME" -f "$REPO/docker-compose.yml" up -d --no-build
 mv "$AT.away" "$AT"
-"$D" down >/dev/null; inside 'rm -rf /data/projects/lantern-web-app /data/projects/tidepool-notebook'; "$D" up >/dev/null
+"$D" down >/dev/null; inside 'rm -rf /data/projects/*'; "$D" up >/dev/null
 
 echo "== demo deployment keeps data"
 "$D" down >/dev/null
 check "demo up" "$D" up --demo
 # The examples are copied in after the server is up; its watcher indexes them a moment later.
-n=""; for _ in $(seq 30); do n="$(projects)"; [ "$n" = 2 ] && break; sleep 1; done
-[ "$n" = 2 ] && ok "demo has the 2 example projects" || bad "demo has the 2 example projects (saw: $n)"
+want="$(find "$REPO/examples/projects" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
+n=""; for _ in $(seq 30); do n="$(projects)"; [ "$n" = "$want" ] && break; sleep 1; done
+[ "$want" -ge 2 ] && [ "$n" = "$want" ] && ok "demo has all $want example projects" || bad "demo has all $want example projects (saw: $n)"
 inside 'echo kept > /data/projects/lantern-web-app/marker.txt && echo changed > /data/projects/tidepool-notebook/README.local'
 "$D" down >/dev/null; "$D" up --demo >/dev/null
 check "re-running demo up keeps existing project files" inside 'grep -q kept /data/projects/lantern-web-app/marker.txt'
