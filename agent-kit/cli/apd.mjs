@@ -22,13 +22,14 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 const USAGE = `usage: apd <command> [arguments] [--flags]
-discover   projects | capabilities | templates
+discover   projects | capabilities | templates | attention
+           daily <templateId> [--field id]   (today's values of a recurring record; the default until set)
            list --section <id> [--status s,s] [--field id=v,v]... [--q text] [--limit n] [--cursor c]
 publish    ask --section <id> (--file f.json | --json '{...}') [--id ID]
            publish --section <id> (--file f.json | --json '{...}') [--id ID]
                   (replaces the record; tracked fields left out keep their value, "fields": {"id": null} clears)
            update <recordId> [--status s] [--label text|none] [--summary text] [--percent n|none]
-                  [--priority p] [--notify true|false] [--note text] [--by name]
+                  [--priority p] [--notify true|false] [--action true|false] [--note text] [--by name]
                   [--field id=value]... (true|false|none|text; none clears) [--external refs.json] [--if-revision r]
                   --by names must not start with "user" (reserved for the dashboard user)
            event <eventId> --action a --summary text [--status info|success|warning|failure] [--area a]
@@ -247,6 +248,16 @@ export async function run(argv, env = process.env) {
       return (await request(s, "GET", `${proj()}/capabilities`)).data;
     case "templates":
       return (await request(s, "GET", `${proj()}/templates`)).data;
+    case "attention":
+      return (await request(s, "GET", `${proj()}/attention`)).data.counts;
+    case "daily": {
+      const cur = (await request(s, "GET", `${proj()}/templates/${enc(need(args[0], "templateId"))}/current`)).data;
+      if (flags.field === undefined) return cur;
+      const fid = need(flags.field, "--field id");
+      if (!cur.date) throw new ApdError("no-current-day", `template ${cur.templateId} has no current day (before its start or after its end date)`, 1);
+      if (!(fid in cur.fields)) throw new ApdError("no-value", `field ${fid} has no value for ${cur.date}`, 1);
+      return { date: cur.date, field: fid, value: cur.fields[fid], label: cur.labels[fid] };
+    }
     case "list": {
       // One page of record summaries, filtered on the server: agents need not read every record.
       const q = new URLSearchParams({ status: String(flags.status ?? "all"), limit: String(flags.limit ?? 50) });
@@ -285,6 +296,7 @@ export async function run(argv, env = process.env) {
       if (flags.percent !== undefined) body.percent = num(flags.percent, "--percent");
       if (flags.priority !== undefined) body.priority = need(flags.priority, "--priority value");
       if (flags.notify !== undefined) body.notifyUser = bool(flags.notify);
+      if (flags.action !== undefined) body.requiresAction = bool(flags.action);
       // The timestamp is fixed here so a retried or replayed call is recognised as the same history entry.
       if (flags.note !== undefined) body.history = { at: new Date().toISOString(), text: need(flags.note, "--note text"), ...(flags.by ? { by: String(flags.by) } : {}) };
       if (flags.field !== undefined) body.fields = fieldFlags(flags.field);

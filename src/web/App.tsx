@@ -11,6 +11,7 @@ import { ProjectsLanding } from "./components/ProjectCards";
 import { ProjectWorkspace } from "./components/ProjectWorkspace";
 import { Diagnostics } from "./components/Diagnostics";
 import { useToast } from "./components/Toasts";
+import { BackToTop } from "./components/BackToTop";
 
 const DEFAULT_PRODUCT = "Agents Project Dashboard";
 
@@ -98,6 +99,7 @@ function Shell({ productName, session, children }: { productName: string; sessio
         )}
         {children}
       </main>
+      <BackToTop />
     </>
   );
 }
@@ -154,17 +156,22 @@ function useScrollMemory(route: Route): void {
     };
   }, []);
 
+  // A link to a record or an attention group positions the page and focus itself; restoring would undo that.
+  const targeted = route.kind === "project" && (!!route.record || !!route.attention);
   useEffect(() => {
     current.current = scope;
     if (first.current) {
       first.current = false;
       return;
     }
+    if (targeted) return;
     const y = positions.current.get(scope) ?? 0;
     const raf = requestAnimationFrame(() => {
       window.scrollTo(0, y);
       document.querySelector<HTMLElement>("main h1")?.focus({ preventScroll: true });
     });
     return () => cancelAnimationFrame(raf);
+    // Only a change of page restores; `targeted` is read for the page being entered.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope]);
 }

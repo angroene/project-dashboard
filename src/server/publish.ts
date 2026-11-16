@@ -384,6 +384,7 @@ export function registerPublishRoutes(app: FastifyInstance, store: Store, cfg: C
     percent: z.number().min(0).max(100).nullable().optional(),
     priority: z.enum(PRIORITIES).optional(),
     notifyUser: z.boolean().optional(),
+    requiresAction: z.boolean().optional(),
     history: z.object({ at: IsoTime.optional(), text: z.string().min(1).max(2000), by: z.string().max(80).optional() }).optional(),
     fields: z.record(z.string().max(40), TrackedFieldValue).optional(),
     /** Replaces the record's external references. */
@@ -495,6 +496,7 @@ export interface RecordUpdate {
   percent?: number | null;
   priority?: (typeof PRIORITIES)[number];
   notifyUser?: boolean;
+  requiresAction?: boolean;
   history?: { at?: string; text: string; by?: string };
   fields?: Record<string, TrackedFieldValue>;
   external?: ExternalRef[];
@@ -532,6 +534,7 @@ export async function updateRecord(
   set("percent", u.percent);
   set("priority", u.priority);
   set("notifyUser", u.notifyUser);
+  set("requiresAction", u.requiresAction);
   set("external", u.external);
 
   if (u.fields && Object.keys(u.fields).length) {

@@ -37,6 +37,8 @@ It must be answerable without reading your chat:
   labelled as a suggestion. It must be a valid answer. It is never an answer by itself: nothing reaches the queue until
   the owner submits, so never act on a default.
 - `dueAt` (ISO time with offset) only for a real deadline. `notifyUser: true` flags it as an update.
+- `requiresAction: true` when the question asks the owner to *do* something and confirm it ("Connect the device,
+  then press Done"). It is then listed under Actions instead of Questions; answering it completes the action.
 
 ```sh
 node "$APD_CLI" ask --section <sectionId> --id LNT-Q-042 --json '{

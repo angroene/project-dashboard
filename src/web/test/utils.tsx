@@ -2,7 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 import { render } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { vi } from "vitest";
-import type { NavNode, ProjectCard, RecordDetail, RecordPage, RecordSummary, SessionInfo } from "../../shared/api";
+import type { AttentionResponse, NavNode, ProjectCard, RecordDetail, RecordPage, RecordSummary, SessionInfo } from "../../shared/api";
 import { buildNavIndex, ProjectContext, SessionContext, type ProjectCtx } from "../context";
 import { ToastProvider } from "../components/Toasts";
 
@@ -72,7 +72,7 @@ export function renderWithProviders(
 ) {
   const client = opts.client ?? newQueryClient();
   const ctx: ProjectCtx | null = opts.project
-    ? { pid: opts.project.pid ?? "p1", navIndex: opts.project.navIndex ?? buildNavIndex(opts.project.nodes ?? []), focus: opts.project.focus ?? null }
+    ? { pid: opts.project.pid ?? "p1", navIndex: opts.project.navIndex ?? buildNavIndex(opts.project.nodes ?? []), focus: opts.project.focus ?? null, ...(opts.project.attention ? { attention: opts.project.attention } : {}) }
     : null;
   const wrap = (children: ReactNode) => (
     <QueryClientProvider client={client}>
@@ -98,12 +98,20 @@ export function card(over: Partial<ProjectCard> = {}): ProjectCard {
     available: true,
     progress: { overallPercent: 64, label: "Milestones", method: "Owner estimate", updatedAt: "2026-11-01T10:00:00Z", stale: false },
     awaitingResponse: 0,
+    outstandingActions: 0,
     awaitingPickup: 0,
     unreadUpdates: 0,
     blocked: 0,
     active: 0,
     ...over,
+    requireAttention: over.requireAttention ?? (over.awaitingResponse ?? 0) + (over.outstandingActions ?? 0),
   };
+}
+
+/** An /attention response; `counts` and `totals` default to zero for every group. */
+export function attentionResponse(over: Partial<AttentionResponse> = {}): AttentionResponse {
+  const zero = { questions: 0, actions: 0, responses: 0, updates: 0 };
+  return { questions: [], unreadRecords: [], unreadActivity: 0, ...over, counts: { ...zero, ...over.counts }, totals: { ...zero, ...over.counts, ...over.totals } };
 }
 
 export function node(over: Partial<NavNode> & Pick<NavNode, "id" | "displayType" | "title">): NavNode {

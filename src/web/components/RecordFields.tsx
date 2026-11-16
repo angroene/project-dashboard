@@ -91,6 +91,9 @@ function FieldRow({ def, value, busy, onChange }: { def: TrackedFieldDef; value:
   }
   let control;
   switch (def.type) {
+    case "yes-no":
+      control = <YesNoButtons id={id} label={def.label} value={value} busy={busy} onChange={onChange} />;
+      break;
     case "checkbox":
       control = <input id={id} type="checkbox" checked={value === true} disabled={busy} onChange={(e) => onChange(e.target.checked)} />;
       break;
@@ -113,10 +116,45 @@ function FieldRow({ def, value, busy, onChange }: { def: TrackedFieldDef; value:
   }
   return (
     <div className="meta-pair">
-      <dt><label htmlFor={id}>{def.label}</label></dt>
+      <dt>{def.type === "yes-no" ? <span id={`${id}-label`}>{def.label}</span> : <label htmlFor={id}>{def.label}</label>}</dt>
       <dd>{control}{help}</dd>
     </div>
   );
+}
+
+/**
+ * Yes / No as two toggle buttons. A tap saves at once (no Submit); the value shown is the stored one, which starts as
+ * the recurring template's default, so it is in effect before anyone touches it.
+ */
+export function YesNoButtons({ id, label, value, busy, onChange }: { id: string; label: string; value: TrackedFieldValue; busy: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <span className="yes-no" role="group" id={id} aria-label={label} aria-busy={busy || undefined}>
+      {([true, false] as const).map((v) => (
+        <button key={String(v)} type="button" aria-pressed={value === v} disabled={busy} onClick={() => { if (value !== v) onChange(v); }}>
+          {v ? "Yes" : "No"}
+        </button>
+      ))}
+    </span>
+  );
+}
+
+/** Saves one user-editable yes-no field of a record from its row (field-level update, no revision check needed). */
+export function useQuickFieldSave(recordId: string) {
+  const { pid } = useProject();
+  const qc = useQueryClient();
+  const toast = useToast();
+  return async (def: TrackedFieldDef, v: TrackedFieldValue): Promise<boolean> => {
+    try {
+      await apiPost<{ revision: string }>(`${projectApi(pid)}/records/${enc(recordId)}/user-update`, { fields: { [def.id]: v } });
+      toast(`${def.label}: ${fieldValueText(def, v)} saved`);
+      return true;
+    } catch (e) {
+      toast(`Could not save ${def.label}: ${errorMessage(e)}`, "error");
+      return false;
+    } finally {
+      applyInvalidation(qc, { projectId: pid, scopes: ["records", "navigation"], recordIds: [recordId] });
+    }
+  };
 }
 
 function TextField({ id, value, disabled, onSave }: { id: string; value: string; disabled: boolean; onSave: (v: string) => void }) {

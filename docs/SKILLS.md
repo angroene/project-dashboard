@@ -8,7 +8,7 @@ and the `apd` CLI ([AGENT_INTEGRATION.md](AGENT_INTEGRATION.md)), not by the ski
 |---|---|---|
 | [`dashboard-ask-question`](../agent-kit/skills/dashboard-ask-question/SKILL.md) | a decision, approval, missing information or file needed from the owner | publishes a question with the narrowest answer type, links it to the task, continues unblocked work |
 | [`dashboard-process-answers`](../agent-kit/skills/dashboard-process-answers/SKILL.md) | a work boundary (task finished, next task, blocked) | lists pending answer ids, claims, applies, completes or fails, marks the question handled |
-| [`dashboard-update-progress`](../agent-kit/skills/dashboard-update-progress/SKILL.md) | a task starts, is blocked, changes phase or finishes; project progress changes | updates task status, percent and notes, publishes events and project progress |
+| [`dashboard-update-progress`](../agent-kit/skills/dashboard-update-progress/SKILL.md) | a task starts, is blocked, changes phase or finishes; project progress changes | updates task status, percent and notes, publishes events and project progress, marks actions for the owner, reads daily Yes / No settings (`apd daily`) |
 | [`dashboard-report-issue`](../agent-kit/skills/dashboard-report-issue/SKILL.md) | a defect, a failing test run, a finished review | uploads evidence, publishes issues and reviews with severity and reproducibility, keeps statuses honest |
 
 Each skill is a `SKILL.md` with a short `name` and `description` (the only part an agent runtime loads up front) and

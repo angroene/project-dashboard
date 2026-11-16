@@ -161,6 +161,7 @@
             "type": "string",
             "enum": [
               "checkbox",
+              "yes-no",
               "choice",
               "text",
               "date"

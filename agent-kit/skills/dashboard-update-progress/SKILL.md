@@ -43,6 +43,23 @@ node "$APD_CLI" update LNT-REV-001 --external refs.json   # [{"system":"code rev
   `403 reserved-actor`; pick a name such as your agent's name.
 - Recurring records are created by the server (`node "$APD_CLI" templates` lists them); do not publish daily copies
   yourself.
+- **Daily Yes / No settings** (a card with a `yes-no` field and a template): read today's value with
+  `node "$APD_CLI" daily <templateId> --field <fieldId>` → `{"date","field","value":true,"label":"yes"}`. It is the template's
+  default until the owner taps the other answer, and it resets at the template's time. Read it when you need it (at
+  a work boundary); never compute the date or open record files yourself. It is not an answer: nothing to claim.
+
+## Ask the owner to do something
+
+When the owner must act (connect a device, approve a purchase outside the dashboard), publish or mark the record
+with `requiresAction`: it then appears under **Actions** until it is done.
+
+```sh
+node "$APD_CLI" update <ID> --action true --note "Needs the test device connected" --by <agent-name>
+node "$APD_CLI" update <ID> --status done --note "Device seen online" --by <agent-name>   # completes the action
+```
+
+Marking it read does not complete it. If you need the owner to confirm, ask a question with `"requiresAction": true`
+instead (skill `dashboard-ask-question`); answering it completes the action.
 
 ## Activity events
 

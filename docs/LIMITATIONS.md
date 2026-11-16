@@ -43,9 +43,15 @@
 - **Recurring templates are daily only.** No weekly, monthly or cron schedules. Missed days beyond `catchUpDays` are
   skipped, not created. The schedule is checked every `recurrenceSeconds` (60), so a day can appear up to a minute
   after its time.
+- **Daily Yes / No values** are read on request (`/templates/:t/current`, `apd daily`); agents are not notified when
+  the user taps the other answer, and the choice is not an answer in the queue. A tap from the record row is a
+  field-level update without a revision check: two taps at the same moment both succeed and the later one is kept.
+- **Actions** (`requiresAction`) are completed by the producer (an answered question, or a done or closed status). The
+  user cannot mark a non-question action done in the dashboard; a comment or an action question covers that.
+- **Attention counts** are computed per request over all records of the project, not kept incrementally.
 - **External references are not refreshed.** The dashboard never contacts other systems; a reported status is as old as
   its `statusAt`.
-- **Tracked fields** are limited to checkbox, choice, text and date, 20 per card. Changes are attributed to the token
+- **Tracked fields** are limited to checkbox, yes-no, choice, text and date, 20 per card. Changes are attributed to the token
   name or to "user" (one operator identity). Names agents put in `by` must be printable ASCII and must not start with
   "user". `apd update --field id=true` always sends a boolean; to store the text
   "true" in a text field use the API.

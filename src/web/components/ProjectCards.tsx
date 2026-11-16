@@ -1,10 +1,11 @@
-import { memo } from "react";
+import { memo, useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ProjectCard, ProjectsResponse } from "../../shared/api";
 import { apiGet, qk } from "../api/client";
 import { useSseFallback } from "../api/sse";
-import { diagnosticsHref, projectHref } from "../routes";
-import { ErrorNote, Loading, Pill, ProgressSummaryView } from "./common";
+import { attentionHref, diagnosticsHref, projectHref } from "../routes";
+import { formatPercent } from "../format";
+import { ErrorNote, Loading, Pill, ProgressBar, ProgressSummaryView } from "./common";
 
 export function useProjects() {
   const fallback = useSseFallback();
@@ -55,7 +56,13 @@ export function ProjectsLanding() {
   );
 }
 
+/**
+ * One project, collapsed to its name and one status line by default: what requires attention, else published
+ * progress, else nothing. The name opens the project; the chevron button only expands or collapses the details.
+ */
 const ProjectCardView = memo(function ProjectCardView({ p }: { p: ProjectCard }) {
+  const [open, setOpen] = useState(false);
+  const bodyId = useId();
   if (!p.available) {
     return (
       <div className="project project-disabled" aria-disabled="true">
@@ -68,52 +75,81 @@ const ProjectCardView = memo(function ProjectCardView({ p }: { p: ProjectCard })
       </div>
     );
   }
-  const attention = p.awaitingResponse > 0 || p.unreadUpdates > 0;
+  const need = p.requireAttention ?? p.awaitingResponse;
+  const pct = p.progress.overallPercent;
   return (
-    <a className={`project accent-${p.accent}`} href={projectHref(p.id)}>
-      <div className="top">
-        <h2 className="project-title">{p.displayName}</h2>
-        {attention ? (
-          <span className="attention">
-            <span className="attention-dot" aria-hidden="true" />
-            Needs attention
+    <div className={`project project-compact accent-${p.accent}${open ? " open" : ""}`}>
+      <div className="project-head">
+        <h2 className="project-title">
+          <a href={projectHref(p.id)} className="project-link">
+            {p.displayName}
+          </a>
+        </h2>
+        <button
+          type="button"
+          className="btn ghost btn-icon project-expand"
+          aria-expanded={open}
+          aria-controls={bodyId}
+          aria-label={`${open ? "Hide" : "Show"} details for ${p.displayName}`}
+          onClick={() => setOpen((o) => !o)}
+        >
+          <span className={`chevron${open ? " open" : ""}`} aria-hidden="true">
+            ▾
           </span>
-        ) : (
-          <Pill tone="ok">Up to date</Pill>
-        )}
+        </button>
       </div>
-      {p.description && <p className="project-desc">{p.description}</p>}
-      <ProgressSummaryView progress={p.progress} name={p.displayName} />
-      <ul className="counts" role="list">
-        <li>
-          <Pill tone={p.awaitingResponse > 0 ? "warn" : "neutral"}>
-            {p.awaitingResponse} {p.awaitingResponse === 1 ? "question needs" : "questions need"} response
-          </Pill>
-        </li>
-        <li>
-          <Pill tone={p.unreadUpdates > 0 ? "info" : "neutral"}>
-            {p.unreadUpdates} unread {p.unreadUpdates === 1 ? "update" : "updates"}
-          </Pill>
-        </li>
-        {p.awaitingPickup > 0 && (
+      <div className="project-line">
+        {need > 0 ? (
+          <a className="attention" href={attentionHref(p.id, p.awaitingResponse > 0 ? "questions" : "actions")}>
+            <span className="attention-dot" aria-hidden="true" />
+            {need} {need === 1 ? "requires" : "require"} attention
+          </a>
+        ) : pct != null ? (
+          <span className="project-line-progress" title={p.progress.label || "Overall progress"}>
+            <ProgressBar value={pct} label={`${p.displayName}: ${p.progress.label || "Overall progress"}`} small />
+            <span className="small" aria-hidden="true">{formatPercent(pct)}</span>
+          </span>
+        ) : null}
+      </div>
+      <div id={bodyId} className="project-details" hidden={!open}>
+        {p.description && <p className="project-desc">{p.description}</p>}
+        <ProgressSummaryView progress={p.progress} name={p.displayName} />
+        <ul className="counts" role="list">
           <li>
-            <Pill tone="info">{p.awaitingPickup} submitted · awaiting pickup</Pill>
+            <Pill tone={p.awaitingResponse > 0 ? "warn" : "neutral"}>
+              {p.awaitingResponse} {p.awaitingResponse === 1 ? "question needs" : "questions need"} response
+            </Pill>
           </li>
-        )}
-        {p.blocked > 0 && (
+          {(p.outstandingActions ?? 0) > 0 && (
+            <li>
+              <Pill tone="warn">{p.outstandingActions} {p.outstandingActions === 1 ? "action" : "actions"} to do</Pill>
+            </li>
+          )}
           <li>
-            <Pill tone="danger">{p.blocked} blocked</Pill>
+            <Pill tone={p.unreadUpdates > 0 ? "info" : "neutral"}>
+              {p.unreadUpdates} unread {p.unreadUpdates === 1 ? "update" : "updates"}
+            </Pill>
           </li>
-        )}
-        {p.active > 0 && (
-          <li>
-            <Pill>{p.active} active</Pill>
-          </li>
-        )}
-      </ul>
-      <span className="explore" aria-hidden="true">
-        Open project →
-      </span>
-    </a>
+          {p.awaitingPickup > 0 && (
+            <li>
+              <Pill tone="info">{p.awaitingPickup} submitted · awaiting pickup</Pill>
+            </li>
+          )}
+          {p.blocked > 0 && (
+            <li>
+              <Pill tone="danger">{p.blocked} blocked</Pill>
+            </li>
+          )}
+          {p.active > 0 && (
+            <li>
+              <Pill>{p.active} active</Pill>
+            </li>
+          )}
+        </ul>
+        <a className="explore" href={projectHref(p.id)}>
+          Open project <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
   );
 });

@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { NavigationResponse, NavNode, ProjectDetail, ProjectsResponse, RecordDetail } from "../../shared/api";
 import { apiGet, projectApi, enc, qk } from "../api/client";
 import { buildNavIndex, ProjectContext, type ProjectCtx } from "../context";
-import { homeHref, navigate, projectHref, type ProjectRoute } from "../routes";
+import { attentionHref, homeHref, navigate, projectHref, type ProjectRoute } from "../routes";
 import { ErrorNote, Loading, Pill, ProgressSummaryView } from "./common";
 import { SectionContent, TabBar, TabPanel, WorkAreas } from "./Navigation";
 import { CardPanel, StandaloneRecord } from "./CardPanel";
@@ -14,7 +14,7 @@ import { ActivityPanel } from "./ActivityPanel";
 
 export function ProjectWorkspace({ route }: { route: ProjectRoute }) {
   const qc = useQueryClient();
-  const { projectId: pid, path, record } = route;
+  const { projectId: pid, path, record, attention } = route;
 
   const detail = useQuery<ProjectDetail>({
     queryKey: qk.projectDetail(pid),
@@ -50,8 +50,8 @@ export function ProjectWorkspace({ route }: { route: ProjectRoute }) {
   }, [record, path.length, focusEntry, pid]);
 
   const ctx: ProjectCtx = useMemo(
-    () => ({ pid, navIndex, focus: record && focusSection ? { recordId: record, sectionId: focusSection } : null }),
-    [pid, navIndex, record, focusSection],
+    () => ({ pid, navIndex, focus: record && focusSection ? { recordId: record, sectionId: focusSection } : null, ...(attention ? { attention } : {}) }),
+    [pid, navIndex, record, focusSection, attention],
   );
 
   const project = detail.data;
@@ -155,6 +155,7 @@ export function ProjectWorkspace({ route }: { route: ProjectRoute }) {
 }
 
 function ProjectHeader({ project: p }: { project: ProjectDetail }) {
+  const need = p.requireAttention ?? p.awaitingResponse;
   return (
     <>
       <div className="hero">
@@ -163,20 +164,21 @@ function ProjectHeader({ project: p }: { project: ProjectDetail }) {
           <h1 tabIndex={-1}>{p.displayName}</h1>
           {p.description && <p>{p.description}</p>}
         </div>
-        {p.awaitingResponse > 0 ? <Pill tone="warn">{p.awaitingResponse} awaiting your response</Pill> : <Pill tone="ok">Nothing awaiting your response</Pill>}
+        {need > 0 ? (
+          <a className="pill pill-warn pill-link" href={attentionHref(p.id, p.awaitingResponse > 0 ? "questions" : "actions")}>
+            {need} {need === 1 ? "requires" : "require"} attention
+          </a>
+        ) : (
+          <Pill tone="ok">Nothing requires your attention</Pill>
+        )}
       </div>
       <div className="stats">
         <div className="stat stat-progress">
           <ProgressSummaryView progress={p.progress} name={p.displayName} />
         </div>
-        <div className="stat">
-          <span>Need your response</span>
-          <strong>{p.awaitingResponse}</strong>
-        </div>
-        <div className="stat">
-          <span>Unread updates</span>
-          <strong>{p.unreadUpdates}</strong>
-        </div>
+        <StatLink label="Need your response" value={p.awaitingResponse} href={attentionHref(p.id, "questions")} />
+        {(p.outstandingActions ?? 0) > 0 && <StatLink label="Actions to do" value={p.outstandingActions} href={attentionHref(p.id, "actions")} />}
+        <StatLink label="Unread updates" value={p.unreadUpdates} href={attentionHref(p.id, "updates")} />
         <div className="stat">
           <span>Submitted · awaiting pickup</span>
           <strong>{p.awaitingPickup}</strong>
@@ -195,6 +197,24 @@ function ProjectHeader({ project: p }: { project: ProjectDetail }) {
         )}
       </div>
     </>
+  );
+}
+
+/** A count that opens the matching attention group (only when there is something to open). */
+function StatLink({ label, value, href }: { label: string; value: number; href: string }) {
+  if (value === 0) {
+    return (
+      <div className="stat">
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </div>
+    );
+  }
+  return (
+    <a className="stat stat-link" href={href}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </a>
   );
 }
 

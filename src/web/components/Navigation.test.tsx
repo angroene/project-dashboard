@@ -3,7 +3,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { NavigationResponse, NavNode } from "../../shared/api";
 import { ProjectWorkspace } from "./ProjectWorkspace";
-import { card, mockFetch, node, page, renderWithProviders, summary } from "../test/utils";
+import { attentionResponse, card, mockFetch, node, page, renderWithProviders, summary } from "../test/utils";
 
 const PID = "p1";
 
@@ -12,7 +12,7 @@ function routes(nav: NavigationResponse, extra: Record<string, unknown> = {}) {
     [`GET /api/projects/${PID}`]: card({ id: PID, displayName: "Example Project" }),
     [`GET /api/projects/${PID}/navigation`]: nav,
     [`GET /api/projects/${PID}/progress`]: { overallPercent: null, label: "Progress", method: "", stale: false, breakdown: [] },
-    [`GET /api/projects/${PID}/attention`]: { questions: [], unreadRecords: [] },
+    [`GET /api/projects/${PID}/attention`]: attentionResponse(),
     [`GET /api/projects/${PID}/activity`]: { items: [], nextCursor: null, unreadCount: 0 },
     ...extra,
   });

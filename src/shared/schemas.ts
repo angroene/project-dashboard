@@ -127,7 +127,7 @@ export const ALLOWED_CHILDREN: Record<"root" | DisplayType, readonly DisplayType
 export const MAX_SECTION_DEPTH = 3;
 
 // --------------------------------------------------------- tracked fields --
-export const TRACKED_FIELD_TYPES = ["checkbox", "choice", "text", "date"] as const;
+export const TRACKED_FIELD_TYPES = ["checkbox", "yes-no", "choice", "text", "date"] as const;
 export const FIELD_EDITORS = ["user", "agent"] as const;
 /** One independently tracked value per record, e.g. "Reviewed" (checkbox) next to "Decision" (choice). */
 export const TrackedFieldDef = z.object({
@@ -149,7 +149,7 @@ export type TrackedFieldDef = z.infer<typeof TrackedFieldDef>;
 function ChoiceOptionLazy() {
   return z.object({ id: z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/), label: z.string().min(1).max(60) });
 }
-/** A tracked field's stored value: checkbox → boolean, choice → option id, text → string, date → YYYY-MM-DD; null = cleared. */
+/** A tracked field's stored value: checkbox and yes-no → boolean, choice → option id, text → string, date → YYYY-MM-DD; null = cleared. */
 export const TrackedFieldValue = z.union([z.boolean(), z.string().max(2000), z.null()]);
 export type TrackedFieldValue = z.infer<typeof TrackedFieldValue>;
 
@@ -346,6 +346,11 @@ const RecordBase = {
   actions: z.array(Action).optional(),
   /** When true this record counts as an unread update until the user marks it read (per updatedAt). */
   notifyUser: z.boolean().default(false),
+  /**
+   * When true the record asks the user to do something and is listed under Actions. Outstanding while a question still
+   * needs a response, or while another record's status is not in a done/closed category. Independent of read state.
+   */
+  requiresAction: z.boolean().default(false),
   percent: z.number().min(0).max(100).nullable().optional(),
   /** Values of the card's tracked fields (see SectionManifest.fields). */
   fields: z.record(z.string().max(40), TrackedFieldValue).default({}),

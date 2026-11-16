@@ -36,6 +36,9 @@ reused unchanged.
 | Set agent-editable tracked fields, replace external references | `PATCH /records/:recordId` (`fields`, `external`) | `apd update --field id=value --external refs.json` |
 | Find records by status, text or field value (summaries, paged) | `GET /sections/:sectionId/records?status=&q=&field.<id>=` | `apd list` |
 | See recurring templates and their state | `GET /templates` | `apd templates` |
+| Read today's value of a recurring record (daily Yes / No) | `GET /templates/:templateId/current` *agent API* | `apd daily <template> --field <id>` |
+| Count what waits for the user, per attention group | `GET /attention` | `apd attention` |
+| Ask the user to do something (an action) | `PUT` or `PATCH /records/:recordId` with `requiresAction: true` | `apd update ID --action true` |
 | Read a record as stored, with its revision | `GET /records/:recordId/source` *agent API* | `apd source` |
 | Publish an activity event | `PUT /activity/:eventId` *agent API* | `apd event` |
 | Publish project progress | `PUT /progress` *agent API* | `apd progress` |
@@ -119,7 +122,7 @@ any case) are refused: that name belongs to the dashboard user (ADR 0015).
 Create a token (the token goes only into the file you name, created with mode 600; stdout gets the entry above):
 
 ```sh
-npm run agent-token -- lantern-agent ./lantern-agent.token --projects lantern-web-app --scopes read,publish,consume
+npm run -s agent-token -- lantern-agent ./lantern-agent.token --projects lantern-web-app --scopes read,publish,consume
 ```
 
 | Scope | Allows |
@@ -156,11 +159,12 @@ outbox. For a self-signed certificate start Node with `NODE_EXTRA_CA_CERTS=/path
 
 | Command | Does |
 |---|---|
-| `projects`, `capabilities`, `templates` | discovery |
+| `projects`, `capabilities`, `templates`, `attention` | discovery; `attention` prints the pending count per group (`questions`, `actions`, `responses`, `updates`) |
+| `daily TEMPLATE [--field id]` | the current day's values of a recurring record. With `--field`: `{"date","field","value","label"}`, for example `{"value":true,"label":"yes"}`; exit 1 with `no-current-day` before the template's start or after its end |
 | `list --section S [--status a,b] [--field id=v,w]... [--q text] [--limit n] [--cursor c]` | one page of record summaries, filtered on the server, plus the card's `fieldDefs` |
 | `ask --section S --id ID (--file f.json \| --json '{...}')` | publish a question (fills `recordType`, `status: open`, `requiresResponse`, `questionRevision: 1`) |
 | `publish --section S --id ID (--file \| --json)` | publish any record (`PUT`). Replacing a record keeps the user's comments, attachments and every tracked field the JSON leaves out; `"fields": {"id": null}` clears one |
-| `update ID [--status] [--label] [--summary] [--percent n\|none] [--priority] [--notify] [--note text] [--by name] [--field id=value]... [--external refs.json] [--if-revision r]` | `PATCH`. `--field` values: `true`/`false` (checkbox), `none` (sends `null`: clears the value), anything else as text or option id. `--external` reads a JSON array and replaces the list. |
+| `update ID [--status] [--label] [--summary] [--percent n\|none] [--priority] [--notify] [--action true\|false] [--note text] [--by name] [--field id=value]... [--external refs.json] [--if-revision r]` | `PATCH`. `--field` values: `true`/`false` (checkbox), `none` (sends `null`: clears the value), anything else as text or option id. `--external` reads a JSON array and replaces the list. |
 | `event ID --action A --summary S [--status] [--area] [--record] [--source]` | activity event |
 | `progress (--file \| --percent n [--label] [--method])` | project progress |
 | `upload FILE... [--question QID]` | upload, prints attachment ids |
@@ -203,6 +207,15 @@ Output is one JSON line on stdout; errors are one JSON line on stderr (`error`, 
 - Recurring records are created by the server from `templates/` files, not by agents. They are ordinary records:
   answer handling, `update` and the queue work the same. A question's `default` is never an answer; only answers the
   user submitted appear in `apd pending`.
+- **Daily Yes / No values.** When a card has a `yes-no` field and a template sets its default, read the value for
+  today with `apd daily <template> --field <id>` (`value` is `true` for yes). It is the default until the user taps
+  the other answer, it resets at the template's time, and it is correct even before the day's record exists. Do not
+  scan record folders or compute dates yourself. The user's choice is not an answer in the queue: nothing appears in
+  `apd pending` for it.
+- **Actions.** Set `requiresAction: true` (`apd update ID --action true`, or in the published JSON) on a record that
+  asks the user to do something. It is listed under Actions until a question is answered or another record reaches a
+  done or closed status, which the agent sets (`apd update ID --status done`) once it sees the work is done. Marking it
+  read does not complete it.
 - To avoid reading every record, ask the server: `apd list --section reviews --field reviewed=true --status needs-review`
   returns only matching summaries, 50 per page.
 

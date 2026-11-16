@@ -208,6 +208,10 @@
           "default": false,
           "type": "boolean"
         },
+        "requiresAction": {
+          "default": false,
+          "type": "boolean"
+        },
         "percent": {
           "anyOf": [
             {
@@ -1114,6 +1118,10 @@
           "default": false,
           "type": "boolean"
         },
+        "requiresAction": {
+          "default": false,
+          "type": "boolean"
+        },
         "percent": {
           "anyOf": [
             {
@@ -1426,6 +1434,10 @@
           }
         },
         "notifyUser": {
+          "default": false,
+          "type": "boolean"
+        },
+        "requiresAction": {
           "default": false,
           "type": "boolean"
         },
@@ -1748,6 +1760,10 @@
           "default": false,
           "type": "boolean"
         },
+        "requiresAction": {
+          "default": false,
+          "type": "boolean"
+        },
         "percent": {
           "anyOf": [
             {
@@ -2056,6 +2072,10 @@
           }
         },
         "notifyUser": {
+          "default": false,
+          "type": "boolean"
+        },
+        "requiresAction": {
           "default": false,
           "type": "boolean"
         },
@@ -2370,6 +2390,10 @@
           "default": false,
           "type": "boolean"
         },
+        "requiresAction": {
+          "default": false,
+          "type": "boolean"
+        },
         "percent": {
           "anyOf": [
             {
@@ -2681,6 +2705,10 @@
           "default": false,
           "type": "boolean"
         },
+        "requiresAction": {
+          "default": false,
+          "type": "boolean"
+        },
         "percent": {
           "anyOf": [
             {
@@ -2989,6 +3017,10 @@
           }
         },
         "notifyUser": {
+          "default": false,
+          "type": "boolean"
+        },
+        "requiresAction": {
           "default": false,
           "type": "boolean"
         },

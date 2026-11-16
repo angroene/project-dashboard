@@ -244,7 +244,7 @@ function RecordList({ node, focusId }: { node: NavNode; focusId?: string }) {
               </option>
             ))}
           </select>
-          {(first?.fieldDefs ?? []).filter((d) => d.filter && (d.type === "checkbox" || d.type === "choice")).map((d) => (
+          {(first?.fieldDefs ?? []).filter((d) => d.filter && (d.type === "checkbox" || d.type === "yes-no" || d.type === "choice")).map((d) => (
             <FieldFilter key={d.id} def={d} counts={first?.fieldCounts[d.id] ?? {}} value={fieldFilter[d.id] ?? "*"} onChange={(v) => setFieldFilter((f) => ({ ...f, [d.id]: v }))} />
           ))}
         </div>

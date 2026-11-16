@@ -13,6 +13,7 @@ export function fieldValueError(def: TrackedFieldDef, value: TrackedFieldValue):
   if (value === null) return null;
   switch (def.type) {
     case "checkbox":
+    case "yes-no":
       return typeof value === "boolean" ? null : "expected true or false";
     case "choice":
       if (typeof value !== "string") return "expected an option id";
@@ -40,7 +41,7 @@ export function fieldErrors(defs: readonly TrackedFieldDef[], values: Record<str
 /** Human-readable value for history notes and plain-text views. */
 export function fieldValueText(def: TrackedFieldDef | undefined, value: TrackedFieldValue | undefined): string {
   if (value === null || value === undefined || value === "") return "—";
-  if (def?.type === "checkbox") return value ? "yes" : "no";
+  if (def?.type === "checkbox" || def?.type === "yes-no") return value ? "yes" : "no";
   if (def?.type === "choice") return def.options?.find((o) => o.id === value)?.label ?? String(value);
   return String(value);
 }

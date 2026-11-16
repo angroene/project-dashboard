@@ -54,6 +54,18 @@ export function dueDates(t: RecurringTemplate, now: Date, after: string | undefi
   return out;
 }
 
+/**
+ * The local date whose occurrence is current at `now`: today once `schedule.time` has passed, else yesterday; limited
+ * to startDate..endDate (null before the start and after the end). Uses the same rule as dueDates, so the value an agent reads switches
+ * to the new day at exactly the time the scheduler creates it, even before the scheduler has run.
+ */
+export function currentDate(t: RecurringTemplate, now: Date): string | null {
+  const s = t.schedule;
+  const local = localDateTime(now, s.timezone);
+  const d = local.time >= s.time ? local.date : addDays(local.date, -1);
+  return d < s.startDate || (s.endDate && d > s.endDate) ? null : d;
+}
+
 export const occurrenceId = (templateId: string, date: string) => `${templateId}-${date}`;
 
 function fill(v: unknown, date: string): unknown {

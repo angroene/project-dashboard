@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { diagnosticsHref, homeHref, navigate, parseHash, projectHref } from "./routes";
+import { attentionHref, diagnosticsHref, homeHref, navigate, parseHash, projectHref } from "./routes";
 
 describe("parseHash", () => {
   it("maps empty and root hashes to home", () => {
@@ -34,6 +34,14 @@ describe("parseHash", () => {
 
   it("ignores empty segments from doubled or trailing slashes", () => {
     expect(parseHash("#/p//alpha//work/")).toMatchObject({ projectId: "alpha", path: ["work"] });
+  });
+});
+
+describe("attention deep links", () => {
+  it("parses a known group and ignores an unknown one", () => {
+    expect(parseHash(attentionHref("alpha", "actions"))).toEqual({ kind: "project", projectId: "alpha", path: [], attention: "actions" });
+    expect(parseHash("#/p/alpha?attention=everything")).toEqual({ kind: "project", projectId: "alpha", path: [] });
+    expect(parseHash("#/p/a%20b?attention=updates&record=R1")).toEqual({ kind: "project", projectId: "a b", path: [], record: "R1", attention: "updates" });
   });
 });
 

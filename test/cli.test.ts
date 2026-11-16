@@ -309,3 +309,50 @@ describe("apd CLI: tracked fields, external references, listing, templates", () 
     expect(r.out.templates).toMatchObject([{ id: "daily", sectionId: "reviews", state: "paused" }]);
   });
 });
+
+describe("apd CLI: daily yes / no values, attention counts and actions", () => {
+  async function withDaily(dflt: boolean, startDate = "2026-01-01") {
+    const s = await server({ auth: true });
+    const dir = path.join(s.root, "projects", "alpha", "sections", "dev", "work", "checkins");
+    writeJson(path.join(dir, "section.json"), { schemaVersion: 1, id: "checkins", displayType: "expandable-card", title: "Check-ins", fields: [
+      { id: "answer", label: "Available tonight?", type: "yes-no", editableBy: ["user"] },
+    ] });
+    writeJson(path.join(dir, "templates", "tonight.json"), { schemaVersion: 1, id: "tonight", title: "Available tonight?", state: "active",
+      schedule: { frequency: "daily", time: "00:00", timezone: "UTC", startDate }, record: { recordType: "generic", status: "open", fields: { answer: dflt } } });
+    const re = await s.app.inject({ method: "POST", url: "/api/admin/reindex", headers: { ...POST_HEADERS, authorization: `Bearer ${OPERATOR}` }, payload: "{}" });
+    expect(re.statusCode).toBe(200);
+    return s;
+  }
+
+  it.each([true, false])("reads today's value (default %s) with the agent token, before the day's record exists", async (dflt) => {
+    const s = await withDaily(dflt);
+    const today = new Date().toISOString().slice(0, 10);
+    const r = await s.apd(["daily", "tonight", "--field", "answer"]);
+    expect(r.code, r.stderr).toBe(0);
+    expect(r.out).toEqual({ date: today, field: "answer", value: dflt, label: dflt ? "yes" : "no" });
+    const full = await s.apd(["daily", "tonight"]);
+    expect(full.out).toMatchObject({ templateId: "tonight", recordExists: false, fields: { answer: dflt } });
+  });
+
+  it("fails clearly before the start date, for an unknown field and an unknown template", async () => {
+    const s = await withDaily(true, "2099-01-01");
+    const r = await s.apd(["daily", "tonight", "--field", "answer"]);
+    expect(r.code).toBe(1);
+    expect(r.err).toMatchObject({ error: "no-current-day" });
+    const s2 = await withDaily(true);
+    expect((await s2.apd(["daily", "tonight", "--field", "nope"])).err).toMatchObject({ error: "no-value" });
+    expect((await s2.apd(["daily", "missing"])).code).toBe(1);
+    expect((await s2.apd(["daily"])).code).toBe(2);
+  });
+
+  it("marks a record as an action and prints attention counts", async () => {
+    const s = await server({ auth: true });
+    const before = await s.apd(["attention"]);
+    expect(before.code, before.stderr).toBe(0);
+    expect(before.out).toMatchObject({ actions: 0 });
+    expect((await s.apd(["update", "T2", "--action", "true"])).code).toBe(0);
+    expect((await s.apd(["attention"])).out).toMatchObject({ actions: 1 });
+    expect((await s.apd(["update", "T2", "--status", "done"])).code).toBe(0);
+    expect((await s.apd(["attention"])).out).toMatchObject({ actions: 0 });
+  });
+});

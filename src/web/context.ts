@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import type { NavNode, SessionInfo } from "../shared/api";
+import type { AttentionGroup, NavNode, SessionInfo } from "../shared/api";
 
 export const SessionContext = createContext<SessionInfo | null>(null);
 
@@ -34,6 +34,8 @@ export interface ProjectCtx {
   navIndex: NavIndex;
   /** Record requested via ?record=, with the section it lives in once known. */
   focus: { recordId: string; sectionId: string } | null;
+  /** Attention group requested via ?attention= (opened and scrolled into view). */
+  attention?: AttentionGroup;
 }
 
 export const ProjectContext = createContext<ProjectCtx | null>(null);

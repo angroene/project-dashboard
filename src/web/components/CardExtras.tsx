@@ -10,7 +10,7 @@ import { useToast } from "./Toasts";
 /** Filter a card by one tracked field ("*" = any value, "" = not set). */
 export function FieldFilter({ def, counts, value, onChange }: { def: TrackedFieldDef; counts: Record<string, number>; value: string; onChange: (v: string) => void }) {
   const id = useId();
-  const options = def.type === "checkbox"
+  const options = def.type === "checkbox" || def.type === "yes-no"
     ? [{ id: "true", label: "Yes" }, { id: "false", label: "No" }]
     : (def.options ?? []);
   return (

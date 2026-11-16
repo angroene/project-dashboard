@@ -12,6 +12,7 @@ import {
   type ExternalRef, type RecordAttachment, type RecordType, type TrackedFieldValue,
 } from "../shared/schemas.js";
 import { fieldErrors } from "../shared/fields.js";
+import type { AttentionGroup } from "../shared/api.js";
 import type {
   Diagnostic, InvalidateEvent, NavNode, ProgressSummary, ProjectCard, QuestionUiState, RecordSummary,
 } from "../shared/api.js";
@@ -43,6 +44,7 @@ export interface RecordEntry {
   order?: number;
   percent?: number | null;
   notifyUser: boolean;
+  requiresAction: boolean;
   actions: Action[];
   attachments: RecordAttachment[];
   /** Tracked field values that are valid for the card's field definitions. */
@@ -258,6 +260,36 @@ export class Store extends EventEmitter {
     return !seen || Date.parse(seen) < Date.parse(r.updatedAt);
   }
 
+  /** Still to do for a record with requiresAction: a question until it is answered, other records until done or closed. */
+  isActionOutstanding(p: ProjectState, r: RecordEntry): boolean {
+    if (!r.requiresAction) return false;
+    if (r.recordType === "question") return this.questionUiState(p, r) === "needs-response";
+    const cat = statusInfo(p.manifest, r.recordType, r.status).category;
+    return cat !== "done" && cat !== "closed";
+  }
+
+  /**
+   * The attention group a record is listed in by default (each record in at most one), or null when nothing is pending:
+   * an outstanding action, a question awaiting an answer, an unread question (a response), or another unread record.
+   */
+  attentionGroup(p: ProjectState, r: RecordEntry): AttentionGroup | null {
+    if (this.isActionOutstanding(p, r)) return "actions";
+    // An action question awaiting its answer was returned above, so this is a plain question.
+    if (this.questionUiState(p, r) === "needs-response") return "questions";
+    if (this.isUnread(p, r)) return r.recordType === "question" ? "responses" : "updates";
+    return null;
+  }
+
+  /** Whether a record belongs to an attention group's full history ("Show all"), whatever its current state. */
+  inAttentionHistory(r: RecordEntry, g: AttentionGroup): boolean {
+    switch (g) {
+      case "actions": return r.requiresAction;
+      case "questions": return !r.requiresAction && r.recordType === "question" && !!r.question?.requiresResponse;
+      case "responses": return !r.requiresAction && r.recordType === "question" && (r.notifyUser || !r.question?.requiresResponse);
+      case "updates": return !r.requiresAction && r.recordType !== "question" && r.notifyUser;
+    }
+  }
+
   isActivityUnread(p: ProjectState, e: ActivityEvent): boolean {
     return !p.readState.seen[`activity:${e.id}`];
   }
@@ -280,6 +312,7 @@ export class Store extends EventEmitter {
       percent: r.percent,
       attachmentCount: r.attachments.length,
       unread: this.isUnread(p, r),
+      ...(r.requiresAction ? { requiresAction: true, actionOutstanding: this.isActionOutstanding(p, r) } : {}),
       actions: r.actions,
       ...(Object.keys(r.fields).length ? { fields: r.fields } : {}),
       ...(r.external.length ? { external: r.external } : {}),
@@ -313,9 +346,10 @@ export class Store extends EventEmitter {
   }
 
   private computeCard(p: ProjectState): ProjectCard {
-    let awaitingResponse = 0, unread = 0, blocked = 0, active = 0;
+    let awaitingResponse = 0, unread = 0, blocked = 0, active = 0, actions = 0, otherActions = 0;
     for (const r of p.records.values()) {
       if (this.questionUiState(p, r) === "needs-response") awaitingResponse++;
+      if (this.isActionOutstanding(p, r)) { actions++; if (r.recordType !== "question") otherActions++; }
       if (this.isUnread(p, r)) unread++;
       if (r.recordType !== "question") {
         const cat = statusInfo(p.manifest, r.recordType, r.status).category;
@@ -335,6 +369,8 @@ export class Store extends EventEmitter {
       available: true,
       progress: p.progress,
       awaitingResponse,
+      outstandingActions: actions,
+      requireAttention: awaitingResponse + otherActions,
       awaitingPickup,
       unreadUpdates: unread,
       blocked,
@@ -353,6 +389,8 @@ export class Store extends EventEmitter {
       unavailableReason: b.reason,
       progress: { overallPercent: null, label: "Overall progress", method: "", stale: false },
       awaitingResponse: 0,
+      outstandingActions: 0,
+      requireAttention: 0,
       awaitingPickup: 0,
       unreadUpdates: 0,
       blocked: 0,
@@ -740,6 +778,7 @@ function entryFromRecord(rec: AnyRecord, sectionId: string, file: string, sectio
     order: rec.order,
     percent: rec.percent,
     notifyUser: rec.notifyUser,
+    requiresAction: rec.requiresAction,
     actions: (rec.actions ?? sectionActions).filter((a) => sectionActions.includes(a) || !rec.actions),
     attachments: rec.attachments,
     fields: rec.fields,

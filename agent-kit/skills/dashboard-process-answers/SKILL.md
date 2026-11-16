@@ -37,6 +37,9 @@ Do not interrupt a task in progress to check, and never poll in a loop. One chec
 6. Mark the question handled: `node "$APD_CLI" update <questionId> --status processed`
    (or `answered` or `closed`).
 
+Daily Yes / No settings are not answers and never appear in `pending`; read them with
+`node "$APD_CLI" daily <templateId> --field <fieldId>` (skill `dashboard-update-progress`).
+
 ## Rules
 
 - Claim only what you will process in this session.

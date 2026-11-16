@@ -23,7 +23,23 @@
 - Record details on phones: a long code line or table scrolls inside its box instead of widening the record past
   the screen. Image attachments (PNG, JPEG, GIF, WebP) show as previews that open full size, and attachments come
   before the answer form.
-- "Needs your attention" can be folded, and so can each of its groups (questions, unread updates).
+- "Needs your attention" can be folded, and so can each of its groups.
+- Attention groups (ADR 0021): the project overview splits what needs the user into Questions, Actions, Responses and
+  Updates, each with its count, paged, and only pending items by default. "Show all" (off on every visit) adds
+  answered, completed and read history without changing anything. Select items, Select all unread shown, and Mark
+  selected as read (read state only; never answers or completes). Header counts open the matching group
+  (`#/p/<project>?attention=<group>`). New `GET /attention/:group`; `GET /attention` adds `counts`, `totals`,
+  `unreadActivity`.
+- `requiresAction` on any record (ADR 0021): listed under Actions until a question is answered or another record
+  reaches a done or closed status. `PATCH` accepts it; `apd update --action true|false`; `apd attention`.
+- Project cards on the landing page are collapsed by default: the name (opens the project), then "N require
+  attention" or a compact progress bar, or nothing. A chevron button shows the full details. New card fields
+  `outstandingActions` and `requireAttention`.
+- Daily Yes / No values (ADR 0022): tracked field type `yes-no` (Yes / No buttons that save on tap, also on the
+  record row). With a recurring template that sets its default, the day's value is in effect from the template's
+  reset time without anyone answering. `GET /templates/:templateId/current` (agent `read` scope) and
+  `apd daily <template> --field <id>` return the current value, also before the scheduler has created the day.
+- A floating "Back to top" button after scrolling down.
 
 ### Upgrade notes
 

@@ -8,10 +8,11 @@ import fastifyStatic from "@fastify/static";
 import yazl from "yazl";
 import { z } from "zod";
 import type {
-  ActivityPage, AttentionResponse, DiagnosticsResponse, ImportCommitResponse, MarkReadResponse, NavigationResponse,
-  ProgressResponse, ProjectsResponse, RecordDetail, RecordPage, SessionInfo, SubmitAnswerResponse, TemplateSummary, UploadResponse, ZipPreflight,
+  ActivityPage, AttentionGroup, AttentionPage, AttentionResponse, DiagnosticsResponse, ImportCommitResponse, MarkReadResponse, NavigationResponse,
+  ProgressResponse, ProjectsResponse, RecordDetail, RecordPage, SessionInfo, SubmitAnswerResponse, TemplateCurrent, TemplateSummary, UploadResponse, ZipPreflight,
 } from "../shared/api.js";
-import { Id, RecurringTemplate, SubmitAnswerRequest, TEMPLATE_STATES, type QuestionRecord } from "../shared/schemas.js";
+import { ATTENTION_GROUPS } from "../shared/api.js";
+import { Id, RecurringTemplate, SubmitAnswerRequest, TEMPLATE_STATES, type QuestionRecord, type TrackedFieldValue } from "../shared/schemas.js";
 import { agentMayUseProject, agentOf, Auth } from "./auth.js";
 import { statusInfo } from "../shared/workflow.js";
 import { ApiFailure, claimNext, completeAnswer, failAnswer, listQueue, readAnswer, recoverExpiredLeases, recoverStaging, submitAnswer } from "./answers.js";
@@ -19,12 +20,16 @@ import { attachmentRef, inlineSafe, resolveAttachment, type ResolvedAttachment }
 import type { Config } from "./config.js";
 import { atomicWriteFile, sanitizeFileName } from "./fsutil.js";
 import { readRaw, registerPublishRoutes, revisionOf, serialize } from "./publish.js";
-import { skipPausedDays } from "./recurrence.js";
+import { currentDate, occurrenceId, skipPausedDays } from "./recurrence.js";
+import { fieldValueError, fieldValueText } from "../shared/fields.js";
 import { claimKey, parseRecordFile, Store, type ProjectState, type RecordEntry, type TemplateEntry } from "./store.js";
 import { storeUpload, UploadRejected } from "./uploads.js";
 import { buildWorkbook, commitImport, previewImport } from "./xlsx.js";
 
 const MAX_SSE_CLIENTS = 50;
+const byDue = (a: RecordEntry, b: RecordEntry) => (a.question?.dueAt ?? "9999").localeCompare(b.question?.dueAt ?? "9999") || b.updatedAt.localeCompare(a.updatedAt);
+interface AttentionKey { pend: number; due: string; upd: string; id: string }
+const cmpAttention = (a: AttentionKey, b: AttentionKey) => a.pend - b.pend || a.due.localeCompare(b.due) || b.upd.localeCompare(a.upd) || a.id.localeCompare(b.id);
 const PRIORITY_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, none: 4 };
 
 /** Keyset cursors: the sort key of the last item returned, so inserts/deletes never skip or repeat rows. */
@@ -261,6 +266,33 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
     return { templates: [...p.templates.values()].sort((a, b) => a.id.localeCompare(b.id)).map((t) => templateSummary(p, t)) };
   });
 
+  app.get<{ Params: { projectId: string; templateId: string } }>("/api/projects/:projectId/templates/:templateId/current", async (req): Promise<TemplateCurrent> => {
+    const p = project(req.params.projectId);
+    const entry = p.templates.get(req.params.templateId);
+    if (!entry) throw new ApiFailure(404, "not-found", "template not found");
+    const t = entry.template;
+    if (!t) throw new ApiFailure(409, "unavailable", `template file is invalid; fix it first (${entry.error ?? "invalid"})`);
+    const defs = p.sections.get(entry.sectionId)?.manifest.fields ?? [];
+    const date = currentDate(t, new Date());
+    const recordId = date ? occurrenceId(t.id, date) : null;
+    const rec = recordId ? p.records.get(recordId) : undefined;
+    const exists = !!rec && rec.sectionId === entry.sectionId;
+    // Until the day's record exists (the scheduler has not run yet, or the template is paused) its values are the
+    // template's: that is what the record will start with.
+    const defaults = (t.record.fields && typeof t.record.fields === "object" ? t.record.fields : {}) as Record<string, TrackedFieldValue>;
+    const fields: Record<string, TrackedFieldValue> = {};
+    const labels: Record<string, string> = {};
+    if (date) {
+      for (const def of defs) {
+        const v = exists ? rec.fields[def.id] : defaults[def.id];
+        if (v === undefined || fieldValueError(def, v)) continue;
+        fields[def.id] = v;
+        labels[def.id] = fieldValueText(def, v);
+      }
+    }
+    return { templateId: t.id, sectionId: entry.sectionId, state: t.state, date, recordId, recordExists: exists, fields, labels };
+  });
+
   const TemplateStateBody = z.object({ state: z.enum(TEMPLATE_STATES) }).strict();
   app.post<{ Params: { projectId: string; templateId: string } }>("/api/projects/:projectId/templates/:templateId/state", async (req): Promise<TemplateSummary> => {
     const body = TemplateStateBody.parse(req.body);
@@ -316,16 +348,58 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean } = {}): Pr
     const p = project(req.params.projectId);
     const questions: RecordEntry[] = [];
     const unread: RecordEntry[] = [];
+    const counts = Object.fromEntries(ATTENTION_GROUPS.map((g) => [g, 0])) as Record<AttentionGroup, number>;
+    const totals = { ...counts };
     for (const r of p.records.values()) {
       if (store.questionUiState(p, r) === "needs-response") questions.push(r);
       else if (store.isUnread(p, r)) unread.push(r);
+      const g = store.attentionGroup(p, r);
+      if (g) counts[g]++;
+      for (const h of ATTENTION_GROUPS) if (store.inAttentionHistory(r, h) || g === h) totals[h]++;
     }
-    const byDue = (a: RecordEntry, b: RecordEntry) => (a.question?.dueAt ?? "9999").localeCompare(b.question?.dueAt ?? "9999") || b.updatedAt.localeCompare(a.updatedAt);
     return {
       questions: questions.sort(byDue).slice(0, 50).map((r) => store.summary(p, r)),
       unreadRecords: unread.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 50).map((r) => store.summary(p, r)),
+      counts,
+      totals,
+      unreadActivity: p.activity.reduce((n, e) => n + (store.isActivityUnread(p, e) ? 1 : 0), 0),
     };
   });
+
+  app.get<{ Params: { projectId: string; group: string }; Querystring: { all?: string; cursor?: string; limit?: string } }>(
+    "/api/projects/:projectId/attention/:group",
+    async (req): Promise<AttentionPage> => {
+      const p = project(req.params.projectId);
+      const group = z.enum(ATTENTION_GROUPS).parse(req.params.group);
+      const all = req.query.all === "1";
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 25));
+      const rows: RecordEntry[] = [];
+      for (const r of p.records.values()) {
+        const g = store.attentionGroup(p, r);
+        if (g === group || (all && store.inAttentionHistory(r, group))) rows.push(r);
+      }
+      // Pending first (answer or act on these), then newest; questions and actions by due date within each.
+      const pending = (r: RecordEntry) => (store.attentionGroup(p, r) === group ? 0 : 1);
+      const dueFirst = group === "questions" || group === "actions";
+      const keyOf = (r: RecordEntry): AttentionKey => ({ pend: pending(r), due: dueFirst ? (r.question?.dueAt ?? "9999") : "", upd: r.updatedAt, id: r.id });
+      rows.sort((a, b) => cmpAttention(keyOf(a), keyOf(b)));
+      const after = decodeCursor<AttentionKey>(req.query.cursor);
+      let start = 0;
+      if (after && typeof after.id === "string" && typeof after.upd === "string" && typeof after.due === "string" && typeof after.pend === "number") {
+        start = rows.findIndex((r) => cmpAttention(keyOf(r), after) > 0);
+        if (start < 0) start = rows.length;
+      }
+      const page = rows.slice(start, start + limit);
+      const last = page[page.length - 1];
+      return {
+        group,
+        all,
+        total: rows.length,
+        items: page.map((r) => store.summary(p, r)),
+        nextCursor: last && start + limit < rows.length ? encodeCursor({ ...keyOf(last) }) : null,
+      };
+    },
+  );
 
   app.get("/api/diagnostics", async (): Promise<DiagnosticsResponse> => ({
     indexedAt: store.indexedAt,

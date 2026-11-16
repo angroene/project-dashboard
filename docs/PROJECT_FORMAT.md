@@ -4,7 +4,7 @@ A project is a folder of plain JSON files. The dashboard discovers projects, val
 navigation from the section manifests. There is no shared registry file: each project owns its folder.
 
 The runtime schemas are `src/shared/schemas.ts` (zod). They are the authoritative contract; this page is the readable
-version. Every file carries `"schemaVersion": 1`. Two complete, working projects are in [`examples/`](../examples/README.md).
+version. Every file carries `"schemaVersion": 1`. Complete, working example projects (including a showcase with every item type) are in [`examples/`](../examples/README.md).
 
 ## Where projects live
 
@@ -153,9 +153,9 @@ change is written to the record's `history` with who made it and the old and new
 |---|---|
 | `id` | Letter first, then letters, digits, `_` or `-` (max 40). Unique within the card. |
 | `label` | 1 to 60 characters. `help` (optional) up to 300. |
-| `type` | `checkbox` (value `true`/`false`), `choice` (value = an option id; needs `options`, 1 to 30 `{id, label}`), `text` (up to 2000 characters), `date` (`YYYY-MM-DD`). |
+| `type` | `checkbox` (value `true`/`false`), `yes-no` (value `true` = yes, `false` = no; shown as Yes / No buttons that save on tap, see [daily Yes / No items](#daily-yes--no-items)), `choice` (value = an option id; needs `options`, 1 to 30 `{id, label}`), `text` (up to 2000 characters), `date` (`YYYY-MM-DD`). |
 | `editableBy` | `["user"]`, `["agent"]` or both (default). The server refuses a change from anyone else. An agent's full record write (PUT) cannot change a user-only field either. |
-| `filter` | `checkbox` and `choice` fields only: show a filter for the field above the card's records. |
+| `filter` | `checkbox`, `yes-no` and `choice` fields only: show a filter for the field above the card's records. |
 
 Records keep the values in `fields` (`{ "reviewed": true, "decision": "approve" }`); a missing key or `null` means
 "not set". Fields are separate from the workflow `status`: setting "Decision" does not move the record through the
@@ -206,12 +206,33 @@ record's own `order` number is used, then `updatedAt`. Projects sort by `order` 
 
 ## Notifications and read state
 
-Two independent counts appear on the project card:
+Independent counts appear on the project card:
 
 - **Awaiting response**: questions that need an answer (`requiresResponse: true`, `status: "open"`, no answer yet for
   the current revision).
+- **Actions to do**: records with `"requiresAction": true` that are still outstanding (see below).
+- **Require attention**: awaiting response plus outstanding actions that are not questions. This is the number shown
+  on a collapsed project card; unread updates are informational and are not part of it.
 - **Unread updates**: activity events and records with `"notifyUser": true` that the user has not marked read.
   Changing a record's `updatedAt` makes it unread again. Opening a project or record never marks anything read.
+
+#### Attention groups
+
+The project overview lists what needs the user in four groups. Each pending record is in exactly one group:
+
+| Group | Pending (shown by default) | Also with "Show all" |
+|---|---|---|
+| Questions | Questions awaiting an answer (not marked `requiresAction`) | Every question with `requiresResponse`, answered or closed |
+| Actions | Records with `requiresAction` still to do: a question until it is answered, any other record until its status is in a `done` or `closed` [category](#status-workflows) | Every record with `requiresAction` |
+| Responses | Unread questions (with `notifyUser`) that do not await an answer, for example an agent's reply on an answered question, or a notice (`requiresResponse: false`) | Those questions, read or not |
+| Updates | Unread records of other types (`notifyUser`) | Those records, read or not |
+
+Read, answered, completed and reviewed are separate states: marking an item read never answers a question, completes
+an action or changes a review status, and answering a question does not mark it read. "Show all" only widens the
+lists; it changes nothing and is off each time the project is opened. A non-question action is completed by moving
+its status to a status in a done or closed category (an agent: `apd update <id> --status done`); the user can comment
+on it when the card allows comments. Counts and links on the project header open the matching group
+(`#/p/<project>?attention=<group>`).
 
 Read state is stored by the backend under `user-state/`; producers never write it. See
 [ADR 0007](adr/0007-unread-definition.md).
@@ -240,6 +261,7 @@ Records are JSON files in an expandable-card's `records/` folder. Common envelop
   "metadata": { "build": "118", "retries": 2 },
   "history": [{ "at": "2026-11-10T09:00:00Z", "text": "Created", "by": "dev-1" }],
   "notifyUser": false,
+  "requiresAction": false,
   "percent": 40
 }
 ```
@@ -252,6 +274,9 @@ Required: `schemaVersion`, `id`, `recordType`, `title`, `status`, `updatedAt`.
 - `bodyMarkdown`: up to 200,000 characters; rendered as sanitised Markdown, never as raw HTML. Only `http(s)` links.
 - `metadata`: string (up to 2000 characters), number or boolean values; keys up to 60 characters.
 - Timestamps are ISO 8601 **with an offset**: `2026-11-12T16:00:00Z` or `2026-11-12T16:00:00+01:00`.
+- `notifyUser`: the record counts as an unread update until the user marks it read.
+- `requiresAction`: the record asks the user to do something and is listed under Actions
+  ([attention groups](#attention-groups)). Independent of `notifyUser`.
 - `fields`: values of the card's [tracked fields](#tracked-fields).
 - `external`: up to 20 [external references](#external-references).
 - `occurrence`: set by the server on records made from a [recurring template](#recurring-templates); do not write it.
@@ -449,6 +474,43 @@ Behaviour that can be relied on:
   a diagnostic and creates nothing. If a day's record fails validation (for example an unknown status), the template
   shows the error, nothing is written, and the day is tried again on the next check.
 - The server checks templates every `recurrenceSeconds` (default 60) and at start-up; `0` turns the scheduler off.
+
+#### Daily Yes / No items
+
+A card with a `yes-no` [tracked field](#tracked-fields) and a template whose `record.fields` sets that field gives a
+daily Yes / No value that is in effect **without anyone answering**: the template's value is the day's default, a tap
+on Yes or No saves at once (no Submit), and the next day starts from the default again. Earlier days keep their value.
+
+`sections/checkins/section.json`:
+
+```json
+{
+  "schemaVersion": 1, "id": "checkins", "displayType": "expandable-card", "title": "Check-ins",
+  "fields": [{ "id": "answer", "label": "Available tonight?", "type": "yes-no", "editableBy": ["user"] }]
+}
+```
+
+`sections/checkins/templates/tonight.json`:
+
+```json
+{
+  "schemaVersion": 1, "id": "tonight", "title": "Available tonight?", "state": "active",
+  "schedule": { "frequency": "daily", "time": "06:00", "timezone": "Europe/Berlin", "startDate": "2026-11-01" },
+  "record": { "recordType": "generic", "title": "Available tonight? {date}", "status": "open", "fields": { "answer": true } }
+}
+```
+
+- `time` is the daily reset: from that local time on, the current value is the new day's. The default is
+  `record.fields` (`true` or `false`); a change to it applies from the next record the scheduler creates.
+- Agents read the current value with `GET /api/projects/:p/templates/:t/current` or
+  `apd daily <template> --field <id>`: `true`/`false`, with `"yes"`/`"no"` as the display label. Until the day's record exists (the
+  reset time passed but the scheduler has not run yet, or the template is paused) the value is the template's default,
+  so it switches at exactly the reset time. Before `startDate` and after `endDate` there is no current day.
+- The day's value is that record's field: a tap changes that day only, never the default, earlier or later days.
+- This is an opt-in mode built on tracked fields. Recurring **questions** keep their meaning: their defaults are only
+  shown and nothing is answered until the user submits ([ADR 0011](adr/0011-answer-defaults.md),
+  [ADR 0022](adr/0022-daily-yes-no-values.md)).
+- `editableBy: ["user"]` keeps agents from changing the user's answer; add `"agent"` if an agent may set it too.
 
 ### Attachments and artifact roots
 

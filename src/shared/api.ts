@@ -48,6 +48,10 @@ export interface ProjectCard {
   progress: ProgressSummary;
   /** Questions with requiresResponse, status open, and no answer for the current revision. */
   awaitingResponse: number;
+  /** Records with requiresAction that are still to do (questions among them are also in awaitingResponse). */
+  outstandingActions: number;
+  /** Items that need the user to act: questions awaiting a response plus other outstanding actions. Unread is not included. */
+  requireAttention: number;
   /** Answers submitted but not yet processed by the project (pending + processing). */
   awaitingPickup: number;
   unreadUpdates: number;
@@ -118,6 +122,9 @@ export interface RecordSummary {
   percent?: number | null;
   attachmentCount: number;
   unread: boolean;
+  /** Set when the record asks the user to do something; actionOutstanding = still to do. */
+  requiresAction?: true;
+  actionOutstanding?: boolean;
   actions: Action[];
   /** Tracked field values (only when the record has any). */
   fields?: Record<string, TrackedFieldValue>;
@@ -175,6 +182,23 @@ export interface TemplateSummary {
   lastDate?: string;
   /** Problem with the template file, if any (it then creates nothing). */
   error?: string;
+}
+
+/**
+ * GET /api/projects/:projectId/templates/:templateId/current: the occurrence that is current now and its tracked field
+ * values. `date` is today (template time zone) once the template's time has passed, otherwise yesterday; null before
+ * startDate. Until that day's record exists, `fields` are the template's starting values, so a default is in effect
+ * from the reset time on without anyone (or the scheduler) acting. `labels` holds the same values as display text.
+ */
+export interface TemplateCurrent {
+  templateId: string;
+  sectionId: string;
+  state: TemplateState;
+  date: string | null;
+  recordId: string | null;
+  recordExists: boolean;
+  fields: Record<string, TrackedFieldValue>;
+  labels: Record<string, string>;
 }
 
 /** POST /api/projects/:projectId/records/:recordId/user-update (dashboard user) */
@@ -240,8 +264,32 @@ export interface ActivityPage {
 
 /** GET /api/projects/:projectId/attention → questions awaiting the user across all sections. */
 export interface AttentionResponse {
+  /** Questions awaiting a response (first 50), kept for existing clients. */
   questions: RecordSummary[];
+  /** Unread records that are not awaiting a response (first 50), kept for existing clients. */
   unreadRecords: RecordSummary[];
+  /** Items pending per attention group (each record counted in at most one group). */
+  counts: Record<AttentionGroup, number>;
+  /** Items per group including answered, completed and read history ("Show all"). */
+  totals: Record<AttentionGroup, number>;
+  /** Unread activity events (shown in the activity panel). */
+  unreadActivity: number;
+}
+
+export const ATTENTION_GROUPS = ["questions", "actions", "responses", "updates"] as const;
+/** Questions = awaiting an answer; actions = records with requiresAction; responses = unread questions; updates = other unread records. */
+export type AttentionGroup = (typeof ATTENTION_GROUPS)[number];
+
+/**
+ * GET /api/projects/:projectId/attention/:group?all=1&cursor=&limit=
+ * Without `all`: only pending items (unanswered, outstanding or unread). With `all=1`: the group's whole history.
+ */
+export interface AttentionPage {
+  group: AttentionGroup;
+  all: boolean;
+  total: number;
+  items: RecordSummary[];
+  nextCursor: string | null;
 }
 
 /** POST /api/projects/:projectId/questions/:id/answers  (body SubmitAnswerRequest) */

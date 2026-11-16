@@ -1,11 +1,12 @@
 import { memo, useEffect, useId, useRef, useState } from "react";
 import type { RecordSummary } from "../../shared/api";
-import type { TrackedFieldDef } from "../../shared/schemas";
+import type { TrackedFieldDef, TrackedFieldValue } from "../../shared/schemas";
 import { fieldValueText } from "../../shared/fields";
 import { prefersReducedMotion } from "../context";
 import { humanize, uiStateInfo } from "../format";
 import { Pill, ProgressBar, TimeAgo, UnreadDot } from "./common";
 import { RecordDetailView } from "./RecordDetail";
+import { useQuickFieldSave, YesNoButtons } from "./RecordFields";
 
 interface Props {
   summary: RecordSummary;
@@ -19,14 +20,39 @@ interface Props {
 
 const NO_FIELDS: TrackedFieldDef[] = [];
 
+/** Yes / No fields the user may change are answered from the row itself, without opening the record. */
+const quickEdit = (d: TrackedFieldDef) => d.type === "yes-no" && d.editableBy.includes("user");
+
+function QuickYesNo({ recordId, title, def, value }: { recordId: string; title: string; def: TrackedFieldDef; value: TrackedFieldValue }) {
+  const save = useQuickFieldSave(recordId);
+  // The tapped value is shown until the reloaded list brings a different stored value (or the save fails).
+  const [tap, setTap] = useState<{ v: boolean; base: TrackedFieldValue; saving: boolean } | null>(null);
+  const id = useId();
+  if (tap && !tap.saving && value !== tap.base) setTap(null);
+  return (
+    <div className="record-yes-no">
+      <span className="label" aria-hidden="true">{def.label}</span>
+      <YesNoButtons id={id} label={`${def.label}: ${title}`} value={tap ? tap.v : value} busy={!!tap?.saving} onChange={(v) => {
+        setTap({ v, base: value, saving: true });
+        void save(def, v).then((ok) => setTap(ok ? { v, base: value, saving: false } : null));
+      }} />
+    </div>
+  );
+}
+
 /** One record row. Memoized: selecting or refetching one row does not re-render the others. Detail loads only when expanded. */
 export const RecordRow = memo(function RecordRow({ summary: r, selectable, selected, onSelect, focused, fieldDefs = NO_FIELDS }: Props) {
   const [expanded, setExpanded] = useState(!!focused);
   const ref = useRef<HTMLLIElement>(null);
   const detailId = useId();
+  // Becoming the focused record expands the row (state adjusted during render, not in an effect).
+  const [wasFocused, setWasFocused] = useState(!!focused);
+  if (!!focused !== wasFocused) {
+    setWasFocused(!!focused);
+    if (focused) setExpanded(true);
+  }
   useEffect(() => {
     if (!focused) return;
-    setExpanded(true);
     const raf = requestAnimationFrame(() => ref.current?.scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" }));
     return () => cancelAnimationFrame(raf);
   }, [focused]);
@@ -70,7 +96,7 @@ export const RecordRow = memo(function RecordRow({ summary: r, selectable, selec
             · {r.attachmentCount} {r.attachmentCount === 1 ? "attachment" : "attachments"}
           </span>
         )}
-        {fieldDefs.filter((d) => r.fields?.[d.id] != null && r.fields[d.id] !== "").map((d) => (
+        {fieldDefs.filter((d) => r.fields?.[d.id] != null && r.fields[d.id] !== "" && !quickEdit(d)).map((d) => (
           <span key={d.id} className="record-field">
             {" "}
             · {d.label}: {fieldValueText(d, r.fields![d.id])}
@@ -89,6 +115,9 @@ export const RecordRow = memo(function RecordRow({ summary: r, selectable, selec
           </span>
         )}
       </div>
+      {fieldDefs.filter(quickEdit).map((d) => (
+        <QuickYesNo key={d.id} recordId={r.id} title={r.title} def={d} value={r.fields?.[d.id] ?? null} />
+      ))}
       {r.summary && <p className={`record-summary${expanded ? "" : " clamp"}`}>{r.summary}</p>}
       {r.percent != null && (
         <div className="record-percent">
