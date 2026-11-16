@@ -287,33 +287,50 @@ await walk(1, "All Projects: cards, progress and attention match fixtures", asyn
       expect((await card.textContent())?.includes(p.unavailableReason ?? "§"), `unavailable reason for ${p.id} not shown`);
       continue;
     }
-    const card = page.locator(`a.project[href="#/p/${p.id}"]`);
-    expect((await card.count()) === 1, `card for ${p.id} missing`);
-    const text = (await card.textContent()) ?? "";
-    expect(text.includes(p.displayName), `${p.id}: name`);
+    const link = page.locator(`a.project-link[href="#/p/${p.id}"]`);
+    expect((await link.count()) === 1, `card for ${p.id} missing`);
+    const card = page.locator(".project", { has: link });
+    const details = card.locator(".project-details");
+    // Collapsed by default: name, then one status line.
+    expect(!(await details.isVisible()), `${p.id}: details visible before expanding`);
+    expect(((await link.textContent()) ?? "").includes(p.displayName), `${p.id}: name`);
+    const line = (await card.locator(".project-line").textContent()) ?? "";
     // Published progress straight from the fixture file (not just echoed from the API).
     const progFile = path.join(projDir(p.id), "progress.json");
     const published = fs.existsSync(progFile) ? readJson<{ overallPercent?: number | null }>(progFile).overallPercent ?? null : null;
+    if (p.requireAttention > 0) {
+      const want = `${p.requireAttention} ${p.requireAttention === 1 ? "requires" : "require"} attention`;
+      expect(line.includes(want), `${p.id}: collapsed line "${line}" should say "${want}"`);
+    } else if (published != null) {
+      expect(line.includes(`${Math.round(published)}%`), `${p.id}: collapsed line shows the percentage`);
+    } else {
+      expect(line.trim() === "", `${p.id}: nothing invented when there is no attention or progress ("${line}")`);
+    }
+    await card.locator(".project-expand").click();
+    expect((await card.locator(".project-expand").getAttribute("aria-expanded")) === "true", `${p.id}: aria-expanded`);
+    const text = (await details.textContent()) ?? "";
     const want = published == null ? "Not reported" : `${Math.round(published)}%`;
     expect(text.includes(want), `${p.id}: progress shows "${want}"`);
-    if (published == null) expect((await card.locator('[role="progressbar"]').count()) === 0, `${p.id}: no bar when not reported`);
-    else expect((await card.locator('[role="progressbar"]').getAttribute("aria-valuenow")) === String(Math.round(published)), `${p.id}: aria-valuenow`);
+    if (published == null) expect((await details.locator('[role="progressbar"]').count()) === 0, `${p.id}: no bar when not reported`);
+    else expect((await details.locator('[role="progressbar"]').getAttribute("aria-valuenow")) === String(Math.round(published)), `${p.id}: aria-valuenow`);
     const q = `${p.awaitingResponse} ${p.awaitingResponse === 1 ? "question needs" : "questions need"} response`;
     const u = `${p.unreadUpdates} unread ${p.unreadUpdates === 1 ? "update" : "updates"}`;
     expect(text.includes(q), `${p.id}: "${q}" missing in card text`);
     expect(text.includes(u), `${p.id}: "${u}" missing`);
-    const attention = p.awaitingResponse > 0 || p.unreadUpdates > 0;
-    expect(text.includes(attention ? "Needs attention" : "Up to date"), `${p.id}: attention text`);
-    log(`${p.id} ${want} q=${p.awaitingResponse} u=${p.unreadUpdates}`);
+    log(`${p.id} ${want} q=${p.awaitingResponse} u=${p.unreadUpdates} attention=${p.requireAttention}`);
   }
   expect((await page.getByRole("link", { name: /configuration problem/ }).count()) === 1, "diagnostics link missing");
+  await shot(page, "desktop-landing-expanded");
+  // Screenshot of the default (collapsed) landing page.
+  await page.reload();
+  await page.waitForSelector(".project");
   await shot(page, "desktop-landing");
 });
 
 // #2 — Harborlight → Game Developer → Progress → Outstanding Mechanics; detail loads only on expand.
 await walk(2, "Workspace navigation; record detail loads lazily", async (log) => {
   desk.requests.length = 0;
-  metrics.projectOpenUncachedMs = await timeClick(page, `a.project[href="#/p/${MW}"]`, ".workarea");
+  metrics.projectOpenUncachedMs = await timeClick(page, `a.project-link[href="#/p/${MW}"]`, ".workarea");
   await page.waitForSelector(".stat");
   await shot(page, "desktop-workspace");
   metrics.mainTabOpenMs = await timeClick(page, 'a.workarea[href$="/game-developer"]', '[data-section-id="outstanding-mechanics"] li.record');
@@ -349,7 +366,7 @@ await walk(3, "Return to All Projects and back without refetching", async (log) 
   desk.requests.length = 0;
   await page.locator(".breadcrumb a", { hasText: "All projects" }).click();
   await page.waitForSelector(".project");
-  metrics.projectOpenCachedMs = await timeClick(page, `a.project[href="#/p/${MW}"]`, ".workarea");
+  metrics.projectOpenCachedMs = await timeClick(page, `a.project-link[href="#/p/${MW}"]`, ".workarea");
   await page.waitForTimeout(500);
   const paths = desk.requests.map((r) => apiPath(r.url));
   const navigation = paths.filter((p) => p.endsWith("/navigation"));
@@ -543,7 +560,7 @@ await walk(8, "New project folder appears without code changes or reload", async
   pj.displayName = "E2E Added (synthetic)";
   fs.writeFileSync(path.join(dst, "project.json"), JSON.stringify(pj, null, 2));
   const t0 = Date.now();
-  await page.locator('a.project[href="#/p/e2e-added"]').waitFor({ timeout: 20_000 });
+  await page.locator('a.project-link[href="#/p/e2e-added"]').waitFor({ timeout: 20_000 });
   metrics.newProjectVisibleMs = Date.now() - t0;
   log(`card visible after ${metrics.newProjectVisibleMs} ms (no page reload)`);
 });
@@ -865,6 +882,85 @@ await walk(14, "Login modes: required, local-network (forged X-Forwarded-For ign
   } finally {
     for (const sv of servers) await sv.close();
   }
+});
+
+// #15 — attention groups: counts, deep link, Show all, select and mark read; Back to top.
+await walk(15, "Attention groups: counts, deep link, Show all, Mark selected as read; Back to top", async (log) => {
+  const att = await api<{ counts: Record<string, number>; totals: Record<string, number> }>(`/api/projects/${MW}/attention`);
+  await page.goto(`${BASE}/#/p/${MW}?attention=updates`);
+  const panel = page.locator(".attention-panel").first();
+  await panel.waitFor();
+  for (const [g, title] of [["questions", "Questions"], ["actions", "Actions"], ["responses", "Responses"], ["updates", "Updates"]] as const) {
+    const chip = panel.locator(".attention-chip", { hasText: title });
+    expect(((await chip.locator("strong").textContent()) ?? "") === String(att.counts[g]), `${g}: chip count ${await chip.textContent()} vs ${att.counts[g]}`);
+  }
+  expect(att.counts.updates > 1, "fixtures need at least two unread updates");
+  const group = page.locator(`#attention-${MW}-updates`);
+  await group.locator(".attention-item").first().waitFor();
+  await until("deep link focuses the Updates group", async () => page.evaluate((id) => document.activeElement?.closest(`#${id}`) != null, `attention-${MW}-updates`), 5000);
+  expect(!(await panel.getByRole("checkbox", { name: "Show all" }).isChecked()), "Show all must be off on open");
+  // Mark one unread update read: only read state changes.
+  const firstId = await group.locator(".attention-item a.list-link").first().getAttribute("href");
+  const rid = new URLSearchParams((firstId ?? "").split("?")[1]).get("record")!;
+  const before = await api<RecordDetail>(`/api/projects/${MW}/records/${rid}`);
+  await group.locator(".attention-item").first().getByRole("checkbox").check();
+  await group.getByRole("button", { name: "Mark selected as read (1)" }).click();
+  await until("updates count down by one", async () => (await api<{ counts: Record<string, number> }>(`/api/projects/${MW}/attention`)).counts.updates === att.counts.updates - 1);
+  await until("chip follows", async () => ((await panel.locator(".attention-chip", { hasText: "Updates" }).locator("strong").textContent()) ?? "") === String(att.counts.updates - 1));
+  const after = await api<RecordDetail>(`/api/projects/${MW}/records/${rid}`);
+  expect(after.status === before.status && after.revision === before.revision && !after.unread, "mark read changed more than read state");
+  // Show all brings the read item back, without writing anything.
+  const writes = desk.requests.length;
+  await panel.getByRole("checkbox", { name: "Show all" }).check();
+  await page.locator(`#attention-${MW}-updates a.list-link[href*="record=${rid}"]`).waitFor();
+  expect(desk.requests.slice(writes).every((r) => r.req.method() === "GET"), "Show all sent a write");
+  await shot(page, "desktop-attention");
+  // Header counts open the matching group.
+  await page.goto(`${BASE}/#/p/${MW}/game-developer`);
+  await page.locator("a.stat-link", { hasText: "Need your response" }).click();
+  await until("hash has attention=questions", async () => (await page.evaluate(() => location.hash)).endsWith("?attention=questions"), 5000);
+  await page.locator(`#attention-${MW}-questions .attention-item`).first().waitFor();
+  // Back to top after scrolling far.
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.getByRole("button", { name: "Back to top" }).click();
+  await until("scrolled to top", async () => (await page.evaluate(() => window.scrollY)) === 0, 5000);
+  expect(await page.evaluate(() => document.activeElement?.tagName === "H1"), "focus moves to the page heading");
+  log(`counts ${JSON.stringify(att.counts)}; marked ${rid} read; Show all; header link; back to top`);
+});
+
+// #16 — daily Yes / No: default in effect untouched, tap saves at once, agents read it.
+await walk(16, "Daily Yes / No: default without answering, one tap saves, API value follows", async (log) => {
+  const pid = "cards-only";
+  const dir = path.join(projDir(pid), "sections", "e2e-tonight");
+  fs.mkdirSync(path.join(dir, "templates"), { recursive: true });
+  fs.writeFileSync(path.join(dir, "section.json"), JSON.stringify({ schemaVersion: 1, id: "e2e-tonight", displayType: "expandable-card", title: "Available tonight? (synthetic)", order: 0, defaultOpen: true,
+    fields: [{ id: "answer", label: "Available tonight?", type: "yes-no", editableBy: ["user"] }] }, null, 2));
+  const today = new Date().toISOString().slice(0, 10);
+  fs.writeFileSync(path.join(dir, "templates", "tonight.json"), JSON.stringify({ schemaVersion: 1, id: "e2e-tonight", title: "Available tonight?", state: "active",
+    schedule: { frequency: "daily", time: "00:00", timezone: "UTC", startDate: today }, record: { recordType: "generic", title: "Available tonight? {date}", status: "open", fields: { answer: true } } }, null, 2));
+  await until("template indexed", async () => (await api<{ templates: { id: string }[] }>(`/api/projects/${pid}/templates`)).templates.some((t) => t.id === "e2e-tonight"));
+  const cur0 = await api<{ date: string; recordExists: boolean; fields: Record<string, unknown> }>(`/api/projects/${pid}/templates/e2e-tonight/current`);
+  expect(cur0.date === today && cur0.fields.answer === true, `default before the record exists: ${JSON.stringify(cur0)}`);
+  await runRecurrence(store, pid, new Date());
+  const rid = `e2e-tonight-${today}`;
+  await page.goto(`${BASE}/#/p/${pid}`);
+  const row = page.locator(`[data-record-id="${rid}"]`);
+  await row.waitFor({ timeout: 15_000 });
+  const yes = row.locator(".record-yes-no").getByRole("button", { name: "Yes" });
+  const no = row.locator(".record-yes-no").getByRole("button", { name: "No" });
+  expect((await yes.getAttribute("aria-pressed")) === "true", "Yes pressed by default");
+  expect((await page.locator('button:has-text("Submit")').count()) === 0 || (await row.getByRole("button", { name: /Submit/ }).count()) === 0, "no submit for a yes-no item");
+  await no.click();
+  const file = path.join(dir, "records", `${rid}.json`);
+  await until("No saved to the day's record", async () => readJson<{ fields?: Record<string, unknown> }>(file).fields?.answer === false);
+  await until("API returns no", async () => (await api<{ fields: Record<string, unknown> }>(`/api/projects/${pid}/templates/e2e-tonight/current`)).fields.answer === false);
+  await page.reload();
+  await row.waitFor();
+  expect((await no.getAttribute("aria-pressed")) === "true", "No still pressed after reload");
+  expect(readJson<{ record: { fields: Record<string, unknown> } }>(path.join(dir, "templates", "tonight.json")).record.fields.answer === true, "default unchanged");
+  await row.scrollIntoViewIfNeeded();
+  await shot(page, "desktop-daily-yes-no");
+  log(`${rid}: default yes, tapped no, saved and read back`);
 });
 
 // ------------------------------------------------- screenshots (mobile) --
