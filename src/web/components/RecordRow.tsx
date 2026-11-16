@@ -1,3 +1,4 @@
+import { landedByReload } from "../routes";
 import { memo, useEffect, useId, useRef, useState } from "react";
 import type { RecordSummary } from "../../shared/api";
 import type { TrackedFieldDef, TrackedFieldValue } from "../../shared/schemas";
@@ -52,7 +53,7 @@ export const RecordRow = memo(function RecordRow({ summary: r, selectable, selec
     if (focused) setExpanded(true);
   }
   useEffect(() => {
-    if (!focused) return;
+    if (!focused || landedByReload()) return;
     const raf = requestAnimationFrame(() => ref.current?.scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" }));
     return () => cancelAnimationFrame(raf);
   }, [focused]);

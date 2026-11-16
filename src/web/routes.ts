@@ -67,3 +67,10 @@ export function navigate(href: string, opts: { replace?: boolean } = {}): void {
     window.location.hash = href;
   }
 }
+
+/** True from a page reload until the first in-app navigation: a reload starts at the top instead of re-jumping to a linked record or group. */
+let reloadLanding =
+  typeof performance !== "undefined" &&
+  (performance.getEntriesByType?.("navigation")[0] as PerformanceNavigationTiming | undefined)?.type === "reload";
+if (typeof window !== "undefined") window.addEventListener("hashchange", () => { reloadLanding = false; });
+export const landedByReload = (): boolean => reloadLanding;

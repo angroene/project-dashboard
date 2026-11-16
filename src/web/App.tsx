@@ -4,7 +4,7 @@ import type { SessionInfo } from "../shared/api";
 import { apiGet, apiPost, errorMessage, qk } from "./api/client";
 import { useServerEvents } from "./api/sse";
 import { SessionContext } from "./context";
-import { homeHref, useRoute, type Route } from "./routes";
+import { homeHref, landedByReload, useRoute, type Route } from "./routes";
 import { ErrorNote, Loading } from "./components/common";
 import { Login } from "./components/Login";
 import { ProjectsLanding } from "./components/ProjectCards";
@@ -162,6 +162,10 @@ function useScrollMemory(route: Route): void {
     current.current = scope;
     if (first.current) {
       first.current = false;
+      // The browser's own restore runs before the lists have loaded and lands at a random height. A reload starts at
+      // the top instead, unless a link (not a reload) names a record or attention group: those scroll themselves into view.
+      if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+      if (!targeted || landedByReload()) window.scrollTo(0, 0);
       return;
     }
     if (targeted) return;

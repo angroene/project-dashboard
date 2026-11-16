@@ -5,7 +5,7 @@ import { apiGet, apiPost, enc, errorMessage, projectApi, qk } from "../api/clien
 import { applyInvalidation } from "../api/sse";
 import { prefersReducedMotion, useProject } from "../context";
 import { uiStateInfo } from "../format";
-import { projectHref } from "../routes";
+import { landedByReload, navigate, projectHref } from "../routes";
 import { ErrorNote, Loading, Pill, TimeAgo, UnreadDot } from "./common";
 import { useToast } from "./Toasts";
 
@@ -153,10 +153,12 @@ function GroupView({ group, all, count, pending, focused }: { group: AttentionGr
   const allChosen = readable.length > 0 && chosen.length === readable.length;
 
   useEffect(() => {
-    if (!focused) return;
+    if (!focused || landedByReload()) return;
     const raf = requestAnimationFrame(() => {
       ref.current?.scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
       ref.current?.querySelector<HTMLElement>("button")?.focus({ preventScroll: true });
+      // The jump is one-shot: drop ?attention= so a reload does not scroll down again.
+      navigate(window.location.hash.replace(/([?&])attention=[^&]*&?/, "$1").replace(/[?&]$/, ""), { replace: true });
     });
     return () => cancelAnimationFrame(raf);
   }, [focused]);

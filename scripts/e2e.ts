@@ -918,7 +918,23 @@ await walk(15, "Attention groups: counts, deep link, Show all, Mark selected as 
   // Header counts open the matching group.
   await page.goto(`${BASE}/#/p/${MW}/game-developer`);
   await page.locator("a.stat-link", { hasText: "Need your response" }).click();
-  await until("hash has attention=questions", async () => (await page.evaluate(() => location.hash)).endsWith("?attention=questions"), 5000);
+  await page.locator(`#attention-${MW}-questions .attention-item`).first().waitFor();
+  await until("header link focuses the Questions group", async () => page.evaluate((id) => document.activeElement?.closest(`#${id}`) != null, `attention-${MW}-questions`), 5000);
+  // The jump is one-shot: the parameter is dropped, and a reload starts at the top.
+  await until("attention parameter dropped", async () => !(await page.evaluate(() => location.hash)).includes("attention="), 5000);
+  // A link to a record far down scrolls to it; reloading that address starts at the top (record still open).
+  const deep = (await openQuestions(MW, "questions")).at(-1)!.id;
+  await page.goto(`${BASE}/#/p/${MW}?record=${deep}`);
+  const deepRow = page.locator(`[data-record-id="${deep}"]`).first();
+  await deepRow.locator('.record-toggle[aria-expanded="true"]').waitFor();
+  await until("link scrolls to the record", async () => (await page.evaluate(() => window.scrollY)) > 200, 5000);
+  await page.reload();
+  await deepRow.locator('.record-toggle[aria-expanded="true"]').waitFor();
+  await page.waitForTimeout(1500);
+  const afterReload = await page.evaluate(() => window.scrollY);
+  expect(afterReload === 0, `reload must start at the top (was at ${afterReload})`);
+  await page.goto(`${BASE}/#/p/${MW}/game-developer`);
+  await page.locator("a.stat-link", { hasText: "Need your response" }).click();
   await page.locator(`#attention-${MW}-questions .attention-item`).first().waitFor();
   // Back to top after scrolling far.
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
