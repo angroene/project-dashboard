@@ -36,6 +36,13 @@ Use the dashboard as the main record of this work; keep chat short.
   test failures as issues with evidence.
 - In chat, give a short acknowledgement and a final status of one or two lines that points to the dashboard. Do not
   repeat routine progress in chat.
+- A turn the owner did not start (a background agent, build, test run, scheduled check or another session reporting
+  back) that needs nothing from the owner gets one line, such as `Nothing for you.` No status, counts or plans; those
+  go on the dashboard.
+- When you list next steps for the owner, list only what is new since your last reply. Do not repeat questions that
+  are already open on the dashboard; the owner sees them there.
+- Answer a direct question from the owner in at most three short lines or bullets; put longer detail on the
+  dashboard and point to the record.
 - Never move these out of chat, whatever the dashboard shows: critical errors, permission or approval prompts of the
   agent runtime, safety warnings, and loss of dashboard connectivity.
 - If publishing fails, say so in one visible line, continue, and run `node "$APD_CLI" flush` later to deliver the
