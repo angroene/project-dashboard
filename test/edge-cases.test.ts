@@ -3,14 +3,30 @@ import fs from "node:fs";
 import path from "node:path";
 import ExcelJS from "exceljs";
 import { afterEach, describe, expect, it } from "vitest";
-import { makeApp, makeDataRoot, POST_HEADERS, question, task, writeJson } from "./helpers.js";
-import type { ProjectCard, RecordPage } from "../src/shared/api.js";
+import { makeApp, makeDataRoot, POST_HEADERS, question, section, task, writeJson } from "./helpers.js";
+import type { NavigationResponse, NavNode, ProjectCard, RecordPage } from "../src/shared/api.js";
 
 const apps: { app: { close: () => Promise<unknown> } }[] = [];
 afterEach(async () => { while (apps.length) await apps.pop()!.app.close(); });
 const tasksDir = (root: string) => path.join(root, "projects", "alpha", "sections", "dev", "work", "tasks", "records");
 
 describe("invalid input files", () => {
+  it("pinned is reported for expandable cards only; on a tab it is ignored with a warning", async () => {
+    const root = makeDataRoot();
+    const s = path.join(root, "projects", "alpha", "sections", "dev");
+    writeJson(path.join(s, "work", "tasks", "section.json"), section("tasks", "expandable-card", "Tasks", { pinned: true }));
+    writeJson(path.join(s, "work", "section.json"), section("work", "page-tab", "Work", { order: 2, views: ["progress"], pinned: true }));
+    const h = await makeApp(root);
+    apps.push(h);
+    const nav = (await h.app.inject("/api/projects/alpha/navigation")).json() as NavigationResponse;
+    const flat = (ns: NavNode[]): NavNode[] => ns.flatMap((n) => [n, ...flat(n.children)]);
+    const byId = new Map(flat(nav.nodes).map((n) => [n.id, n]));
+    expect(byId.get("tasks")?.pinned).toBe(true);
+    expect(byId.get("work")?.pinned).toBe(false);
+    expect(byId.get("qs")?.pinned).toBe(false);
+    expect(JSON.stringify((await h.app.inject("/api/diagnostics")).json())).toMatch(/pinned applies to expandable cards only/);
+  });
+
   it("rejects unsupported schema versions and invalid timestamps with a diagnostic, keeping valid siblings", async () => {
     const root = makeDataRoot();
     writeJson(path.join(tasksDir(root), "V2.json"), task("V2", { schemaVersion: 2 }));

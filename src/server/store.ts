@@ -425,6 +425,7 @@ export class Store extends EventEmitter {
         icon: m.icon,
         order: m.order,
         defaultOpen: m.defaultOpen,
+        pinned: m.pinned && m.displayType === "expandable-card",
         views: m.views,
         actions: m.actions,
         filters: m.filters,
@@ -697,6 +698,7 @@ export async function loadProject(dirIn: string): Promise<ProjectState | BrokenP
         diag("error", sfile, `${m.displayType} not allowed inside ${parentType} — ignored`);
         continue;
       }
+      if (m.pinned && m.displayType !== "expandable-card") diag("warning", sfile, `pinned applies to expandable cards only — ignored on a ${m.displayType}`);
       if (depth > MAX_SECTION_DEPTH) { diag("error", sfile, `nesting deeper than ${MAX_SECTION_DEPTH} — ignored`); continue; }
       const st: SectionState = { manifest: m, dir: real, relDir: path.relative(dir, real), parentId, depth, childIds: [], recordIds: [] };
       found.push(st);

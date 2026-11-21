@@ -6,7 +6,7 @@ import { buildNavIndex, ProjectContext, type ProjectCtx } from "../context";
 import { attentionHref, homeHref, navigate, projectHref, type ProjectRoute } from "../routes";
 import { ErrorNote, Loading, Pill, ProgressSummaryView } from "./common";
 import { SectionContent, TabBar, TabPanel, WorkAreas } from "./Navigation";
-import { CardPanel, StandaloneRecord } from "./CardPanel";
+import { CardPanel, PinnedCard, StandaloneRecord } from "./CardPanel";
 import { preloadDetailChunks } from "./RecordDetail";
 import { ProgressPanel } from "./ProgressPanel";
 import { AttentionPanel } from "./AttentionPanel";
@@ -78,6 +78,7 @@ export function ProjectWorkspace({ route }: { route: ProjectRoute }) {
   if (selectedMainPage) crumbs.push({ label: selectedMainPage.title });
   if (rootPage) crumbs.push({ label: rootPage.title });
 
+  const pinned = useMemo(() => pinnedCards(nav.data?.nodes ?? []), [nav.data]);
   const orphanFocus = record && focusDetail.data && nav.data && !focusEntry;
   const showOverview = !main && !rootPage;
 
@@ -113,6 +114,14 @@ export function ProjectWorkspace({ route }: { route: ProjectRoute }) {
             </div>
           )}
           {orphanFocus && focusDetail.data && <StandaloneRecord record={focusDetail.data} />}
+
+          {pinned.length > 0 && (
+            <div className="card-list pinned-cards">
+              {pinned.map((n) => (
+                <PinnedCard key={n.id} node={n} />
+              ))}
+            </div>
+          )}
 
           {nav.data && rootType === null && (
             <div className="panel empty">
@@ -228,4 +237,9 @@ function Overview() {
       <ActivityPanel pageSize={10} />
     </div>
   );
+}
+
+/** Pinned cards anywhere in the tree, in tree order: they show above the tabs on every view of the project. */
+function pinnedCards(nodes: NavNode[]): NavNode[] {
+  return nodes.flatMap((n) => (n.pinned ? [n] : pinnedCards(n.children)));
 }

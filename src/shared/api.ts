@@ -76,6 +76,8 @@ export interface NavNode {
   icon?: string;
   order: number;
   defaultOpen: boolean;
+  /** Its newest record is also shown above the project's tabs, on every view (expandable cards only). */
+  pinned: boolean;
   views: ("records" | "progress" | "activity" | "attention")[];
   actions: Action[];
   filters: { statuses?: string[]; defaultStatus?: string; sort: string };

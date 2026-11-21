@@ -126,6 +126,7 @@ code changes when a project renames or rearranges them.
 | `icon` | One of `folder gamepad map book chart question bug review check flag clock file image code wrench star inbox list box bolt`. |
 | `visible` | `false` hides the section from navigation. |
 | `defaultOpen` | Cards only: start expanded. |
+| `pinned` | Cards only: the card's newest record (in its `sort` order) is also shown above the project's tabs, on every view, without filters or paging; the full card stays in its tab. Default `false`. On a tab it is ignored with a warning. See [ADR 0023](adr/0023-pinned-cards.md). |
 | `views` | Main and page tabs: built-in panels shown before the children. Any of `progress`, `activity`, `attention`, `records`. |
 | `actions` | Subset of `copy download bulk-download export-xlsx import-xlsx respond upload mark-read open-detail comment`. Default `["copy","open-detail"]`. `comment` lets the dashboard user add comments and files to the card's records. The backend still decides what is allowed. |
 | `filters` | `statuses` (up to 20 status ids offered as filters), `defaultStatus`, `sort`. Sections with answerable questions also get a "Needs response" chip; `"defaultStatus": "needs-response"` opens the section on it. |
@@ -511,6 +512,44 @@ on Yes or No saves at once (no Submit), and the next day starts from the default
   shown and nothing is answered until the user submits ([ADR 0011](adr/0011-answer-defaults.md),
   [ADR 0022](adr/0022-daily-yes-no-values.md)).
 - `editableBy: ["user"]` keeps agents from changing the user's answer; add `"agent"` if an agent may set it too.
+- `"pinned": true` on the card puts the current day's Yes / No above the project's tabs, so it can be changed from
+  any view. Keep the card's `sort` at `updated-desc`: the scheduler's new day is then the newest record.
+
+#### Daily pinned choice
+
+The same with your own answers: a `choice` field instead of `yes-no`. On a pinned card each option is a button that
+saves on tap; the template's value is the default, in effect when nobody taps anything, and every day starts from it
+again at `schedule.time`.
+
+| What | Where |
+|---|---|
+| The question | the field's `label` (and the card's `title` / `description`) |
+| The possible answers | the field's `options` (`id` + `label`, 1 to 30) |
+| The default answer | the template's `record.fields.<field>` (an option `id`) |
+| The reset time | the template's `schedule.time` and `timezone` (for example `"00:00"` for midnight) |
+
+`sections/tonight/section.json`:
+
+```json
+{
+  "schemaVersion": 1, "id": "tonight", "displayType": "expandable-card", "title": "Tonight", "pinned": true,
+  "fields": [{ "id": "plan", "label": "What's the plan tonight?", "type": "choice", "editableBy": ["user"],
+    "options": [{ "id": "test", "label": "Play-test" }, { "id": "review", "label": "Review only" }, { "id": "off", "label": "Night off" }] }]
+}
+```
+
+`sections/tonight/templates/plan.json`:
+
+```json
+{
+  "schemaVersion": 1, "id": "plan", "title": "Tonight's plan", "state": "active",
+  "schedule": { "frequency": "daily", "time": "00:00", "timezone": "Europe/Berlin", "startDate": "2026-11-01" },
+  "record": { "recordType": "generic", "title": "Tonight {date}", "status": "open", "fields": { "plan": "test" } }
+}
+```
+
+Agents read it with `apd daily plan --field plan` (`value` is the option id, `label` its text). In the card's own tab
+the value shows as text; open the record to change an older day.
 
 ### Attachments and artifact roots
 

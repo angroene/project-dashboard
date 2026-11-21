@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "evening-plan",
+  "title": "Tonight in the garden",
+  "state": "active",
+  "schedule": {
+    "frequency": "daily",
+    "time": "00:00",
+    "timezone": "Europe/Lisbon",
+    "startDate": "2026-11-10"
+  },
+  "record": {
+    "recordType": "generic",
+    "title": "Tonight in the garden {date}",
+    "summary": "Water the beds unless you pick something else.",
+    "status": "open",
+    "fields": {
+      "plan": "water"
+    }
+  }
+}

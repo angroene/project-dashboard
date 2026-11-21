@@ -127,11 +127,18 @@ function FieldRow({ def, value, busy, onChange }: { def: TrackedFieldDef; value:
  * the recurring template's default, so it is in effect before anyone touches it.
  */
 export function YesNoButtons({ id, label, value, busy, onChange }: { id: string; label: string; value: TrackedFieldValue; busy: boolean; onChange: (v: boolean) => void }) {
+  return <ChoiceButtons id={id} label={label} options={YES_NO} value={value} busy={busy} onChange={(v) => onChange(v as boolean)} />;
+}
+
+const YES_NO = [{ value: true, label: "Yes" }, { value: false, label: "No" }];
+
+/** One toggle button per option; a tap on another option saves it at once (no Submit). */
+export function ChoiceButtons({ id, label, options, value, busy, onChange }: { id: string; label: string; options: { value: boolean | string; label: string }[]; value: TrackedFieldValue; busy: boolean; onChange: (v: boolean | string) => void }) {
   return (
     <span className="yes-no" role="group" id={id} aria-label={label} aria-busy={busy || undefined}>
-      {([true, false] as const).map((v) => (
-        <button key={String(v)} type="button" aria-pressed={value === v} disabled={busy} onClick={() => { if (value !== v) onChange(v); }}>
-          {v ? "Yes" : "No"}
+      {options.map((o) => (
+        <button key={String(o.value)} type="button" aria-pressed={value === o.value} disabled={busy} onClick={() => { if (value !== o.value) onChange(o.value); }}>
+          {o.label}
         </button>
       ))}
     </span>

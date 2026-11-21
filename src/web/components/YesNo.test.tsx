@@ -13,6 +13,19 @@ const yesNo: TrackedFieldDef = { id: "answer", label: "Available tonight?", type
 const agentYesNo: TrackedFieldDef = { id: "ready", label: "Build ready", type: "yes-no", editableBy: ["agent"], filter: false };
 
 describe("Yes / No fields", () => {
+  it("a choice field is answered from the row only when the row asks for it (pinned cards); otherwise it stays text", async () => {
+    mockFetch({});
+    const plan: TrackedFieldDef = { id: "plan", label: "Plan", type: "choice", options: [{ id: "a", label: "Alpha" }, { id: "b", label: "Beta" }], editableBy: ["user"], filter: false };
+    const r = summary({ id: "d1", title: "Day 1", fields: { plan: "a" } });
+    const { rerender } = renderWithProviders(<RecordRow summary={r} selectable={false} selected={false} onSelect={() => undefined} fieldDefs={[plan]} />, { project: { pid: PID } });
+    expect(screen.queryByRole("group", { name: "Plan: Day 1" })).toBeNull();
+    expect(screen.getByText(/Plan: Alpha/)).toBeInTheDocument();
+    rerender(<RecordRow summary={r} selectable={false} selected={false} onSelect={() => undefined} fieldDefs={[plan]} quickChoices />);
+    const group = screen.getByRole("group", { name: "Plan: Day 1" });
+    expect(within(group).getByRole("button", { name: "Alpha" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByText(/Plan: Alpha/)).toBeNull();
+  });
+
   it("shows the stored value as the pressed button and saves a tap at once, without a submit step", async () => {
     const api = mockFetch({ [`POST ${UPDATE}`]: { recordId: "tonight-2026-11-16", unchanged: false, revision: "bbbbbbbbbbbbbbbb" } });
     renderWithProviders(<TrackedFields d={detail({ id: "tonight-2026-11-16", title: "Available tonight? 2026-11-16", fieldDefs: [yesNo, agentYesNo], fields: { answer: true, ready: false }, revision: "aaaaaaaaaaaaaaaa" })} />, { project: { pid: PID } });
@@ -86,4 +99,5 @@ describe("BackToTop", () => {
     });
     await waitFor(() => expect(screen.queryByRole("button", { name: "Back to top" })).toBeNull());
   });
+
 });

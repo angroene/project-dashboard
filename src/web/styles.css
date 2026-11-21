@@ -1367,7 +1367,7 @@ a.attention-chip:hover { text-decoration: underline; color: var(--text); }
 .load-more { margin-top: 8px; }
 
 /* Yes / No tracked fields */
-.yes-no { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 10px; overflow: hidden; }
+.yes-no { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--border-strong); border-radius: 10px; overflow: hidden; }
 .yes-no button { min-width: 64px; min-height: 40px; padding: 6px 14px; background: var(--raised); border: 0; color: var(--text-2); font-weight: 650; }
 .yes-no button + button { border-left: 1px solid var(--border-strong); }
 .yes-no button[aria-pressed="true"] { background: var(--accent); color: #fff; }
@@ -1381,3 +1381,11 @@ a.attention-chip:hover { text-decoration: underline; color: var(--text); }
 @media (max-width: 480px) { .back-to-top .label { display: none; } .back-to-top { padding: 0; } }
 /* Toasts move above the Back to top button while it is shown, so neither covers the other. */
 body:has(.back-to-top) .toasts { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 60px); }
+
+/* Pinned cards sit above the project's tabs on every view. */
+.pinned-cards {
+  margin-bottom: 16px;
+}
+.pinned-card {
+  border-color: var(--accent, currentColor);
+}

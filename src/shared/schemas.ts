@@ -92,6 +92,8 @@ export const SectionManifest = z.object({
   icon: Icon.optional(),
   visible: z.boolean().default(true),
   defaultOpen: z.boolean().default(false),
+  /** expandable-card only: its newest record is also shown above the project's tabs, on every view. */
+  pinned: z.boolean().default(false),
   /** Extra panels rendered by this section (page-tab / main-tab), before its children. */
   views: z.array(SectionView).max(4).default([]),
   actions: z.array(Action).default(["copy", "open-detail"]),

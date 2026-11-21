@@ -25,5 +25,6 @@
       "filter": true,
       "help": "Resets to the default every morning."
     }
-  ]
+  ],
+  "pinned": true
 }

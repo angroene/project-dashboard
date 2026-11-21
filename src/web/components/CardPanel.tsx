@@ -324,6 +324,41 @@ function RecordList({ node, focusId }: { node: NavNode; focusId?: string }) {
   );
 }
 
+/**
+ * A pinned card's newest record (in the card's sort order), shown above the project's tabs: no filters, toolbar or
+ * paging. The full card, with older records, stays in its tab.
+ */
+export function PinnedCard({ node }: { node: NavNode }) {
+  const { pid } = useProject();
+  const headingId = useId();
+  const q = useQuery({
+    queryKey: qk.records(pid, node.id, { status: "", q: "", sort: node.filters.sort, limit: 1, fields: "" }),
+    queryFn: ({ signal }) => apiGet<RecordPage>(`${projectApi(pid)}/sections/${enc(node.id)}/records?limit=1&status=all&sort=${enc(node.filters.sort)}`, signal),
+  });
+  const r = q.data?.items[0];
+  return (
+    <section className="panel card-panel pinned-card" data-section-id={node.id} aria-labelledby={headingId}>
+      <div className="card-head">
+        <h2 className="card-title" id={headingId}>
+          <span className="card-toggle static">
+            <Icon name={node.icon} />
+            <span className="card-title-text">{node.title}</span>
+          </span>
+        </h2>
+        {node.description && <p className="small muted card-desc">{node.description}</p>}
+      </div>
+      {q.isPending && <Loading />}
+      {q.isError && <ErrorNote error={q.error} onRetry={() => void q.refetch()} />}
+      {q.data && !r && <p className="muted empty-list">No records yet.</p>}
+      {r && (
+        <ul className="records" role="list">
+          <RecordRow summary={r} selectable={false} selected={false} onSelect={noop} fieldDefs={q.data?.fieldDefs} quickChoices />
+        </ul>
+      )}
+    </section>
+  );
+}
+
 /** A linked record that is not on the loaded page of its list: show it on its own, expanded. */
 function FocusedRecord({ recordId }: { recordId: string }) {
   const { pid } = useProject();

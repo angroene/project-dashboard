@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "evening-plan",
+  "displayType": "expandable-card",
+  "title": "Tonight in the garden",
+  "description": "A daily pinned choice: tap an answer, no Submit. Back to Water every night at midnight.",
+  "order": 15,
+  "icon": "clock",
+  "pinned": true,
+  "actions": [
+    "copy",
+    "open-detail"
+  ],
+  "filters": {
+    "sort": "updated-desc"
+  },
+  "fields": [
+    {
+      "id": "plan",
+      "label": "What's the plan tonight?",
+      "type": "choice",
+      "editableBy": [
+        "user"
+      ],
+      "filter": true,
+      "options": [
+        { "id": "water", "label": "Water the beds" },
+        { "id": "weed", "label": "Weed" },
+        { "id": "rest", "label": "Rest" }
+      ]
+    }
+  ]
+}

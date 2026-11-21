@@ -18,7 +18,7 @@ what it needs, and gives a complete file you can copy.
 | [B. Records](#b-record-types) | `question`, `task`, `issue`, `review`, `progress`, `activity`, `document`, `generic` |
 | [C. Questions](#c-question-and-answer-types) | `single-choice`, `multiple-choice`, `free-text`, `approval`, `file-upload`, `composite`, informational |
 | [D. Tracked fields](#d-tracked-field-types) | `checkbox`, `yes-no`, `choice`, `text`, `date` |
-| [E. Recurring items](#e-recurring-items) | daily templates, daily Yes / No items, recurring questions, paused templates |
+| [E. Recurring items](#e-recurring-items) | daily templates, daily Yes / No items, daily pinned choices, recurring questions, paused templates |
 | [F. Statuses and attention](#f-statuses-workflows-and-attention-groups) | workflows, categories, `requiresAction`, `notifyUser`, attention groups |
 | [G. Actions](#g-actions) | `copy`, `download`, `bulk-download`, `export-xlsx`, `import-xlsx`, `upload`, `respond`, `mark-read`, `comment`, `open-detail` |
 | [H. Files, progress, activity](#h-attachments-artifact-roots-progress-and-activity) | attachments, artifact roots, `progress.json`, activity events |
@@ -504,6 +504,7 @@ The card (`sections/checkins/section.json`):
   "displayType": "expandable-card",
   "title": "Evening check-in",
   "defaultOpen": true,
+  "pinned": true,
   "fields": [{ "id": "available", "label": "Available for the evening check?", "type": "yes-no", "editableBy": ["user"], "filter": true }]
 }
 ```
@@ -523,6 +524,44 @@ The template (`sections/checkins/templates/evening-check.json`):
 ```
 
 `time` is the daily reset. Before `startDate` and after `endDate` there is no current day.
+
+`"pinned": true` also shows the current day's row above the project's tabs, so the value can be changed from any
+view ([ADR 0023](adr/0023-pinned-cards.md)); the card with earlier days stays in its tab.
+
+### Daily pinned choice
+
+**Purpose:** a daily question with your own answers that never has to be answered, for example "What's the plan
+tonight?". **Shows:** above the project's tabs, today's row with one button per answer; the default is pressed until
+someone taps another, a tap saves at once (no Submit), and every day starts from the default again at the reset time.
+**Needs:** a card with `"pinned": true` and a user `choice` field (the question is its `label`, the answers its
+`options`), and an active template whose `record.fields` sets the default and whose `schedule.time` is the reset.
+Agents read today's answer with `apd daily <template> --field <id>` (`value` = option id, `label` = its text).
+Showcase: [`plan/daily/evening-plan`](../examples/projects/showcase-garden/sections/plan/daily/evening-plan).
+
+<!-- example: section -->
+```json
+{
+  "schemaVersion": 1,
+  "id": "evening-plan",
+  "displayType": "expandable-card",
+  "title": "Tonight in the garden",
+  "pinned": true,
+  "fields": [{ "id": "plan", "label": "What's the plan tonight?", "type": "choice", "editableBy": ["user"],
+    "options": [{ "id": "water", "label": "Water the beds" }, { "id": "weed", "label": "Weed" }, { "id": "rest", "label": "Rest" }] }]
+}
+```
+
+<!-- example: template -->
+```json
+{
+  "schemaVersion": 1,
+  "id": "evening-plan",
+  "title": "Tonight in the garden",
+  "state": "active",
+  "schedule": { "frequency": "daily", "time": "00:00", "timezone": "Europe/Lisbon", "startDate": "2026-11-10" },
+  "record": { "recordType": "generic", "title": "Tonight in the garden {date}", "status": "open", "fields": { "plan": "water" } }
+}
+```
 
 ### Recurring question
 

@@ -68,6 +68,10 @@
       "default": false,
       "type": "boolean"
     },
+    "pinned": {
+      "default": false,
+      "type": "boolean"
+    },
     "views": {
       "default": [],
       "maxItems": 4,

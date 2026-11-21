@@ -179,6 +179,23 @@ const at = (iso: string) => {
 };
 
 describe("daily yes / no values", () => {
+  it("a daily choice works the same way: the template's option is in effect untouched, a tap sets another, the next day resets", async () => {
+    const root = dataRoot();
+    const dir = path.join(root, "projects", "alpha", "sections", "dev", "work", "tonight");
+    const plan = { id: "plan", label: "Tonight's plan", type: "choice", editableBy: ["user"], options: [{ id: "test", label: "Play-test" }, { id: "off", label: "Night off" }] };
+    writeJson(path.join(dir, "section.json"), section("tonight", "expandable-card", "Tonight", { pinned: true, fields: [plan] }));
+    writeJson(path.join(dir, "templates", "tonight.json"), { ...yesNoTemplate(true), record: { recordType: "generic", title: "Tonight {date}", status: "open", fields: { plan: "test" } } });
+    const t = await setup({ root });
+    at("2026-11-10T07:00:00Z");
+    expect((await t.call<TemplateCurrent>("GET", `${A}/templates/tonight/current`)).body).toMatchObject({ recordExists: false, fields: { plan: "test" }, labels: { plan: "Play-test" } });
+    await runRecurrence(t.store, "alpha", new Date());
+    expect((await t.call("POST", `${A}/records/tonight-2026-11-10/user-update`, { fields: { plan: "off" } })).status).toBe(200);
+    expect((await t.call<TemplateCurrent>("GET", `${A}/templates/tonight/current`)).body).toMatchObject({ fields: { plan: "off" }, labels: { plan: "Night off" } });
+    expect((await t.call("POST", `${A}/records/tonight-2026-11-10/user-update`, { fields: { plan: "maybe" } })).status).toBe(422);
+    at("2026-11-11T05:00:00Z");
+    expect((await t.call<TemplateCurrent>("GET", `${A}/templates/tonight/current`)).body).toMatchObject({ date: "2026-11-11", fields: { plan: "test" } });
+  });
+
   it.each([true, false])("default %s is the effective value from the reset time on, before the scheduler runs and without anyone answering", async (dflt) => {
     const t = await setup({ root: dailyRoot(yesNoTemplate(dflt)) });
     // 05:30 UTC = 06:30 in Berlin (CET): today's day has begun, its record does not exist yet.

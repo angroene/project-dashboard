@@ -36,7 +36,7 @@ function jsonFiles(dir: string): string[] {
     .filter((f) => f.endsWith(".json"));
 }
 
-interface SectionFile { id: string; displayType: string; views?: string[]; fields?: { id: string; type: string }[] }
+interface SectionFile { id: string; displayType: string; views?: string[]; pinned?: boolean; fields?: { id: string; type: string; editableBy: string[]; options?: { id: string; label: string }[] }[] }
 interface RecordFile { recordType: string; answerSchema?: { type: string }; fields?: Record<string, unknown> }
 interface TemplateFile { id: string; state?: string; record: RecordFile }
 const read = <T>(f: string) => JSON.parse(fs.readFileSync(f, "utf8")) as T;
@@ -82,6 +82,16 @@ describe("showcase-garden example", () => {
       expect(cur.date).not.toBeNull();
       expect(typeof cur.fields[fieldId]).toBe("boolean");
       expect(["yes", "no"]).toContain(cur.labels[fieldId]);
+    }
+    // A daily pinned choice: a pinned card with a user choice field and an active template that sets its default.
+    const choiceCards = sections.filter((s) => s.pinned && (s.fields ?? []).some((f) => f.type === "choice" && f.editableBy.includes("user")));
+    const choiceDaily = templates.filter((t) => t.state === "active" && choiceCards.some((s) => s.fields!.some((f) => f.type === "choice" && t.record.fields?.[f.id] !== undefined)));
+    expect(choiceDaily.length).toBeGreaterThan(0);
+    for (const t of choiceDaily) {
+      const cur = await get<TemplateCurrent>(`/api/projects/${SHOWCASE}/templates/${t.id}/current`);
+      const f = choiceCards.find((s) => s.id === cur.sectionId)!.fields!.find((x) => x.type === "choice")!;
+      expect(f.options!.map((o) => o.id)).toContain(cur.fields[f.id]);
+      expect(cur.labels[f.id]).toBe(f.options!.find((o) => o.id === cur.fields[f.id])!.label);
     }
     expect(templates.some((t) => t.state === "paused")).toBe(true);
     expect(templates.some((t) => t.record.recordType === "question")).toBe(true);

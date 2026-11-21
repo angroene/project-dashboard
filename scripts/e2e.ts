@@ -979,6 +979,61 @@ await walk(16, "Daily Yes / No: default without answering, one tap saves, API va
   log(`${rid}: default yes, tapped no, saved and read back`);
 });
 
+// #17 — a pinned daily card: its current row sits above the tabs on every view and saves from there.
+await walk(17, "Pinned cards: current Yes / No and choice above the tabs on every tab, a tap saves there", async (log) => {
+  const pid = "e2e-pinned";
+  const root = projDir(pid);
+  const w = (rel: string, v: unknown) => { fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true }); fs.writeFileSync(path.join(root, rel), JSON.stringify(v, null, 2)); };
+  const today = new Date().toISOString().slice(0, 10);
+  w("sections/work/section.json", { schemaVersion: 1, id: "work", displayType: "page-tab", title: "Work", order: 1 });
+  w("sections/work/tasks/section.json", { schemaVersion: 1, id: "tasks", displayType: "expandable-card", title: "Tasks", defaultOpen: true });
+  w("sections/desk/section.json", { schemaVersion: 1, id: "desk", displayType: "page-tab", title: "Desk", order: 2 });
+  w("sections/desk/tonight/section.json", { schemaVersion: 1, id: "tonight", displayType: "expandable-card", title: "Testing tonight? (synthetic)", defaultOpen: true, pinned: true,
+    fields: [{ id: "testing", label: "Testing tonight?", type: "yes-no", editableBy: ["user"] }] });
+  w("sections/desk/tonight/templates/tonight.json", { schemaVersion: 1, id: "tonight", title: "Testing tonight?", state: "active",
+    schedule: { frequency: "daily", time: "00:00", timezone: "UTC", startDate: today }, record: { recordType: "generic", title: "Testing tonight? {date}", status: "open", fields: { testing: true } } });
+  w("sections/desk/plan/section.json", { schemaVersion: 1, id: "plan", displayType: "expandable-card", title: "Tonight's plan (synthetic)", order: 2, pinned: true,
+    fields: [{ id: "plan", label: "Plan", type: "choice", editableBy: ["user"], options: [{ id: "test", label: "Play-test" }, { id: "review", label: "Review only" }, { id: "off", label: "Night off" }] }] });
+  w("sections/desk/plan/templates/plan.json", { schemaVersion: 1, id: "plan", title: "Tonight's plan", state: "active",
+    schedule: { frequency: "daily", time: "00:00", timezone: "UTC", startDate: today }, record: { recordType: "generic", title: "Plan {date}", status: "open", fields: { plan: "test" } } });
+  w("project.json", { schemaVersion: 1, id: pid, displayName: "E2E Pinned (synthetic)" });
+  await until("pinned project indexed", async () => (await api<{ templates: { id: string }[] }>(`/api/projects/${pid}/templates`)).templates.some((t) => t.id === "tonight"), 20_000);
+  await until("both templates indexed", async () => (await api<{ templates: { id: string }[] }>(`/api/projects/${pid}/templates`)).templates.length === 2, 20_000);
+  await runRecurrence(store, pid, new Date());
+  const rid = `tonight-${today}`;
+  for (const tab of ["", "/work"]) {
+    await page.goto(`${BASE}/#/p/${pid}${tab}`);
+    const pinned = page.locator('.pinned-card[data-section-id="tonight"]');
+    await pinned.locator(`[data-record-id="${rid}"]`).waitFor({ timeout: 15_000 });
+    const above = await page.evaluate(() => {
+      const p = document.querySelector(".pinned-card"), t = document.querySelector('[role="tablist"]');
+      return !!p && !!t && (p.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+    });
+    expect(above, `pinned card above the tabs on '${tab || "overview"}'`);
+    expect((await pinned.locator('[data-record-id]').count()) === 1, "pinned card shows one record");
+  }
+  // A pinned choice: one button per option from the JSON, the template's option pressed, a tap saves it.
+  const planCard = page.locator('.pinned-card[data-section-id="plan"]');
+  const planBtns = planCard.locator(".record-yes-no button");
+  expect(JSON.stringify(await planBtns.allTextContents()) === JSON.stringify(["Play-test", "Review only", "Night off"]), "choice buttons from the field's options");
+  expect((await planCard.getByRole("button", { name: "Play-test" }).getAttribute("aria-pressed")) === "true", "template option in effect untouched");
+  await planCard.getByRole("button", { name: "Night off" }).click();
+  const planFile = path.join(root, "sections", "desk", "plan", "records", `plan-${today}.json`);
+  await until("choice saved from the pinned card", async () => fs.existsSync(planFile) && readJson<{ fields?: Record<string, unknown> }>(planFile).fields?.plan === "off");
+  expect((await api<{ labels: Record<string, string> }>(`/api/projects/${pid}/templates/plan/current`)).labels.plan === "Night off", "agents read the chosen option");
+  const pinned = page.locator('.pinned-card[data-section-id="tonight"]');
+  expect((await pinned.getByRole("button", { name: "Yes" }).getAttribute("aria-pressed")) === "true", "Yes by default, nothing submitted");
+  await pinned.getByRole("button", { name: "No" }).click();
+  const file = path.join(root, "sections", "desk", "tonight", "records", `${rid}.json`);
+  await until("No saved from the pinned card", async () => fs.existsSync(file) && readJson<{ fields?: Record<string, unknown> }>(file).fields?.testing === false);
+  await page.goto(`${BASE}/#/p/${pid}/desk`);
+  const inTab = page.locator('[role="tabpanel"] [data-record-id="' + rid + '"]');
+  await inTab.waitFor();
+  expect((await inTab.locator(".record-yes-no").getByRole("button", { name: "No" }).getAttribute("aria-pressed")) === "true", "the card in its tab shows the saved No");
+  await shot(page, "desktop-pinned-card");
+  log(`${rid}: above the tabs on overview and Work; No saved from the pinned card; card in Desk shows it; pinned choice saved 'off'`);
+});
+
 // ------------------------------------------------- screenshots (mobile) --
 try {
   const m = await open(MOBILE, "mobile390");

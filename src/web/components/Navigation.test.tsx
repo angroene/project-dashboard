@@ -122,6 +122,63 @@ describe("ProjectWorkspace navigation (manifest-driven)", () => {
     expect(screen.queryByRole("navigation", { name: "Work areas" })).toBeNull();
   });
 
+  it("a pinned card shows its newest record above the tabs on every view; the full card stays in its tab", async () => {
+    const yesNo = { id: "go", label: "Going?", type: "yes-no" as const, editableBy: ["user" as const], filter: false };
+    const nav: NavigationResponse = {
+      projectId: PID,
+      rootChildType: "page-tab",
+      nodes: [
+        node({ id: "work", displayType: "page-tab", title: "Work", children: [node({ id: "tasks", displayType: "expandable-card", title: "Tasks", defaultOpen: true })] }),
+        node({ id: "desk", displayType: "page-tab", title: "Desk", children: [node({ id: "daily", displayType: "expandable-card", title: "Tonight", pinned: true, defaultOpen: true })] }),
+      ],
+    };
+    const api = routes(nav, {
+      ...recordsRoute("tasks", "Task row"),
+      [`GET /api/projects/${PID}/sections/daily/records`]: { ...page([summary({ id: "day-2", title: "Tonight day 2", sectionId: "daily", fields: { go: true } })]), fieldDefs: [yesNo] },
+    });
+    const r = renderWithProviders(<ProjectWorkspace route={{ kind: "project", projectId: PID, path: [] }} />);
+    const pinned = await screen.findByRole("region", { name: "Tonight" });
+    expect(await within(pinned).findByText("Tonight day 2")).toBeInTheDocument();
+    expect(within(pinned).getByRole("button", { name: "Yes" })).toHaveAttribute("aria-pressed", "true");
+    // Above the tabs, without the list chrome, and fetched as a single newest record.
+    const tablist = screen.getByRole("tablist", { name: "Example Project views" });
+    expect(pinned.compareDocumentPosition(tablist) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(pinned).queryByRole("searchbox")).toBeNull();
+    expect(api.calls.some((c) => c.path.endsWith("/sections/daily/records") && c.query.get("limit") === "1")).toBe(true);
+    // Another tab: still on top.
+    r.rerender(<ProjectWorkspace route={{ kind: "project", projectId: PID, path: ["work"] }} />);
+    expect(await screen.findByText("Task row")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Tonight" })).toBeInTheDocument();
+    // Its own tab: the pinned copy plus the full card with its list.
+    r.rerender(<ProjectWorkspace route={{ kind: "project", projectId: PID, path: ["desk"] }} />);
+    const panel = await screen.findByRole("tabpanel");
+    expect(await within(panel).findByRole("searchbox")).toBeInTheDocument();
+  });
+
+  it("a pinned card answers a choice field with one button per option; a tap saves that option, no Submit", async () => {
+    const plan = { id: "plan", label: "Tonight's plan", type: "choice" as const, editableBy: ["user" as const], filter: false,
+      options: [{ id: "test", label: "Play-test" }, { id: "review", label: "Review only" }, { id: "off", label: "Night off" }] };
+    const nav: NavigationResponse = {
+      projectId: PID,
+      rootChildType: "page-tab",
+      nodes: [node({ id: "desk", displayType: "page-tab", title: "Desk", children: [node({ id: "daily", displayType: "expandable-card", title: "Tonight", pinned: true })] })],
+    };
+    const saved: unknown[] = [];
+    routes(nav, {
+      [`GET /api/projects/${PID}/sections/daily/records`]: { ...page([summary({ id: "day-1", title: "Tonight day 1", sectionId: "daily", fields: { plan: "test" } })]), fieldDefs: [plan] },
+      [`POST /api/projects/${PID}/records/day-1/user-update`]: (c: { body: unknown }) => { saved.push(c.body); return { revision: "r2" }; },
+    });
+    renderWithProviders(<ProjectWorkspace route={{ kind: "project", projectId: PID, path: [] }} />);
+    const pinned = await screen.findByRole("region", { name: "Tonight" });
+    const group = await within(pinned).findByRole("group", { name: "Tonight's plan: Tonight day 1" });
+    expect(within(group).getAllByRole("button").map((b) => b.textContent)).toEqual(["Play-test", "Review only", "Night off"]);
+    expect(within(group).getByRole("button", { name: "Play-test" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(pinned).queryByRole("button", { name: /Submit/ })).toBeNull();
+    await userEvent.click(within(group).getByRole("button", { name: "Night off" }));
+    await waitFor(() => expect(saved).toEqual([{ fields: { plan: "off" } }]));
+    expect(within(group).getByRole("button", { name: "Night off" })).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("reports an unknown section in the path instead of guessing", async () => {
     routes(mainTabNav({ areaA: "A", areaB: "B", view1: "V1", view2: "V2" }));
     renderWithProviders(<ProjectWorkspace route={{ kind: "project", projectId: PID, path: ["renamed-away"] }} />);

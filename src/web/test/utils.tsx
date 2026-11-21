@@ -119,6 +119,7 @@ export function node(over: Partial<NavNode> & Pick<NavNode, "id" | "displayType"
     description: "",
     order: 10,
     defaultOpen: false,
+    pinned: false,
     views: [],
     actions: ["copy", "open-detail"],
     filters: { sort: "updated-desc" },
